@@ -32,6 +32,7 @@ import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -51,7 +52,6 @@ public class IMUViewActivity extends Activity {
     private static final byte IMUID = C.toByte(0xD0);
 
     byte[] sensor_list = null;
-    String[] df_list = null;
     byte[] MorSensorVersion = {0, 0, 0};
     byte[] FirmwareVersion = {0, 0, 0};
 
@@ -86,9 +86,6 @@ public class IMUViewActivity extends Activity {
     long uv_timestamp = 0;
     long humidity_timestamp = 0;
 
-    static DetectLocalECThread detect_local_ec_thread = null;
-    static boolean detect_local_ec_permission;
-    static RegisterThread register_thread = null;
     final int NOTIFICATION_ID = 1;
     static Handler resend_loop;
     static boolean resend_loop_working;
@@ -222,18 +219,8 @@ public class IMUViewActivity extends Activity {
         super.onDestroy();
         Log.v(C.log_tag, "--- ON DESTROY PreferenceActivity ---");
         BtDisConnect();
-        if (detect_local_ec_thread != null) {
-            detect_local_ec_thread.stop_working();
-            detect_local_ec_thread = null;
-        }
-        if (register_thread != null) {
-            register_thread.stop_working();
-            register_thread = null;
-        }
         resend_permission = false;
-        NotificationManager notification_manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notification_manager.cancelAll();
-        new DetachThread().start();
+        EasyConnect.detach();
     }
 
     public void BtDisConnect(){
@@ -364,6 +351,7 @@ public class IMUViewActivity extends Activity {
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 // Show all the supported services and characteristics on the user interface.
                 displayGattServices(mBluetoothLeService.getSupportedGattServices());
+                EasyConnect.start(IMUViewActivity.this, "MorSensor");
                 if (!resend_loop_working) {
                     resend_loop.postDelayed(resender, 1000);
                     resend_loop_working = true;
@@ -431,26 +419,27 @@ public class IMUViewActivity extends Activity {
                 }
 
                 /* Register to EasyConnect */
-                df_list = C.gen_feature_list_from_sensor_id_list(sensor_list);
+                String[] df_list = C.gen_feature_list_from_sensor_id_list(sensor_list);
                 logging("Found features:");
                 for (String i: df_list) {
                     logging("feature: "+ i);
                 }
 
-                // detect local EC
-                if (detect_local_ec_thread == null) {
-                    detect_local_ec_permission = true;
-                    detect_local_ec_thread = new DetectLocalECThread();
-                    detect_local_ec_thread.start();
+                JSONObject profile = new JSONObject();
+                try {
+                    profile.put("d_name", "Android"+ EasyConnect.get_mac_addr());
+                    profile.put("dm_name", C.dm_name);
+                    JSONArray feature_list = new JSONArray();
+                    for (String f: df_list) {
+                        feature_list.put(f);
+                    }
+                    profile.put("df_list", feature_list);
+                    profile.put("u_name", C.u_name);
+                    profile.put("monitor", EasyConnect.get_mac_addr());
+                    EasyConnect.attach(EasyConnect.get_d_id(EasyConnect.get_mac_addr()), profile);
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-                if (register_thread != null) {
-                    register_thread.stop_working();
-                    register_thread = null;
-                }
-                register_thread = new RegisterThread();
-                register_thread.start();
-                show_ec_status(false);
-
 
                 tv_MorSensorID.setText(sensor_list_str);
                 for (int i = 0; i < sensor_list.length; i++) {
@@ -588,30 +577,25 @@ public class IMUViewActivity extends Activity {
                     tv_MagY.setText(str_mag2); //Mag y
                     tv_MagZ.setText(str_mag3); //Mag z
 
-                    (new Thread () {
-                        @Override
-                        public void run () {
-                            try {
-                                JSONArray data = new JSONArray();
-                                data.put(gyro_x); data.put(gyro_y); data.put(gyro_z);
-                                EasyConnect.push_data("Gyroscope", data);
-                                logging("push(\"Gyroscope\", "+ gyro_x +","+ gyro_y +","+ gyro_z +")");
+                    try {
+                        JSONArray data = new JSONArray();
+                        data.put(gyro_x); data.put(gyro_y); data.put(gyro_z);
+                        EasyConnect.push_data("Gyroscope", data);
+                        logging("push(\"Gyroscope\", "+ gyro_x +","+ gyro_y +","+ gyro_z +")");
 
-                                data = new JSONArray();
-                                data.put(acc_x); data.put(acc_y); data.put(acc_z);
-                                EasyConnect.push_data("G-sensor", data);
-                                logging("push(\"G-sensor\", "+ acc_x +","+ acc_y +","+ acc_z +")");
+                        data = new JSONArray();
+                        data.put(acc_x); data.put(acc_y); data.put(acc_z);
+                        EasyConnect.push_data("G-sensor", data);
+                        logging("push(\"G-sensor\", "+ acc_x +","+ acc_y +","+ acc_z +")");
 
-                                data = new JSONArray();
-                                data.put(mag_x); data.put(mag_y); data.put(mag_z);
-                                EasyConnect.push_data("Magnetometer", data);
-                                logging("push(\"Magnetometer\", "+ mag_x +","+ mag_y +","+ mag_z +")");
+                        data = new JSONArray();
+                        data.put(mag_x); data.put(mag_y); data.put(mag_z);
+                        EasyConnect.push_data("Magnetometer", data);
+                        logging("push(\"Magnetometer\", "+ mag_x +","+ mag_y +","+ mag_z +")");
 
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }).start();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
 
                     imu_timestamp = current_time;
                 }
@@ -620,13 +604,8 @@ public class IMUViewActivity extends Activity {
             case 0xC0: // UV
                 if (current_time - uv_timestamp >= 200) {
                     final float uv_data = (float) ((((short) value[3]) * 256 + ((short) value[2])) / 100.0);
-                    (new Thread() {
-                        @Override
-                        public void run() {
-                            EasyConnect.push_data("UV", uv_data);
-                            logging("push(\"UV\", " + uv_data +")");
-                        }
-                    }).start();
+                    EasyConnect.push_data("UV", uv_data);
+                    logging("push(\"UV\", " + uv_data +")");
                     uv_timestamp = current_time;
                 }
                 break;
@@ -636,15 +615,11 @@ public class IMUViewActivity extends Activity {
                     final float temp_data = (float) ((value[2] * 256 + value[3]) * 175.72 / 65536.0 - 46.85);
                     final float humidity_data = (float) ((value[4] * 256 + value[5]) * 125.0 / 65536.0 - 6.0);
 
-                    (new Thread() {
-                        @Override
-                        public void run() {
-                            EasyConnect.push_data("Temperature", temp_data);
-                            logging("push(\"Temperature\", " + temp_data +")");
-                            EasyConnect.push_data("Humidity", humidity_data);
-                            logging("push(\"Humidity\", " + humidity_data +")");
-                        }
-                    }).start();
+                    EasyConnect.push_data("Temperature", temp_data);
+                    logging("push(\"Temperature\", " + temp_data +")");
+                    EasyConnect.push_data("Humidity", humidity_data);
+                    logging("push(\"Humidity\", " + humidity_data +")");
+
                     humidity_timestamp = current_time;
                 }
                 break;
@@ -795,131 +770,6 @@ public class IMUViewActivity extends Activity {
         }
 
         return  super.onKeyDown ( keyCode ,  event );
-    }
-
-    public class RegisterThread extends Thread {
-        boolean working_permission;
-        public RegisterThread () {
-            working_permission = true;
-        }
-        public void stop_working () {
-            working_permission = false;
-        }
-        @Override
-        public void run () {
-            logging("RegisterThread starts");
-            boolean attach_success = false;
-            String morsensor_d_name = "MorSensor"+ mDeviceAddress.replace(":", "");
-
-            while ( !attach_success && working_permission ) {
-                attach_success = EasyConnect.attach(
-                        mDeviceAddress,
-                        C.dm_name,
-                        df_list,
-                        morsensor_d_name,
-                        C.u_name,
-                        get_wifi_mac_addr()
-                );
-
-                if (!working_permission) {
-                    break;
-                }
-
-                if ( !attach_success ) {
-                    logging("Attach failed, wait for 2000ms and try again");
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                } else {
-                    logging("Attach Successed");
-                    show_ec_status(true);
-
-                }
-            }
-            logging("RegisterThread stops");
-        }
-    }
-
-    private class DetectLocalECThread extends Thread {
-        DatagramSocket socket;
-        public void stop_working () {
-            socket.close();
-        }
-
-        public void run () {
-            logging("Detection Thread starts");
-            try {
-                String current_ec_host = EasyConnect.EC_HOST;
-                socket = new DatagramSocket(null);
-                socket.setReuseAddress(true);
-                socket.bind(new InetSocketAddress("0.0.0.0", EasyConnect.EC_BROADCAST_PORT));
-                byte[] lmessage = new byte[20];
-                DatagramPacket packet = new DatagramPacket(lmessage, lmessage.length);
-                while (detect_local_ec_permission) {
-                    logging("wait for UDP packet");
-                    socket.receive(packet);
-                    String input_data = new String( lmessage, 0, packet.getLength() );
-                    if (input_data.equals("easyconnect")) {
-                        InetAddress ec_raw_addr = packet.getAddress();
-                        String ec_addr = ec_raw_addr.getHostAddress();
-                        logging("Get easyconnect UDP Packet from "+ ec_addr);
-                        String new_ec_host = ec_addr +":"+ EasyConnect.EC_PORT;
-                        if (!current_ec_host.equals(new_ec_host)) {
-                            logging("Reattach to "+ new_ec_host);
-                            EasyConnect.reattach_to(new_ec_host);
-                            current_ec_host = new_ec_host;
-                            show_ec_status(true);
-                        }
-                    }
-                }
-                socket.close();
-            } catch (SocketException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                logging("Detection Thread stops");
-            }
-        }
-    }
-
-    static private class DetachThread extends Thread {
-        public void run () {
-            EasyConnect.detach();
-            EasyConnect.reset_ec_host();
-            logging("Detached from EasyConnect");
-        }
-    }
-
-    private String get_wifi_mac_addr () {
-        WifiManager wifiMan = (WifiManager) this.getSystemService(
-                Context.WIFI_SERVICE);
-        WifiInfo wifiInf = wifiMan.getConnectionInfo();
-        return wifiInf.getMacAddress();
-    }
-
-    public void show_ec_status (boolean status) {
-        String text = status ? EasyConnect.EC_HOST : "Connecting";
-        NotificationManager notification_manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification.Builder notification_builder =
-                new Notification.Builder(this)
-                        .setSmallIcon(R.drawable.morsensorlogo_a)
-                        .setContentTitle(C.dm_name)
-                        .setContentText(text)
-                        .setOngoing(true);
-
-        PendingIntent pending_intent = PendingIntent.getActivity(
-                this,
-                0,
-                new Intent(this, IMUViewActivity.class),
-                PendingIntent.FLAG_UPDATE_CURRENT
-        );
-
-        notification_builder.setContentIntent(pending_intent);
-        notification_manager.notify(NOTIFICATION_ID, notification_builder.build());
     }
 
     private static void logging (String _) {
