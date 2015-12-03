@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<declare-styleable name="Dial">
+		<attr name="valueScale" format="reference"/>
+	    <attr name="totalNotches" format="reference"/>
+		<attr name="scaleCenterValue" format="reference"/>
+		<attr name="scaleColor" format="reference"/>
+	    <attr name="incrementPerLargeNotch" format="reference"/>
+		<attr name="incrementPerSmallNotch" format="reference"/>
+		<attr name="warningValue" format="reference"/>
+		<attr name="warningComment" format="reference"/>
+		<attr name="upperTitle" format="reference"/>
+		<attr name="lowerTitle" format="reference"/>
+		<attr name="unitTitle" format="reference"/>
+		<attr name="rangeTable" format="reference"/>
+	</declare-styleable>
+</resources>

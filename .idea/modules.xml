@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Application/Application.iml" filepath="$PROJECT_DIR$/Application/Application.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MorSensor_IMU.iml" filepath="$PROJECT_DIR$/MorSensor_IMU.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MorSensor_IMU - Test Final.iml" filepath="$PROJECT_DIR$/MorSensor_IMU - Test Final.iml" />
+    </modules>
+  </component>
+</project>
+
