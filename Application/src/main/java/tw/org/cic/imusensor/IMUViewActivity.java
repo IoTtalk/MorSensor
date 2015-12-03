@@ -109,7 +109,10 @@ public class IMUViewActivity extends Activity {
                             send_command(MorSensorCommand.GetFirmwareVersion());
                             break;
                         case STATE_WAIT_DATA:
-                            send_command(MorSensorCommand.Echo());
+//                            send_command(MorSensorCommand.Echo());
+                            for (int i = 0; i < sensor_list.length; i++) {
+                                send_command(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_list[i]));
+                            }
                             break;
                         case STATE_RECONNECTING:
                             if (mBluetoothLeService != null) {
@@ -444,7 +447,7 @@ public class IMUViewActivity extends Activity {
                 tv_MorSensorID.setText(sensor_list_str);
                 for (int i = 0; i < sensor_list.length; i++) {
                     send_command(MorSensorCommand.SetSensorStopTransmission(sensor_list[i]));
-                    send_command(MorSensorCommand.SetSensorTransmissionModeOnce(sensor_list[i]));
+//                    send_command(MorSensorCommand.SetSensorTransmissionModeOnce(sensor_list[i]));
                 }
                 send_command(MorSensorCommand.GetMorSensorVersion());
                 break;
@@ -493,7 +496,10 @@ public class IMUViewActivity extends Activity {
                 FirmwareVersion[2] = values[3];
                 tv_FirmwaveVersion.setText(FirmwareVersion[0] + "." + FirmwareVersion[1] + "." + FirmwareVersion[2]);
 
-                send_command(MorSensorCommand.Echo());
+//                send_command(MorSensorCommand.Echo());
+                for (int i = 0; i < sensor_list.length; i++) {
+                    send_command(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_list[i]));
+                }
                 break;
 
             case MorSensorCommand.IN_SENSOR_DATA:
@@ -510,15 +516,15 @@ public class IMUViewActivity extends Activity {
                 process_sensor_data(values);
                 break;
 
-            case MorSensorCommand.IN_ECHO:
-                for (int i = 0; i < sensor_list.length; i++) {
-                    logging("Retrieve sensor data: "+ C.fromByte(sensor_list[i]) +"("+ sensor_list[i] +")");
-                    if (C.fromByte(sensor_list[i]) == 0x80) {
-                        send_command(MorSensorCommand.RetrieveSensorData(sensor_list[i]));
-                    }
-                }
-                send_command(MorSensorCommand.Echo());
-                break;
+//            case MorSensorCommand.IN_ECHO:
+//                for (int i = 0; i < sensor_list.length; i++) {
+//                    logging("Retrieve sensor data: "+ C.fromByte(sensor_list[i]) +"("+ sensor_list[i] +")");
+//                    if (C.fromByte(sensor_list[i]) == 0x80) {
+//                        send_command(MorSensorCommand.RetrieveSensorData(sensor_list[i]));
+//                    }
+//                }
+//                send_command(MorSensorCommand.Echo());
+//                break;
         }
     }
 
@@ -605,7 +611,7 @@ public class IMUViewActivity extends Activity {
                 if (current_time - uv_timestamp >= 200) {
                     final float uv_data = (float) ((((short) value[3]) * 256 + ((short) value[2])) / 100.0);
                     EasyConnect.push_data("UV", uv_data);
-                    logging("push(\"UV\", " + uv_data +")");
+                    logging("push(\"UV\", " + uv_data + ")");
                     uv_timestamp = current_time;
                 }
                 break;
@@ -616,9 +622,9 @@ public class IMUViewActivity extends Activity {
                     final float humidity_data = (float) ((value[4] * 256 + value[5]) * 125.0 / 65536.0 - 6.0);
 
                     EasyConnect.push_data("Temperature", temp_data);
-                    logging("push(\"Temperature\", " + temp_data +")");
+                    logging("push(\"Temperature\", " + temp_data + ")");
                     EasyConnect.push_data("Humidity", humidity_data);
-                    logging("push(\"Humidity\", " + humidity_data +")");
+                    logging("push(\"Humidity\", " + humidity_data + ")");
 
                     humidity_timestamp = current_time;
                 }
