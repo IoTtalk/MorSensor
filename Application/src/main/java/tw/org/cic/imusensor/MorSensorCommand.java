@@ -89,6 +89,14 @@ public class MorSensorCommand {
     }
 
     public static byte[] SetSensorTransmissionModeContinuous(byte SensorID){
+        logging("o 0x14 0x__: Get transmission mode");
+        byte[] command = new byte[20];
+        command[0] = OUT_TRANSMISSION_MODE;
+        command[1] = SensorID;
+        return command;
+    }
+
+    public static byte[] GetSensorTransmissionMode(byte SensorID){
         logging("o 0x21 0x__ 0x01: Set transmission mode continuous");
         byte[] command = new byte[20];
         command[0] = OUT_SET_TRANSMISSION_MODE;

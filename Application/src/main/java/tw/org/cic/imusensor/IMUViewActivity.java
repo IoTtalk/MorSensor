@@ -2,9 +2,6 @@ package tw.org.cic.imusensor;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -17,8 +14,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -34,106 +29,49 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 
 public class IMUViewActivity extends Activity {
-    public static Activity mIMUViewActivity;
-//    private static final String TAG = "IMUViewActivity";
+    static byte[] sensor_list = null;
+    static byte[] MorSensorVersion = {0, 0, 0};
+    static byte[] FirmwareVersion = {0, 0, 0};
 
-    private static final byte IMUID = C.toByte(0xD0);
-
-    byte[] sensor_list = null;
-    byte[] MorSensorVersion = {0, 0, 0};
-    byte[] FirmwareVersion = {0, 0, 0};
-
-    private static final int STATE_WAIT_SENSOR_LIST = 0;
-    private static final int STATE_WAIT_MORSENSOR_VERSION = 1;
-    private static final int STATE_WAIT_FIRMWARE_VERSION = 2;
-    private static final int STATE_WAIT_DATA = 3;
-    private static final int STATE_RECONNECTING = 4;
-    private static final int STATE_DISCONNECTED = 5;
-    private int state;
+    static private final int STATE_WAIT_SENSOR_LIST = 0;
+    static private final int STATE_WAIT_MORSENSOR_VERSION = 1;
+    static private final int STATE_WAIT_FIRMWARE_VERSION = 2;
+    static private final int STATE_WAIT_DATA = 3;
+    static private final int STATE_RECONNECTING = 4;
+    static private final int STATE_DISCONNECTED = 5;
+    static private int state;
 
     //------------------------------ BLE -------------------------------------------
-    private static BluetoothLeService mBluetoothLeService = null;
+    static private BluetoothLeService mBluetoothLeService = null;
     // Local Bluetooth adapter
-    private static BluetoothAdapter mBluetoothAdapter = null;
-    private static ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
+    static private BluetoothAdapter mBluetoothAdapter = null;
+    static private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
             new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
-    private static BluetoothGattCharacteristic mReadCharacteristic,mWriteCharacteristic;
-    public static String mDeviceAddress="123",mDeviceName="",mDeviceData="";
-    public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
-    public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
+    static private BluetoothGattCharacteristic mReadCharacteristic,mWriteCharacteristic;
+    static public String mDeviceAddress="123",mDeviceName="",mDeviceData="";
+    static public final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
+    static public final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
     private final String LIST_NAME = "NAME";
     private final String LIST_UUID = "UUID";
 
-    public static boolean mConnected = false;
-    private static final int REQUEST_CONNECT_DEVICE = 1;
+    static public boolean mConnected = false;
+    static private final int REQUEST_CONNECT_DEVICE = 1;
 
-    TextView tv_GryoX,tv_GryoY,tv_GryoZ,tv_AccX,tv_AccY,tv_AccZ,tv_MagX,tv_MagY,tv_MagZ;
-    TextView tv_MorSensorVersion,tv_FirmwaveVersion,tv_MorSensorID;
+    static TextView tv_GryoX, tv_GryoY, tv_GryoZ, tv_AccX, tv_AccY, tv_AccZ, tv_MagX, tv_MagY, tv_MagZ;
+    static TextView tv_MorSensorVersion ,tv_FirmwaveVersion, tv_MorSensorID;
 
-    long imu_timestamp = 0;
-    long uv_timestamp = 0;
-    long humidity_timestamp = 0;
-
-    final int NOTIFICATION_ID = 1;
-    static Handler resend_loop;
-    static boolean resend_loop_working;
-    static boolean resend_permission;
-    static long command_timestamp = 0;
-    private Runnable resender = new Runnable() {
-        @Override
-        public void run() {
-            logging("Resender wakeup, state: "+ state);
-            if (resend_permission) {
-                long current_time = System.currentTimeMillis();
-                if ((current_time - command_timestamp) >= 1000) {
-                    switch (state) {
-                        case STATE_WAIT_SENSOR_LIST:
-                            send_command(MorSensorCommand.GetSensorList());
-                            break;
-                        case STATE_WAIT_MORSENSOR_VERSION:
-                            send_command(MorSensorCommand.GetMorSensorVersion());
-                            break;
-                        case STATE_WAIT_FIRMWARE_VERSION:
-                            send_command(MorSensorCommand.GetFirmwareVersion());
-                            break;
-                        case STATE_WAIT_DATA:
-//                            send_command(MorSensorCommand.Echo());
-                            for (int i = 0; i < sensor_list.length; i++) {
-                                send_command(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_list[i]));
-                            }
-                            break;
-                        case STATE_RECONNECTING:
-                            if (mBluetoothLeService != null) {
-                                mConnected = mBluetoothLeService.connect(mDeviceAddress);
-                            }
-                            logging("Reconnecting: "+ mConnected);
-                            if (mConnected) {
-                                state = STATE_WAIT_SENSOR_LIST;
-                            }
-                            break;
-                    }
-                }
-                if (state == STATE_DISCONNECTED) {
-                    logging("Resender ends");
-                    resend_loop_working = false;
-                } else {
-                    resend_loop.postDelayed(this, 1000);
-                }
-            }
-        }
-    };
+    static long imu_timestamp = 0;
+    static long uv_timestamp = 0;
+    static long humidity_timestamp = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -161,10 +99,7 @@ public class IMUViewActivity extends Activity {
         mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
 
         state = STATE_WAIT_SENSOR_LIST;
-        resend_permission = true;
-
-        resend_loop = new Handler();
-        resend_loop_working = false;
+        CommandSender.init();
 
         if(!mConnected){
             // Use this check to determine whether BLE is supported on the device.  Then you can
@@ -222,7 +157,7 @@ public class IMUViewActivity extends Activity {
         super.onDestroy();
         Log.v(C.log_tag, "--- ON DESTROY PreferenceActivity ---");
         BtDisConnect();
-        resend_permission = false;
+        CommandSender.end();
         EasyConnect.detach();
     }
 
@@ -230,8 +165,10 @@ public class IMUViewActivity extends Activity {
         mConnected = false;
         mDeviceAddress="123";
 
-        for (int i = 0; i < sensor_list.length; i++) {
-            send_command(MorSensorCommand.SetSensorStopTransmission(sensor_list[i]));
+        if (sensor_list != null) {
+            for (int i = 0; i < sensor_list.length; i++) {
+                CommandSender.send_command(MorSensorCommand.SetSensorStopTransmission(sensor_list[i]));
+            }
         }
         state = STATE_DISCONNECTED;
 
@@ -355,42 +292,19 @@ public class IMUViewActivity extends Activity {
                 // Show all the supported services and characteristics on the user interface.
                 displayGattServices(mBluetoothLeService.getSupportedGattServices());
                 EasyConnect.start(IMUViewActivity.this, "MorSensor");
-                if (!resend_loop_working) {
-                    resend_loop.postDelayed(resender, 1000);
-                    resend_loop_working = true;
-                }
-                send_command(MorSensorCommand.GetSensorList());
+                CommandSender.send_command(MorSensorCommand.GetSensorList());
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 mDeviceData = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
-                state_machine_input(hexToBytes(mDeviceData));
+                CommandSender.process_packet(hexToBytes(mDeviceData));
 
             }
         }
     };
 
-    public void send_command (byte[] command) {
-        final byte[] data_byte = new byte[20];
-        for (int i=0;i<20;i++) {
-            data_byte[i] = (byte) command[i];
-        }
-//        Log.i(TAG, "send_command, state: "+ state);
-//        dump_data_packet(data_byte, "o");
-        try {
-            command_timestamp = System.currentTimeMillis();
-            Thread.sleep(150);
-            mWriteCharacteristic.setValue(data_byte);
-            mBluetoothLeService.writeCharacteristic(mWriteCharacteristic);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (NullPointerException e) {
-            Log.e(C.log_tag, "mWriteCharacteristic is not ready yet");
-        }
-    }
-
-    public void state_machine_input (byte[] values) {
+    static public void state_machine_input (byte[] values) {
 //        Log.i(TAG, "state: "+ state);
-//        dump_data_packet(values, "i");
+        dump_data_packet(values, "i");
         switch (state) {
             case STATE_WAIT_SENSOR_LIST:
                 state_machine_wait_sensor_list(values);
@@ -407,7 +321,7 @@ public class IMUViewActivity extends Activity {
         }
     }
 
-    public void state_machine_wait_sensor_list (byte[] values) {
+    static public void state_machine_wait_sensor_list (byte[] values) {
         switch (values[0]) {
             case MorSensorCommand.IN_SENSOR_LIST:
                 logging("IN_SENSOR_LIST");
@@ -421,20 +335,16 @@ public class IMUViewActivity extends Activity {
                     sensor_list_str += C.fromByte(sensor_list[i]) + " ";
                 }
 
-                /* Register to EasyConnect */
-                String[] df_list = C.gen_feature_list_from_sensor_id_list(sensor_list);
-                logging("Found features:");
-                for (String i: df_list) {
-                    logging("feature: "+ i);
-                }
-
+                /* Attach to EasyConnect */
                 JSONObject profile = new JSONObject();
                 try {
                     profile.put("d_name", "Android"+ EasyConnect.get_mac_addr());
                     profile.put("dm_name", C.dm_name);
                     JSONArray feature_list = new JSONArray();
-                    for (String f: df_list) {
+                    logging("Found features:");
+                    for (String f: C.gen_feature_list_from_sensor_id_list(sensor_list)) {
                         feature_list.put(f);
+                        logging("feature: " + f);
                     }
                     profile.put("df_list", feature_list);
                     profile.put("u_name", C.u_name);
@@ -446,28 +356,28 @@ public class IMUViewActivity extends Activity {
 
                 tv_MorSensorID.setText(sensor_list_str);
                 for (int i = 0; i < sensor_list.length; i++) {
-                    send_command(MorSensorCommand.SetSensorStopTransmission(sensor_list[i]));
-//                    send_command(MorSensorCommand.SetSensorTransmissionModeOnce(sensor_list[i]));
+                    CommandSender.send_command(MorSensorCommand.SetSensorStopTransmission(sensor_list[i]));
+//                    CommandSender.send_command(MorSensorCommand.SetSensorTransmissionModeOnce(sensor_list[i]));
                 }
-                send_command(MorSensorCommand.GetMorSensorVersion());
+                CommandSender.send_command(MorSensorCommand.GetMorSensorVersion());
                 break;
 
-            case MorSensorCommand.IN_SENSOR_DATA:
-                byte sensor_id = values[1];
-                send_command(MorSensorCommand.SetSensorStopTransmission(sensor_id));
-                break;
+//            case MorSensorCommand.IN_SENSOR_DATA:
+//                byte sensor_id = values[1];
+//                CommandSender.send_command(MorSensorCommand.SetSensorStopTransmission(sensor_id));
+//                break;
 
             case MorSensorCommand.IN_ERROR:
                 logging("MorSensor Error Report");
                 break;
 
             default:
-                Log.e(C.log_tag, "Warning: Incorrect command format");
+                logging("Warning: Incorrect command format");
                 break;
         }
     }
 
-    public void state_machine_wait_morsensor_version (byte[] values) {
+    static public void state_machine_wait_morsensor_version (byte[] values) {
         switch (values[0]) {
             case MorSensorCommand.IN_MORSENSOR_VERSION:
                 state = STATE_WAIT_FIRMWARE_VERSION;
@@ -476,17 +386,17 @@ public class IMUViewActivity extends Activity {
                 MorSensorVersion[1] = values[2];
                 MorSensorVersion[2] = values[3];
                 tv_MorSensorVersion.setText(MorSensorVersion[0] +"."+ MorSensorVersion[1] +"."+ MorSensorVersion[2]);
-                send_command(MorSensorCommand.GetFirmwareVersion());
+                CommandSender.send_command(MorSensorCommand.GetFirmwareVersion());
                 break;
 
-            case MorSensorCommand.IN_SENSOR_DATA:
-                byte sensor_id = values[1];
-                send_command(MorSensorCommand.SetSensorStopTransmission(sensor_id));
-                break;
+//            case MorSensorCommand.IN_SENSOR_DATA:
+//                byte sensor_id = values[1];
+//                CommandSender.send_command(MorSensorCommand.SetSensorStopTransmission(sensor_id));
+//                break;
         }
     }
 
-    public void state_machine_wait_firmware_version (byte[] values) {
+    static public void state_machine_wait_firmware_version (byte[] values) {
         switch (values[0]) {
             case MorSensorCommand.IN_FIRMWARE_VERSION:
                 state = STATE_WAIT_DATA;
@@ -496,20 +406,22 @@ public class IMUViewActivity extends Activity {
                 FirmwareVersion[2] = values[3];
                 tv_FirmwaveVersion.setText(FirmwareVersion[0] + "." + FirmwareVersion[1] + "." + FirmwareVersion[2]);
 
-//                send_command(MorSensorCommand.Echo());
+//                CommandSender.send_command(MorSensorCommand.Echo());
                 for (int i = 0; i < sensor_list.length; i++) {
-                    send_command(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_list[i]));
+                    CommandSender.send_command(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_list[i]));
+                    CommandSender.send_command(MorSensorCommand.RetrieveSensorData(sensor_list[i]));
                 }
                 break;
 
-            case MorSensorCommand.IN_SENSOR_DATA:
-                byte sensor_id = values[1];
-                send_command(MorSensorCommand.SetSensorStopTransmission(sensor_id));
-                break;
+//            case MorSensorCommand.IN_SENSOR_DATA:
+//                byte sensor_id = values[1];
+//                CommandSender.send_command(MorSensorCommand.SetSensorStopTransmission(sensor_id));
+//                break;
         }
     }
 
-    public void state_machine_wait_data (byte[] values) {
+    static public void state_machine_wait_data (byte[] values) {
+        dump_data_packet(values, "i");
         switch (values[0]) {
             case MorSensorCommand.IN_SENSOR_DATA:
                 state = STATE_WAIT_DATA;
@@ -520,15 +432,15 @@ public class IMUViewActivity extends Activity {
 //                for (int i = 0; i < sensor_list.length; i++) {
 //                    logging("Retrieve sensor data: "+ C.fromByte(sensor_list[i]) +"("+ sensor_list[i] +")");
 //                    if (C.fromByte(sensor_list[i]) == 0x80) {
-//                        send_command(MorSensorCommand.RetrieveSensorData(sensor_list[i]));
+//                        CommandSender.send_command(MorSensorCommand.RetrieveSensorData(sensor_list[i]));
 //                    }
 //                }
-//                send_command(MorSensorCommand.Echo());
+//                CommandSender.send_command(MorSensorCommand.Echo());
 //                break;
         }
     }
 
-    public void dump_data_packet(byte[] data, String from) {
+    static public void dump_data_packet(byte[] data, String from) {
         for (int i = 0; i < 4; i++) {
             String _ = "";
             for (int j = 0; j < 5; j++) {
@@ -538,7 +450,7 @@ public class IMUViewActivity extends Activity {
         }
     }
 
-    public void process_sensor_data(byte[] value) {
+    static public void process_sensor_data(byte[] value) {
         long current_time = System.currentTimeMillis();
 
         switch (C.fromByte(value[1])) {
@@ -634,11 +546,155 @@ public class IMUViewActivity extends Activity {
                 logging("Unknown sensor id:"+ value[1] +"("+ C.fromByte(value[1]) +")");
                 break;
         }
+    }
 
+    static private class CommandSender {
+        // This class handles command sending / receiving / resending
+        static private LinkedBlockingQueue<byte[]> queue;
+        static private byte[] pending_command;
+        static private boolean pending_command_received;
+        static private boolean resend_loop_running;
+        static private boolean resend_permission;
+        static private Semaphore resending_lock;
+        static private Handler resend_loop;
+        static private long last_receive_command_timestamp;
+
+        static public void init () {
+            queue = new LinkedBlockingQueue<byte[]>();
+            pending_command = null;
+            resend_loop_running = false;
+            resending_lock = new Semaphore(1);
+            resend_loop = new Handler();
+            resend_permission = true;
+            last_receive_command_timestamp = 0;
+        }
+
+        static private Runnable resender = new Runnable() {
+            @Override
+            public void run() {
+                logging("[CommandSender] Resender wakeup, state: " + state);
+                if (!resend_permission || state == STATE_DISCONNECTED) {
+                    return;
+                }
+
+                if (state == STATE_RECONNECTING) {
+                    if (mBluetoothLeService != null) {
+                        mConnected = mBluetoothLeService.connect(mDeviceAddress);
+                    }
+                    logging("Reconnecting: " + mConnected);
+                    if (mConnected) {
+                        state = STATE_WAIT_SENSOR_LIST;
+                    }
+                } else {
+                    try {
+                        if (pending_command != null) {
+                            if (pending_command_received) {
+                                // one command just received, retrieve next command
+                                pending_command_received = false;
+                                pending_command = null;
+                                if (!queue.isEmpty()) {
+                                    logging("[CommandSender] before queue.take()");
+                                    pending_command = queue.take();
+                                    logging("[CommandSender] after queue.take()");
+                                } else {
+                                    logging("[CommandSender] queue is empty");
+                                }
+                            }
+                        } else {
+                            // currently no pending command, take one
+                            logging("[CommandSender] pending_command == null");
+                            if (!queue.isEmpty()) {
+                                logging("[CommandSender] before queue.take()");
+                                pending_command = queue.take();
+                                logging("[CommandSender] after queue.take()");
+                            } else {
+                                logging("[CommandSender] queue is empty");
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    // queue.take() may take a long time
+                    if (!resend_permission || state == STATE_DISCONNECTED) {
+                        return;
+                    }
+
+                    send_pending_command();
+                }
+
+                if (state == STATE_DISCONNECTED) {
+                    logging("[CommandSender] Resender ends");
+                } else {
+                    resend_loop.postDelayed(this, 1000);
+                }
+            }
+        };
+
+        static public void send_command (byte[] command) {
+            // this function cannot be blocking, because receiving packet is event-driven
+            try {
+                queue.put(Arrays.copyOf(command, command.length));
+                resending_lock.acquire();
+                if (!resend_loop_running) {
+                    resend_loop_running = true;
+                    pending_command_received = false;
+                    resend_loop.postDelayed(resender, 50);  // 50 is not a meaningful number, just a little number
+                }
+                resending_lock.release();
+            } catch (InterruptedException e) {
+                logging("[CommandSender] send_command(): InterruptedException");
+                e.printStackTrace();
+            }
+        }
+
+        static public void end () {
+            resend_permission = false;
+        }
+
+        static public void process_packet (byte[] packet) {
+            if (pending_command != null) {
+                long current_time = System.currentTimeMillis();
+                if (pending_command[0] == MorSensorCommand.IN_SENSOR_DATA && current_time - last_receive_command_timestamp < 50) {
+                    logging("morsensor send data too fast");
+                    return;
+                }
+                last_receive_command_timestamp = current_time;
+
+                if (packet[0] == pending_command[0]) {
+                    // yeah, we got the command response
+                    pending_command_received = true;
+                }
+            }
+
+            // not a response of previous command, but we can't ignore it
+            // because that may be a sensor data packet
+            state_machine_input(packet);
+        }
+
+        static private void send_pending_command () {
+            if (pending_command == null) {
+                logging("[CommandSender] send_pending_command(): null");
+                return;
+            }
+            logging("[send_pending_command] resend:");
+            dump_data_packet(pending_command, "o");
+            try {
+                Thread.sleep(50);
+                mWriteCharacteristic.setValue(pending_command);
+                mBluetoothLeService.writeCharacteristic(mWriteCharacteristic);
+            } catch (NullPointerException e) {
+                logging("[CommandSender] send_pending_command(): mWriteCharacteristic is not ready yet");
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                logging("[CommandSender] send_pending_command(): InterruptedException");
+                e.printStackTrace();
+            }
+        }
     }
 
     // HexString to Byte[]
-    public static byte[] hexToBytes(String hexString) {
+    static public byte[] hexToBytes(String hexString) {
         char[] hex = hexString.toCharArray();
         //轉rawData長度減半
         int length = hex.length / 2;
@@ -739,7 +795,7 @@ public class IMUViewActivity extends Activity {
         }
     }
 
-    private static IntentFilter makeGattUpdateIntentFilter() {
+    static private IntentFilter makeGattUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
@@ -778,7 +834,7 @@ public class IMUViewActivity extends Activity {
         return  super.onKeyDown ( keyCode ,  event );
     }
 
-    private static void logging (String _) {
+    static private void logging (String _) {
        Log.i(C.log_tag, "[IMUViewActivity]"+ _);
     }
 }

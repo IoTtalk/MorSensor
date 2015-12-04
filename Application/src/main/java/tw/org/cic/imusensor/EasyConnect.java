@@ -41,7 +41,7 @@ import android.os.Parcelable;
 import android.util.Log;
 
 public class EasyConnect extends Service {
-	static public final String version = "20151203a-M";
+	static public final String version = "20151205a-M";
 	static private EasyConnect self = null;
 	static private boolean ec_service_started;
 	static private Context creater = null;
@@ -84,7 +84,7 @@ public class EasyConnect extends Service {
     	logging("onStartCommand()");
     	self = this;
     	show_ec_status_on_notification(ec_status);
-    	return START_STICKY;
+    	return START_NOT_STICKY;
     }
     
     // *********** //
@@ -818,13 +818,10 @@ public class EasyConnect extends Service {
     		logging("EasyConnect.start(): already started");
     		return;
     	}
-		logging("EasyConnect.start()");
+        logging("EasyConnect.start()");
     	ec_service_started = true;
     	creater = ctx;
     	EasyConnect.device_model = device_model;
-    	// start this service
-        Intent intent = new Intent(ctx, EasyConnect.class);
-        ctx.getApplicationContext().startService(intent);
     	upstream_thread_pool = new HashMap<String, UpStreamThread>();
     	downstream_thread_pool = new HashMap<String, DownStreamThread>();
         attach_lock = new Semaphore(1);
@@ -840,6 +837,10 @@ public class EasyConnect extends Service {
             int a = rn.nextInt(16);
             mac_addr_error_prefix += "0123456789ABCDEF".charAt(a);
         }
+
+        // start this service
+        Intent intent = new Intent(ctx, EasyConnect.class);
+        ctx.getApplicationContext().startService(intent);
     }
     
     static public void set_on_click_action (Class<? extends Context> c) {

@@ -77,6 +77,12 @@ ADDED from AndroidManifest.xml:36:9
 		ADDED from AndroidManifest.xml:38:13
 	android:name
 		ADDED from AndroidManifest.xml:37:13
+service#tw.org.cic.imusensor.EasyConnect
+ADDED from AndroidManifest.xml:40:9
+	android:enabled
+		ADDED from AndroidManifest.xml:42:13
+	android:name
+		ADDED from AndroidManifest.xml:41:13
 uses-sdk
 INJECTED from AndroidManifest.xml:0:0 reason: use-sdk injection requested
 	android:targetSdkVersion

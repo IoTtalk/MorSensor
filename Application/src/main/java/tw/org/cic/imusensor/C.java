@@ -6,9 +6,7 @@ import java.util.ArrayList;
 
 public class C {
     static public final String dm_name = "MorSensor";
-//    static public final String[] df_list = new String[]{"G-sensor", "A-sensor", "M-sensor", "UV", "Humidity"};
     static public final String u_name = "yb";
-    
     static public final String log_tag = dm_name;
 
     static public byte toByte (short s) {
