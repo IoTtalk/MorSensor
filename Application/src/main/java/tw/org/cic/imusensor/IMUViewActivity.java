@@ -503,8 +503,8 @@ public class IMUViewActivity extends Activity {
 
                         data = new JSONArray();
                         data.put(acc_x); data.put(acc_y); data.put(acc_z);
-                        EasyConnect.push_data("G-sensor", data);
-                        logging("push(\"G-sensor\", "+ acc_x +","+ acc_y +","+ acc_z +")");
+                        EasyConnect.push_data("Accelerometer", data);
+                        logging("push(\"Accelerometer\", "+ acc_x +","+ acc_y +","+ acc_z +")");
 
                         data = new JSONArray();
                         data.put(mag_x); data.put(mag_y); data.put(mag_z);

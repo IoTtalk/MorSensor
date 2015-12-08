@@ -28,7 +28,7 @@ public class C {
             switch (fromByte(id)) {
                 case 0xD0:
                     ret.add("Gyroscope");
-                    ret.add("G-sensor");
+                    ret.add("Accelerometer");
                     ret.add("Magnetometer");
                     break;
                 case 0xC0:
