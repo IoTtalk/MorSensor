@@ -41,7 +41,7 @@ import android.os.Parcelable;
 import android.util.Log;
 
 public class EasyConnect extends Service {
-	static public final String version = "20151208b-M";
+	static public final String version = "20151208c-M";
 	static private EasyConnect self = null;
 	static private boolean ec_service_started;
 	static private Context creater = null;
@@ -592,7 +592,11 @@ public class EasyConnect extends Service {
 	    	ec_status = new_ec_status;
 	    	if (ec_status) {
 	        	notify_all_subscribers(Tag.ATTACH_SUCCESS, EC_HOST);
-	    	}
+                try {
+                    notify_all_subscribers(Tag.D_NAME_GENEREATED, profile.getString("d_name"));
+                } catch (JSONException e) {
+                }
+            }
 	    	logging("show notification: "+ ec_status);
 	    	Context ctx = get_reliable_context();
 	    	if (ctx == null) {

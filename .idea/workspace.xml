@@ -52,24 +52,24 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="IMUViewActivity.java" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="IMUViewActivity.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.2141802" vertical-offset="1831" max-vertical-offset="16245">
-              <caret line="141" column="40" selection-start-line="141" selection-start-column="40" selection-end-line="141" selection-end-column="40" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1717" max-vertical-offset="16169">
+              <caret line="145" column="36" selection-start-line="145" selection-start-column="36" selection-end-line="145" selection-end-column="36" />
               <folding>
-                <element signature="e#5324#6590#0" expanded="true" />
-                <element signature="e#6579#6580#0" expanded="true" />
+                <element signature="e#5324#6392#0" expanded="true" />
+                <element signature="e#6381#6382#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="EasyConnect.java" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="EasyConnect.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/EasyConnect.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="3563" max-vertical-offset="19703">
-              <caret line="248" column="39" selection-start-line="248" selection-start-column="39" selection-end-line="248" selection-end-column="39" />
+            <state vertical-scroll-proportion="0.61742985" vertical-offset="0" max-vertical-offset="19779">
+              <caret line="60" column="4" selection-start-line="60" selection-start-column="4" selection-end-line="60" selection-end-column="4" />
               <folding />
             </state>
           </provider>
@@ -1091,8 +1091,8 @@
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/C.java" />
         <option value="$PROJECT_DIR$/Application/src/main/AndroidManifest.xml" />
         <option value="$PROJECT_DIR$/Application/src/main/res/layout/activity_imu_view.xml" />
-        <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/EasyConnect.java" />
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java" />
+        <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/EasyConnect.java" />
       </list>
     </option>
   </component>
@@ -1622,8 +1622,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="5757" max-vertical-offset="12692">
           <caret line="303" column="36" selection-start-line="303" selection-start-column="36" selection-end-line="303" selection-end-column="36" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1641,8 +1641,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="5624" max-vertical-offset="12635">
           <caret line="296" column="26" selection-start-line="296" selection-start-column="26" selection-end-line="296" selection-end-column="26" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1660,8 +1660,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="5624" max-vertical-offset="12635">
           <caret line="296" column="26" selection-start-line="296" selection-start-column="26" selection-end-line="296" selection-end-column="26" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1689,8 +1689,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="5928" max-vertical-offset="12635">
           <caret line="312" column="29" selection-start-line="312" selection-start-column="29" selection-end-line="312" selection-end-column="29" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1732,8 +1732,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="475" max-vertical-offset="11894">
           <caret line="51" column="4" selection-start-line="51" selection-start-column="4" selection-end-line="51" selection-end-column="4" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1775,8 +1775,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="8360" max-vertical-offset="11894">
           <caret line="466" column="91" selection-start-line="466" selection-start-column="91" selection-end-line="466" selection-end-column="91" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1810,8 +1810,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="8056" max-vertical-offset="11837">
           <caret line="450" column="41" selection-start-line="450" selection-start-column="41" selection-end-line="450" selection-end-column="41" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1845,8 +1845,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="3971" max-vertical-offset="11229">
           <caret line="235" column="21" selection-start-line="235" selection-start-column="21" selection-end-line="235" selection-end-column="21" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1871,8 +1871,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="3971" max-vertical-offset="11229">
           <caret line="235" column="21" selection-start-line="235" selection-start-column="21" selection-end-line="235" selection-end-column="21" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1897,8 +1897,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="11894">
           <caret line="235" column="28" selection-start-line="235" selection-start-column="23" selection-end-line="235" selection-end-column="28" />
           <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -2038,22 +2038,22 @@
         <state />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/EasyConnect.java">
+    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="3677" max-vertical-offset="19703">
-          <caret line="248" column="39" selection-start-line="248" selection-start-column="39" selection-end-line="248" selection-end-column="39" />
-          <folding />
+        <state vertical-scroll-proportion="0.0" vertical-offset="1717" max-vertical-offset="16169">
+          <caret line="145" column="36" selection-start-line="145" selection-start-column="36" selection-end-line="145" selection-end-column="36" />
+          <folding>
+            <element signature="e#5324#6392#0" expanded="true" />
+            <element signature="e#6381#6382#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
+    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/EasyConnect.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.2141802" vertical-offset="1831" max-vertical-offset="16245">
-          <caret line="141" column="40" selection-start-line="141" selection-start-column="40" selection-end-line="141" selection-end-column="40" />
-          <folding>
-            <element signature="e#5324#6590#0" expanded="true" />
-            <element signature="e#6579#6580#0" expanded="true" />
-          </folding>
+        <state vertical-scroll-proportion="0.61742985" vertical-offset="0" max-vertical-offset="19779">
+          <caret line="60" column="4" selection-start-line="60" selection-start-column="4" selection-end-line="60" selection-end-column="4" />
+          <folding />
         </state>
       </provider>
     </entry>

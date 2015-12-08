@@ -141,10 +141,6 @@ public class IMUViewActivity extends Activity {
 
                     case ATTACH_SUCCESS:
                         show_ec_status((EasyConnect.Tag)msg.getData().get("tag"), msg.getData().getString("message"));
-
-                        d_name = EasyConnect.get_d_name();
-                        logging("Get d_name:"+ d_name);
-                        ((TextView)findViewById(R.id.tv_d_name)).setText(d_name);
                         break;
 
                     case D_NAME_GENEREATED:
