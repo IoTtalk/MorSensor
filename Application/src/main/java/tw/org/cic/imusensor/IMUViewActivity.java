@@ -338,7 +338,7 @@ public class IMUViewActivity extends Activity {
                 /* Attach to EasyConnect */
                 JSONObject profile = new JSONObject();
                 try {
-                    profile.put("d_name", "Android"+ EasyConnect.get_mac_addr());
+                    profile.put("d_name", "MorSensor-"+ EasyConnect.get_mac_addr().substring(8).toUpperCase());
                     profile.put("dm_name", C.dm_name);
                     JSONArray feature_list = new JSONArray();
                     logging("Found features:");
