@@ -230,6 +230,13 @@ public class EasyConnect extends Service {
     		logging("RegisterThread starts");
     		boolean attach_success = false;
     		notify_all_subscribers(Tag.ATTACH_TRYING, EC_HOST);
+
+            if (profile == null) {
+                logging("profile is null, RegisterThread stops");
+                working_permission = false;
+                self = null;
+                return;
+            }
     		
         	try {
 				notify_all_subscribers(Tag.D_NAME_GENEREATED, profile.getString("d_name"));

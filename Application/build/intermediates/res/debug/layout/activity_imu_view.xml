@@ -1,34 +1,78 @@
-
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="wrap_content"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mRelativeLayout"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
+    android:orientation="vertical"
     tools:context="tw.org.cic.imusensor.IMUViewActivity">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Device Name:"
+        android:minWidth="80dp"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginBottom="5dp"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0"
+        android:id="@+id/tv_d_name"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="EC Host:"
+        android:layout_marginRight="3dp"/>
 
     <LinearLayout
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="10dp">
+        android:layout_height="wrap_content">
 
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text=""
+            android:id="@+id/tv_ec_host_address"
+            android:layout_marginRight="3dp"/>
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text=""
+            android:id="@+id/tv_ec_host_status"/>
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:background="@android:color/darker_gray" />
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginRight="5dp"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="MorSensor ID: "
-                android:id="@+id/textView000"
-                android:minWidth="80dp"/>
+                android:text="MorSensor ID:"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -37,21 +81,15 @@
                 android:text="0"
                 android:id="@+id/MorSensor_ID"
                 android:minWidth="60dp"/>
+        </TableRow>
 
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginRight="5dp"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="MorSensor Version: "
-                android:id="@+id/textView0"
-                android:minWidth="80dp"/>
+                android:text="MorSensor Version:"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -60,21 +98,15 @@
                 android:text="0.0.0"
                 android:id="@+id/MorSensor_Version"
                 android:minWidth="60dp"/>
+        </TableRow>
 
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginRight="5dp"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Firmwave Version: "
-                android:id="@+id/textView00"
-                android:minWidth="80dp"/>
+                android:text="Firmware Version:"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -83,23 +115,26 @@
                 android:text="0.0.0"
                 android:id="@+id/Firmwave_Version"
                 android:minWidth="60dp"/>
+        </TableRow>
 
-        </LinearLayout>
+    </TableLayout>
 
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/textView"
-            android:layout_alignParentStart="true"
-            android:layout_marginTop="5dp"
-            android:weightSum="1">
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:background="@android:color/darker_gray" />
 
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Gryo-X: "
+                android:text="Gryo-X:"
                 android:id="@+id/textView1"
                 android:minWidth="80dp"/>
 
@@ -110,12 +145,14 @@
                 android:text="0"
                 android:id="@+id/GryoX"
                 android:minWidth="100dp"/>
+        </TableRow>
 
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Gryo-Y: "
+                android:text="Gryo-Y:"
                 android:id="@+id/textView2"
                 android:minWidth="80dp"/>
 
@@ -126,12 +163,14 @@
                 android:text="0"
                 android:id="@+id/GryoY"
                 android:minWidth="100dp"/>
+        </TableRow>
 
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Gryo-Z: "
+                android:text="Gryo-Z:"
                 android:id="@+id/textView3"
                 android:minWidth="80dp"/>
 
@@ -142,19 +181,14 @@
                 android:text="0"
                 android:id="@+id/GryoZ"
                 android:minWidth="100dp"/>
+        </TableRow>
 
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Acc-X:  "
+                android:text="Acc-X:"
                 android:id="@+id/textView4"
                 android:minWidth="80dp"/>
 
@@ -166,12 +200,14 @@
                 android:id="@+id/AccX"
                 android:layout_gravity="center_vertical"
                 android:minWidth="100dp"/>
+        </TableRow>
 
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Acc-Y:  "
+                android:text="Acc-Y:"
                 android:id="@+id/textView5"
                 android:minWidth="80dp"/>
 
@@ -183,12 +219,14 @@
                 android:id="@+id/AccY"
                 android:layout_gravity="center_vertical"
                 android:minWidth="100dp"/>
+        </TableRow>
 
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Acc-Z:  "
+                android:text="Acc-Z:"
                 android:id="@+id/textView6"
                 android:minWidth="80dp"/>
 
@@ -200,19 +238,14 @@
                 android:id="@+id/AccZ"
                 android:layout_gravity="center_vertical"
                 android:minWidth="100dp"/>
+        </TableRow>
 
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Mag-X:  "
+                android:text="Mag-X:"
                 android:id="@+id/textView7"
                 android:minWidth="80dp"/>
 
@@ -223,12 +256,14 @@
                 android:text="0"
                 android:id="@+id/MagX"
                 android:minWidth="100dp"/>
+        </TableRow>
 
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Mag-Y:  "
+                android:text="Mag-Y:"
                 android:id="@+id/textView8"
                 android:minWidth="80dp"/>
 
@@ -239,12 +274,14 @@
                 android:text="0"
                 android:id="@+id/MagY"
                 android:minWidth="100dp"/>
+        </TableRow>
 
+        <TableRow>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Mag-Z:  "
+                android:text="Mag-Z:"
                 android:id="@+id/textView9"
                 android:minWidth="80dp"/>
 
@@ -255,11 +292,7 @@
                 android:text="0"
                 android:id="@+id/MagZ"
                 android:minWidth="100dp"/>
+        </TableRow>
+    </TableLayout>
 
-        </LinearLayout>
-
-    </LinearLayout>
-
-
-</RelativeLayout>
-<!-- From: file:/C:/Users/Lab117/Downloads/MorSensor/MorSensor_IMU%20-%20Test%20Final/Application/src/main/res/layout/activity_imu_view.xml -->
+</LinearLayout><!-- From: file:/C:/Users/Lab117/Downloads/MorSensor/MorSensor_IMU%20-%20Test%20Final/Application/src/main/res/layout/activity_imu_view.xml -->

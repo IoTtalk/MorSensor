@@ -14,9 +14,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -125,7 +127,63 @@ public class IMUViewActivity extends Activity {
             StartBLE();
         }
 
+        Handler ec_status_handler = new Handler () {
+            public void handleMessage (Message msg) {
+                switch ((EasyConnect.Tag)msg.getData().get("tag")) {
+                    case ATTACH_TRYING:
+                        show_ec_status((EasyConnect.Tag)msg.getData().get("tag"), msg.getData().getString("message"));
+                        break;
+
+                    case ATTACH_FAILED:
+                        show_ec_status((EasyConnect.Tag)msg.getData().get("tag"), msg.getData().getString("message"));
+                        break;
+
+                    case ATTACH_SUCCESS:
+                        show_ec_status((EasyConnect.Tag)msg.getData().get("tag"), msg.getData().getString("message"));
+                        break;
+
+                    case D_NAME_GENEREATED:
+                        String d_name = msg.getData().getString("message");
+                        logging("Get d_name:"+ d_name);
+                        TextView tv_d_name = (TextView)findViewById(R.id.tv_d_name);
+                        tv_d_name.setText(d_name);
+                        break;
+                }
+            }
+        };
+        EasyConnect.register(ec_status_handler);
+
+        String d_name = EasyConnect.get_d_name();
+        logging("Get d_name:"+ d_name);
+        TextView tv_d_name = (TextView)findViewById(R.id.tv_d_name);
+        tv_d_name.setText(d_name);
+
     }
+
+    public void show_ec_status (EasyConnect.Tag t, String host) {
+        ((TextView)findViewById(R.id.tv_ec_host_address)).setText(host);
+        TextView tv_ec_host_status = (TextView)findViewById(R.id.tv_ec_host_status);
+        switch (t) {
+            case ATTACH_TRYING:
+                tv_ec_host_status.setText("...");
+                tv_ec_host_status.setTextColor(Color.rgb(128, 0, 0));
+                break;
+
+            case ATTACH_FAILED:
+                tv_ec_host_status.setText("!");
+                tv_ec_host_status.setTextColor(Color.rgb(128, 0, 0));
+                break;
+
+            case ATTACH_SUCCESS:
+                tv_ec_host_status.setText("~");
+                tv_ec_host_status.setTextColor(Color.rgb(0, 128, 0));
+                break;
+
+        }
+
+    }
+
+
     @Override
     public void onStart() {
         super.onStart();
@@ -233,6 +291,7 @@ public class IMUViewActivity extends Activity {
             if (mDeviceAddress == null || mDeviceAddress.length() < 17) { //未獲取MAC
                 Intent serverIntent = new Intent(this, DeviceScanActivity.class);
                 startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                finish();
             } else {
                 //Start BluetoothLe Service
                 Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
