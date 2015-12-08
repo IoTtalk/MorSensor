@@ -41,7 +41,7 @@ import android.os.Parcelable;
 import android.util.Log;
 
 public class EasyConnect extends Service {
-	static public final String version = "20151208a-M";
+	static public final String version = "20151208b-M";
 	static private EasyConnect self = null;
 	static private boolean ec_service_started;
 	static private Context creater = null;
@@ -175,25 +175,21 @@ public class EasyConnect extends Service {
     		if (receive_count >= 10) {
     			receive_count = 10;
     		}
-    		
-        	if (!EC_HOST.equals(candidate_ec_host) && receive_count >= 5) {
-        		// we are using different EC host, and it's stable
-        		attach_lock.acquire();
-        		boolean reattach_successed = reattach_to(new_ec_host);
-            	show_ec_status_on_notification(reattach_successed);
-            	attach_lock.release();
-        	}
-    	}
-        
-        static private boolean reattach_to (String new_host) {
-        	if (!ec_status) {
-            	EC_HOST = new_host;
-        		return false;
-        	}
-    		detach_api();
-        	EC_HOST = new_host;
-        	logging("Reattach to "+ new_host);
-        	return attach_api(profile);
+
+            if (!EC_HOST.equals(candidate_ec_host) && receive_count >= 5) {
+                // we are using different EC host, and it's stable
+                attach_lock.acquire();
+                if (!ec_status) {
+                    EC_HOST = new_ec_host;
+                } else {
+                    detach_api();
+                    ec_status = false;
+                }
+                EC_HOST = new_ec_host;
+                attach_lock.release();
+                RegisterThread.start_working();
+            }
+
         }
     }
     

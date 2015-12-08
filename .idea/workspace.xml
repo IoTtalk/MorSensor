@@ -50,21 +50,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="IMUViewActivity.java" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="IMUViewActivity.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="15086">
-              <caret line="355" column="0" selection-start-line="355" selection-start-column="0" selection-end-line="355" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.5022157" vertical-offset="5702" max-vertical-offset="15086">
+              <caret line="356" column="56" selection-start-line="356" selection-start-column="56" selection-end-line="356" selection-end-column="56" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="EasyConnect.java" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="EasyConnect.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/EasyConnect.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.14032497" vertical-offset="0" max-vertical-offset="19722">
-              <caret line="43" column="50" selection-start-line="43" selection-start-column="50" selection-end-line="43" selection-end-column="50" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="3363" max-vertical-offset="19646">
+              <caret line="238" column="17" selection-start-line="238" selection-start-column="17" selection-end-line="238" selection-end-column="17" />
               <folding />
             </state>
           </provider>
@@ -1948,18 +1948,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
+    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/EasyConnect.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="15086">
-          <caret line="355" column="0" selection-start-line="355" selection-start-column="0" selection-end-line="355" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="3363" max-vertical-offset="19646">
+          <caret line="238" column="17" selection-start-line="238" selection-start-column="17" selection-end-line="238" selection-end-column="17" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/EasyConnect.java">
+    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.14032497" vertical-offset="0" max-vertical-offset="19722">
-          <caret line="43" column="50" selection-start-line="43" selection-start-column="50" selection-end-line="43" selection-end-column="50" />
+        <state vertical-scroll-proportion="0.5022157" vertical-offset="5702" max-vertical-offset="15086">
+          <caret line="356" column="56" selection-start-line="356" selection-start-column="56" selection-end-line="356" selection-end-column="56" />
           <folding />
         </state>
       </provider>
