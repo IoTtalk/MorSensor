@@ -230,7 +230,7 @@ public class IMUViewActivity extends Activity {
 //        Log.v(TAG, "SttartBLE_mDeviceAddress: "+mDeviceAddress);
         logging("mDeviceAddress: "+ mDeviceAddress);
         if (!mConnected) {
-            if (mDeviceAddress.length() < 17) { //未獲取MAC
+            if (mDeviceAddress == null || mDeviceAddress.length() < 17) { //未獲取MAC
                 Intent serverIntent = new Intent(this, DeviceScanActivity.class);
                 startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
             } else {
