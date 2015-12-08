@@ -129,6 +129,7 @@ public class IMUViewActivity extends Activity {
 
         Handler ec_status_handler = new Handler () {
             public void handleMessage (Message msg) {
+                String d_name;
                 switch ((EasyConnect.Tag)msg.getData().get("tag")) {
                     case ATTACH_TRYING:
                         show_ec_status((EasyConnect.Tag)msg.getData().get("tag"), msg.getData().getString("message"));
@@ -140,13 +141,16 @@ public class IMUViewActivity extends Activity {
 
                     case ATTACH_SUCCESS:
                         show_ec_status((EasyConnect.Tag)msg.getData().get("tag"), msg.getData().getString("message"));
+
+                        d_name = EasyConnect.get_d_name();
+                        logging("Get d_name:"+ d_name);
+                        ((TextView)findViewById(R.id.tv_d_name)).setText(d_name);
                         break;
 
                     case D_NAME_GENEREATED:
-                        String d_name = msg.getData().getString("message");
+                        d_name = msg.getData().getString("message");
                         logging("Get d_name:"+ d_name);
-                        TextView tv_d_name = (TextView)findViewById(R.id.tv_d_name);
-                        tv_d_name.setText(d_name);
+                        ((TextView)findViewById(R.id.tv_d_name)).setText(d_name);
                         break;
                 }
             }
