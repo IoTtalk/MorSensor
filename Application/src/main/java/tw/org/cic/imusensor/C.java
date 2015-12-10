@@ -1,5 +1,6 @@
 package tw.org.cic.imusensor;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -21,26 +22,40 @@ public class C {
         return b & 0xFF;
     }
 
-    static public String[] gen_feature_list_from_sensor_id_list (byte[] sensor_list) {
+    static public String[] get_feature_list_from_sensor (byte sensor_id) {
         ArrayList<String> ret = new ArrayList<String>();
-        for (byte id: sensor_list) {
-            logging("iterate to sensor: "+id+" "+fromByte(id));
-            switch (fromByte(id)) {
-                case 0xD0:
-                    ret.add("Gyroscope");
-                    ret.add("Accelerometer");
-                    ret.add("Magnetometer");
-                    break;
-                case 0xC0:
-                    ret.add("UV");
-                    break;
-                case 0x80:
-                    ret.add("Temperature");
-                    ret.add("Humidity");
-                    break;
+        switch (fromByte(sensor_id)) {
+            case 0xD0:
+                ret.add("Gyroscope");
+                ret.add("Accelerometer");
+                ret.add("Magnetometer");
+                break;
+            case 0xC0:
+                ret.add("UV");
+                break;
+            case 0x80:
+                ret.add("Temperature");
+                ret.add("Humidity");
+                break;
+            default:
+                ret.add("Unknown");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    static public String[] get_feature_list_from_sensor_list(byte[] sensor_list) {
+        ArrayList<String> ret = new ArrayList<String>();
+        for (byte sensor_id: sensor_list) {
+            logging("iterate to sensor: "+sensor_id+" "+fromByte(sensor_id));
+            for (String n: get_feature_list_from_sensor(sensor_id)) {
+                ret.add(n);
             }
         }
         return ret.toArray(new String[0]);
+    }
+
+    static public String get_feature_button_name_from_sensor (byte sensor_id) {
+        return TextUtils.join(", ", get_feature_list_from_sensor(sensor_id));
     }
 
     private static void logging (String _) {

@@ -23,9 +23,13 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.CompoundButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,6 +44,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 public class IMUViewActivity extends Activity {
+    static private IMUViewActivity self;
+
     static byte[] sensor_list = null;
     static byte[] MorSensorVersion = {0, 0, 0};
     static byte[] FirmwareVersion = {0, 0, 0};
@@ -70,6 +76,7 @@ public class IMUViewActivity extends Activity {
 
     static TextView tv_GryoX, tv_GryoY, tv_GryoZ, tv_AccX, tv_AccY, tv_AccZ, tv_MagX, tv_MagY, tv_MagZ;
     static TextView tv_MorSensorVersion ,tv_FirmwaveVersion, tv_MorSensorID;
+    static LinearLayout ll_feature_switches;
 
     static long imu_timestamp = 0;
     static long uv_timestamp = 0;
@@ -82,6 +89,8 @@ public class IMUViewActivity extends Activity {
         setContentView(R.layout.activity_imu_view);
         Log.e(C.log_tag, "-- IMUViewActivity --");
 
+        self = this;
+
         tv_GryoX = (TextView)findViewById(R.id.GryoX);
         tv_GryoY = (TextView)findViewById(R.id.GryoY);
         tv_GryoZ = (TextView)findViewById(R.id.GryoZ);
@@ -91,6 +100,8 @@ public class IMUViewActivity extends Activity {
         tv_MagX = (TextView)findViewById(R.id.MagX);
         tv_MagY = (TextView)findViewById(R.id.MagY);
         tv_MagZ = (TextView)findViewById(R.id.MagZ);
+
+        ll_feature_switches = (LinearLayout)findViewById(R.id.ll_feature_switches);
 
         tv_MorSensorVersion = (TextView)findViewById(R.id.MorSensor_Version);
         tv_FirmwaveVersion = (TextView)findViewById(R.id.Firmwave_Version);
@@ -401,7 +412,7 @@ public class IMUViewActivity extends Activity {
                     profile.put("dm_name", C.dm_name);
                     JSONArray feature_list = new JSONArray();
                     logging("Found features:");
-                    for (String f: C.gen_feature_list_from_sensor_id_list(sensor_list)) {
+                    for (String f: C.get_feature_list_from_sensor_list(sensor_list)) {
                         feature_list.put(f);
                         logging("feature: " + f);
                     }
@@ -409,6 +420,29 @@ public class IMUViewActivity extends Activity {
                     profile.put("u_name", C.u_name);
                     profile.put("monitor", EasyConnect.get_mac_addr());
                     EasyConnect.attach(EasyConnect.get_d_id(EasyConnect.get_mac_addr()), profile);
+
+                    for (byte f: sensor_list) {
+                        String text = C.get_feature_button_name_from_sensor(f);
+                        ToggleButton btn = new ToggleButton(self);
+                        btn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                        ll_feature_switches.addView(btn);
+
+                        btn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                                if (isChecked) {
+                                    // The toggle is now enabled
+                                } else {
+                                    // The toggle is now disabled
+                                }
+                            }
+                        });
+
+                        btn.setText(text);
+                        btn.setTextOff(text);
+                        btn.setTextOn(text);
+                        btn.setChecked(true);
+
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
