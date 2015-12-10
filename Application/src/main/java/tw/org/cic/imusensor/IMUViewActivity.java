@@ -667,6 +667,7 @@ public class IMUViewActivity extends Activity {
         static private Semaphore resending_lock;
         static private Handler resend_loop;
         static private long last_receive_command_timestamp;
+        static private long next_send_delay;
 
         static public void init () {
             queue = new LinkedBlockingQueue<byte[]>();
@@ -676,6 +677,7 @@ public class IMUViewActivity extends Activity {
             resend_loop = new Handler();
             resend_permission = true;
             last_receive_command_timestamp = 0;
+            next_send_delay = 50;
         }
 
         static private Runnable resender = new Runnable() {
@@ -708,6 +710,17 @@ public class IMUViewActivity extends Activity {
                                 } else {
                                     logging("[CommandSender] queue is empty");
                                 }
+
+                                if (next_send_delay > 50) {
+                                    next_send_delay /= 2;
+                                    logging("decrease delay to "+ next_send_delay);
+                                }
+                            } else {
+                                // last command not received
+                                if (next_send_delay < 1000) {
+                                    next_send_delay *= 2;
+                                    logging("increase delay to "+ next_send_delay);
+                                }
                             }
                         } else {
                             // currently no pending command, take one
@@ -735,7 +748,7 @@ public class IMUViewActivity extends Activity {
                 if (state == STATE_DISCONNECTED) {
                     logging("[CommandSender] Resender ends");
                 } else {
-                    resend_loop.postDelayed(this, 1000);
+                    resend_loop.postDelayed(this, next_send_delay);
                 }
             }
         };
