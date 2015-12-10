@@ -435,15 +435,20 @@ public class IMUViewActivity extends Activity {
                     for (byte f: sensor_list) {
                         String text = C.get_feature_button_name_from_sensor(f);
                         ToggleButton btn = new ToggleButton(self);
+                        btn.setTag(f);
                         btn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
                         ll_feature_switches.addView(btn);
 
                         btn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                                byte sensor_id = (Byte)buttonView.getTag();
                                 if (isChecked) {
                                     // The toggle is now enabled
+                                    CommandSender.send_command(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_id));
+                                    CommandSender.send_command(MorSensorCommand.RetrieveSensorData(sensor_id));
                                 } else {
                                     // The toggle is now disabled
+                                    CommandSender.send_command(MorSensorCommand.SetSensorStopTransmission(sensor_id));
                                 }
                             }
                         });
@@ -451,7 +456,7 @@ public class IMUViewActivity extends Activity {
                         btn.setText(text);
                         btn.setTextOff(text);
                         btn.setTextOn(text);
-                        btn.setChecked(true);
+                        btn.setChecked(false);  // default off
 
                     }
                 } catch (JSONException e) {
@@ -511,10 +516,10 @@ public class IMUViewActivity extends Activity {
                 tv_FirmwaveVersion.setText(FirmwareVersion[0] + "." + FirmwareVersion[1] + "." + FirmwareVersion[2]);
 
 //                CommandSender.send_command(MorSensorCommand.Echo());
-                for (int i = 0; i < sensor_list.length; i++) {
-                    CommandSender.send_command(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_list[i]));
-                    CommandSender.send_command(MorSensorCommand.RetrieveSensorData(sensor_list[i]));
-                }
+//                for (int i = 0; i < sensor_list.length; i++) {
+//                    CommandSender.send_command(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_list[i]));
+//                    CommandSender.send_command(MorSensorCommand.RetrieveSensorData(sensor_list[i]));
+//                }
                 break;
 
 //            case MorSensorCommand.IN_SENSOR_DATA:
