@@ -25,6 +25,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -169,6 +170,16 @@ public class IMUViewActivity extends Activity {
         TextView tv_d_name = (TextView)findViewById(R.id.tv_d_name);
         tv_d_name.setText(d_name);
 
+        Button btn_detach = (Button)findViewById(R.id.btn_detach);
+        btn_detach.setOnClickListener(new View.OnClickListener () {
+            @Override
+            public void onClick (View v) {
+                if(DeviceScanActivity.mDeviceScanActivity!=null)
+                    DeviceScanActivity.mDeviceScanActivity.finish();
+
+                BtDisConnect();
+            }
+        });
     }
 
     public void show_ec_status (EasyConnect.Tag t, String host) {
