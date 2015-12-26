@@ -139,6 +139,8 @@ public class IMUViewActivity extends Activity {
             StartBLE();
         }
 
+        EasyConnect.start(IMUViewActivity.this, "MorSensor");
+
         Handler ec_status_handler = new Handler () {
             public void handleMessage (Message msg) {
                 String d_name;
@@ -372,7 +374,6 @@ public class IMUViewActivity extends Activity {
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 // Show all the supported services and characteristics on the user interface.
                 displayGattServices(mBluetoothLeService.getSupportedGattServices());
-                EasyConnect.start(IMUViewActivity.this, "MorSensor");
                 CommandSender.send_command(MorSensorCommand.GetSensorList());
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
