@@ -27,7 +27,7 @@ public class C {
         switch (fromByte(sensor_id)) {
             case 0xD0:
                 ret.add("Gyroscope");
-                ret.add("Accelerometer");
+                ret.add("Acceleration");
                 ret.add("Magnetometer");
                 break;
             case 0xC0:
