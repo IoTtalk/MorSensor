@@ -869,7 +869,7 @@ public class DAN extends Service {
     }
 
     static public String get_d_id (String mac_addr) {
-        return mac_addr;
+        return mac_addr.replace(":", "");
     }
 
     static public String get_d_name () {
