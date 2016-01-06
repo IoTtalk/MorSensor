@@ -364,6 +364,10 @@ public class IMUViewActivity extends Activity {
                 logging("mDeviceAddress: "+ mDeviceAddress);
                 mConnected = false;
                 state = STATE_RECONNECTING;
+                ll_feature_switches.removeAllViews();
+                tv_MorSensorID.setTextColor(Color.rgb(255, 0, 0));
+                tv_MorSensorVersion.setTextColor(Color.rgb(255, 0, 0));
+                tv_FirmwaveVersion.setTextColor(Color.rgb(255, 0, 0));
                 //BtDisConnect();
                 //StartBLE();
 
@@ -417,7 +421,7 @@ public class IMUViewActivity extends Activity {
                 /* Attach to EasyConnect */
                 JSONObject profile = new JSONObject();
                 try {
-                    profile.put("d_name", "MorSensor-"+ DAN.get_mac_addr().substring(8).toUpperCase());
+                    profile.put("d_name", "MorSensor-"+ DAN.get_clean_mac_addr(mDeviceAddress).substring(8).toUpperCase());
                     profile.put("dm_name", C.dm_name);
                     JSONArray feature_list = new JSONArray();
                     logging("Found features:");
@@ -462,6 +466,8 @@ public class IMUViewActivity extends Activity {
                 }
 
                 tv_MorSensorID.setText(sensor_list_str);
+                tv_MorSensorID.setTextColor(Color.rgb(0, 0, 0));
+
                 for (int i = 0; i < sensor_list.length; i++) {
                     CommandSender.send_command(MorSensorCommand.SetSensorStopTransmission(sensor_list[i]));
 //                    CommandSender.send_command(MorSensorCommand.SetSensorTransmissionModeOnce(sensor_list[i]));
@@ -493,6 +499,7 @@ public class IMUViewActivity extends Activity {
                 MorSensorVersion[1] = values[2];
                 MorSensorVersion[2] = values[3];
                 tv_MorSensorVersion.setText(MorSensorVersion[0] +"."+ MorSensorVersion[1] +"."+ MorSensorVersion[2]);
+                tv_MorSensorVersion.setTextColor(Color.rgb(0, 0, 0));
                 CommandSender.send_command(MorSensorCommand.GetFirmwareVersion());
                 break;
 
@@ -512,6 +519,7 @@ public class IMUViewActivity extends Activity {
                 FirmwareVersion[1] = values[2];
                 FirmwareVersion[2] = values[3];
                 tv_FirmwaveVersion.setText(FirmwareVersion[0] + "." + FirmwareVersion[1] + "." + FirmwareVersion[2]);
+                tv_FirmwaveVersion.setTextColor(Color.rgb(0, 0, 0));
 
 //                CommandSender.send_command(MorSensorCommand.Echo());
 //                for (int i = 0; i < sensor_list.length; i++) {
@@ -637,8 +645,8 @@ public class IMUViewActivity extends Activity {
 
             case 0x80: // Humidity and Temperature
                 if (current_time - humidity_timestamp >= 200) {
-                    final float temp_data = (float) ((value[2] * 256 + value[3]) * 175.72 / 65536.0 - 46.85);
-                    final float humidity_data = (float) ((value[4] * 256 + value[5]) * 125.0 / 65536.0 - 6.0);
+                    final float temp_data = (float) (((short) value[2] * 256 + (short) value[3]) * 175.72 / 65536.0 - 46.85);
+                    final float humidity_data = (float) (((short) value[4] * 256 + (short) value[5]) * 125.0 / 65536.0 - 6.0);
 
                     DAN.push("Temperature", temp_data);
                     logging("push(\"Temperature\", " + temp_data + ")");

@@ -50,14 +50,16 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="IMUViewActivity.java" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="IMUViewActivity.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="7032" max-vertical-offset="17157">
-              <caret line="430" column="40" selection-start-line="430" selection-start-column="40" selection-end-line="430" selection-end-column="40" />
+            <state vertical-scroll-proportion="0.43574592" vertical-offset="5899" max-vertical-offset="17366">
+              <caret line="372" column="0" selection-start-line="372" selection-start-column="0" selection-end-line="372" selection-end-column="0" />
               <folding>
                 <element signature="e#5888#6538#0" expanded="true" />
                 <element signature="e#6527#6528#0" expanded="true" />
+                <element signature="e#29678#33000#0" expanded="true" />
+                <element signature="e#32989#32990#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -69,18 +71,18 @@
             <state />
           </provider>
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1026" max-vertical-offset="6080">
-              <caret line="62" column="39" selection-start-line="62" selection-start-column="29" selection-end-line="62" selection-end-column="39" />
+            <state vertical-scroll-proportion="-16.035715" vertical-offset="1812" max-vertical-offset="6080">
+              <caret line="119" column="25" selection-start-line="119" selection-start-column="25" selection-end-line="119" selection-end-column="25" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="DAN.java" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="DAN.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/DAN.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5022157" vertical-offset="16171" max-vertical-offset="18411">
-              <caret line="869" column="0" selection-start-line="869" selection-start-column="0" selection-end-line="869" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="16057" max-vertical-offset="18487">
+              <caret line="870" column="43" selection-start-line="870" selection-start-column="25" selection-end-line="870" selection-end-column="43" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#1886#2050#0" expanded="true" />
@@ -95,12 +97,14 @@
                 <element signature="e#21576#21577#0" expanded="true" />
                 <element signature="e#29588#29589#0" expanded="true" />
                 <element signature="e#29623#29624#0" expanded="true" />
-                <element signature="e#30650#30651#0" expanded="true" />
-                <element signature="e#30698#30699#0" expanded="true" />
-                <element signature="e#32674#32675#0" expanded="true" />
-                <element signature="e#32723#32724#0" expanded="true" />
-                <element signature="e#33267#33268#0" expanded="true" />
-                <element signature="e#33310#33311#0" expanded="true" />
+                <element signature="e#30660#30661#0" expanded="true" />
+                <element signature="e#30708#30709#0" expanded="true" />
+                <element signature="e#30763#30764#0" expanded="true" />
+                <element signature="e#30814#30815#0" expanded="true" />
+                <element signature="e#32790#32791#0" expanded="true" />
+                <element signature="e#32839#32840#0" expanded="true" />
+                <element signature="e#33383#33384#0" expanded="true" />
+                <element signature="e#33426#33427#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -129,7 +133,7 @@
       <file leaf-file-name="MorSensorCommand.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/MorSensorCommand.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1691" max-vertical-offset="2641">
+            <state vertical-scroll-proportion="0.0" vertical-offset="1691" max-vertical-offset="2603">
               <caret line="89" column="0" selection-start-line="89" selection-start-column="0" selection-end-line="89" selection-end-column="0" />
               <folding />
             </state>
@@ -139,9 +143,13 @@
       <file leaf-file-name="C.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/C.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="874" max-vertical-offset="1311">
-              <caret line="46" column="45" selection-start-line="46" selection-start-column="45" selection-end-line="46" selection-end-column="45" />
-              <folding />
+            <state vertical-scroll-proportion="0.0" vertical-offset="127" max-vertical-offset="1140">
+              <caret line="23" column="0" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
+              <folding>
+                <element signature="e#489#490#0" expanded="true" />
+                <element signature="e#520#521#0" expanded="true" />
+                <element signature="e#643#651#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -1141,11 +1149,11 @@
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/MorSensorCommand.java" />
         <option value="$PROJECT_DIR$/Application/src/main/AndroidManifest.xml" />
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/C.java" />
-        <option value="$PROJECT_DIR$/Application/src/main/res/layout/activity_imu_view.xml" />
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/csmapi.java" />
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/EasyConnect.java" />
-        <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java" />
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/DAN.java" />
+        <option value="$PROJECT_DIR$/Application/src/main/res/layout/activity_imu_view.xml" />
+        <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java" />
       </list>
     </option>
   </component>
@@ -1619,6 +1627,7 @@
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295129" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="15" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39933258" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -1640,7 +1649,6 @@
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295129" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2030598" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Captures" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -1685,6 +1693,8 @@
           <folding>
             <element signature="e#5888#6538#0" expanded="true" />
             <element signature="e#6527#6528#0" expanded="true" />
+            <element signature="e#29678#33000#0" expanded="true" />
+            <element signature="e#32989#32990#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1712,6 +1722,8 @@
           <folding>
             <element signature="e#5888#6538#0" expanded="true" />
             <element signature="e#6527#6528#0" expanded="true" />
+            <element signature="e#29678#33000#0" expanded="true" />
+            <element signature="e#32989#32990#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1753,6 +1765,8 @@
           <folding>
             <element signature="e#5888#6538#0" expanded="true" />
             <element signature="e#6527#6528#0" expanded="true" />
+            <element signature="e#29678#33000#0" expanded="true" />
+            <element signature="e#32989#32990#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1794,6 +1808,8 @@
           <folding>
             <element signature="e#5888#6538#0" expanded="true" />
             <element signature="e#6527#6528#0" expanded="true" />
+            <element signature="e#29678#33000#0" expanded="true" />
+            <element signature="e#32989#32990#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1827,6 +1843,8 @@
           <folding>
             <element signature="e#5888#6538#0" expanded="true" />
             <element signature="e#6527#6528#0" expanded="true" />
+            <element signature="e#29678#33000#0" expanded="true" />
+            <element signature="e#32989#32990#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1862,6 +1880,8 @@
           <folding>
             <element signature="e#5888#6538#0" expanded="true" />
             <element signature="e#6527#6528#0" expanded="true" />
+            <element signature="e#29678#33000#0" expanded="true" />
+            <element signature="e#32989#32990#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1888,6 +1908,8 @@
           <folding>
             <element signature="e#5888#6538#0" expanded="true" />
             <element signature="e#6527#6528#0" expanded="true" />
+            <element signature="e#29678#33000#0" expanded="true" />
+            <element signature="e#32989#32990#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1914,6 +1936,8 @@
           <folding>
             <element signature="e#5888#6538#0" expanded="true" />
             <element signature="e#6527#6528#0" expanded="true" />
+            <element signature="e#29678#33000#0" expanded="true" />
+            <element signature="e#32989#32990#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -2001,14 +2025,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/MorSensorCommand.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2603">
-          <caret line="89" column="0" selection-start-line="89" selection-start-column="0" selection-end-line="89" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Application/build.gradle">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.46811596" vertical-offset="285" max-vertical-offset="1330">
@@ -2024,25 +2040,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/C.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="336" max-vertical-offset="1102">
-          <caret line="46" column="45" selection-start-line="46" selection-start-column="45" selection-end-line="46" selection-end-column="45" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/res/layout/activity_imu_view.xml">
-      <provider editor-type-id="android-designer">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1026" max-vertical-offset="6080">
-          <caret line="62" column="39" selection-start-line="62" selection-start-column="29" selection-end-line="62" selection-end-column="39" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$USER_HOME$/AppData/Local/Android/android-sdk/platforms/android-19/android.jar!/android/widget/CompoundButton.class">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.77548003" vertical-offset="425" max-vertical-offset="1102">
@@ -2054,6 +2051,26 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="285" max-vertical-offset="4731">
           <caret line="63" column="0" selection-start-line="63" selection-start-column="0" selection-end-line="63" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/C.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="127" max-vertical-offset="1140">
+          <caret line="23" column="0" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
+          <folding>
+            <element signature="e#489#490#0" expanded="true" />
+            <element signature="e#520#521#0" expanded="true" />
+            <element signature="e#643#651#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/MorSensorCommand.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2603">
+          <caret line="89" column="0" selection-start-line="89" selection-start-column="0" selection-end-line="89" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -2076,21 +2093,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="7032" max-vertical-offset="17157">
-          <caret line="430" column="40" selection-start-line="430" selection-start-column="40" selection-end-line="430" selection-end-column="40" />
-          <folding>
-            <element signature="e#5888#6538#0" expanded="true" />
-            <element signature="e#6527#6528#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/DAN.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5022157" vertical-offset="16171" max-vertical-offset="18411">
-          <caret line="869" column="0" selection-start-line="869" selection-start-column="0" selection-end-line="869" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="16057" max-vertical-offset="18487">
+          <caret line="870" column="43" selection-start-line="870" selection-start-column="25" selection-end-line="870" selection-end-column="43" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#1886#2050#0" expanded="true" />
@@ -2105,12 +2111,38 @@
             <element signature="e#21576#21577#0" expanded="true" />
             <element signature="e#29588#29589#0" expanded="true" />
             <element signature="e#29623#29624#0" expanded="true" />
-            <element signature="e#30650#30651#0" expanded="true" />
-            <element signature="e#30698#30699#0" expanded="true" />
-            <element signature="e#32674#32675#0" expanded="true" />
-            <element signature="e#32723#32724#0" expanded="true" />
-            <element signature="e#33267#33268#0" expanded="true" />
-            <element signature="e#33310#33311#0" expanded="true" />
+            <element signature="e#30660#30661#0" expanded="true" />
+            <element signature="e#30708#30709#0" expanded="true" />
+            <element signature="e#30763#30764#0" expanded="true" />
+            <element signature="e#30814#30815#0" expanded="true" />
+            <element signature="e#32790#32791#0" expanded="true" />
+            <element signature="e#32839#32840#0" expanded="true" />
+            <element signature="e#33383#33384#0" expanded="true" />
+            <element signature="e#33426#33427#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Application/src/main/res/layout/activity_imu_view.xml">
+      <provider editor-type-id="android-designer">
+        <state />
+      </provider>
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-16.035715" vertical-offset="1812" max-vertical-offset="6080">
+          <caret line="119" column="25" selection-start-line="119" selection-start-column="25" selection-end-line="119" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.43574592" vertical-offset="5899" max-vertical-offset="17366">
+          <caret line="372" column="0" selection-start-line="372" selection-start-column="0" selection-end-line="372" selection-end-column="0" />
+          <folding>
+            <element signature="e#5888#6538#0" expanded="true" />
+            <element signature="e#6527#6528#0" expanded="true" />
+            <element signature="e#29678#33000#0" expanded="true" />
+            <element signature="e#32989#32990#0" expanded="true" />
           </folding>
         </state>
       </provider>

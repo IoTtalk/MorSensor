@@ -868,8 +868,12 @@ public class DAN extends Service {
         return mac_addr_cache;
     }
 
-    static public String get_d_id (String mac_addr) {
+    static public String get_clean_mac_addr (String mac_addr) {
         return mac_addr.replace(":", "");
+    }
+
+    static public String get_d_id (String mac_addr) {
+        return get_clean_mac_addr(mac_addr);
     }
 
     static public String get_d_name () {
