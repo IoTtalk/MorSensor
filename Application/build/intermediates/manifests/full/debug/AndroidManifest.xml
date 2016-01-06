@@ -42,7 +42,7 @@
             android:name="tw.org.cic.imusensor.BluetoothLeService"
             android:enabled="true" />
         <service
-            android:name="tw.org.cic.imusensor.EasyConnect"
+            android:name="tw.org.cic.imusensor.DAN"
             android:enabled="true" />
     </application>
 

@@ -18,7 +18,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -58,6 +57,12 @@ public class IMUViewActivity extends Activity {
     static private final int STATE_RECONNECTING = 4;
     static private final int STATE_DISCONNECTED = 5;
     static private int state;
+
+    enum ECStatus {
+        REGISTER_TRYING,
+        REGISTER_FAILED,
+        REGISTER_SUCCEED,
+    }
 
     //------------------------------ BLE -------------------------------------------
     static private BluetoothLeService mBluetoothLeService = null;
@@ -139,35 +144,27 @@ public class IMUViewActivity extends Activity {
             StartBLE();
         }
 
-        EasyConnect.start(IMUViewActivity.this, "MorSensor");
+        DAN.init(IMUViewActivity.this, "MorSensor");
+        show_ec_status(ECStatus.REGISTER_TRYING, csmapi.ENDPOINT);
 
-        Handler ec_status_handler = new Handler () {
-            public void handleMessage (Message msg) {
-                String d_name;
-                switch ((EasyConnect.Tag)msg.getData().get("tag")) {
-                    case ATTACH_TRYING:
-                        show_ec_status((EasyConnect.Tag)msg.getData().get("tag"), msg.getData().getString("message"));
+        DAN.Subscriber ec_status_handler = new DAN.Subscriber() {
+            public void event_handler (DAN.EventObject event_object) {
+                switch (event_object.event_tag) {
+                    case REGISTER_FAILED:
+                        show_ec_status(ECStatus.REGISTER_FAILED, event_object.message);
                         break;
 
-                    case ATTACH_FAILED:
-                        show_ec_status((EasyConnect.Tag)msg.getData().get("tag"), msg.getData().getString("message"));
-                        break;
-
-                    case ATTACH_SUCCESS:
-                        show_ec_status((EasyConnect.Tag)msg.getData().get("tag"), msg.getData().getString("message"));
-                        break;
-
-                    case D_NAME_GENEREATED:
-                        d_name = msg.getData().getString("message");
-                        logging("Get d_name:"+ d_name);
+                    case REGISTER_SUCCEED:
+                        show_ec_status(ECStatus.REGISTER_SUCCEED, event_object.message);
+                        String d_name = DAN.get_d_name();
                         ((TextView)findViewById(R.id.tv_d_name)).setText(d_name);
                         break;
                 }
             }
         };
-        EasyConnect.register(ec_status_handler);
+        DAN.subscribe("Control_channel", ec_status_handler);
 
-        String d_name = EasyConnect.get_d_name();
+        String d_name = DAN.get_d_name();
         logging("Get d_name:"+ d_name);
         TextView tv_d_name = (TextView)findViewById(R.id.tv_d_name);
         tv_d_name.setText(d_name);
@@ -184,21 +181,21 @@ public class IMUViewActivity extends Activity {
         });
     }
 
-    public void show_ec_status (EasyConnect.Tag t, String host) {
+    public void show_ec_status (ECStatus status, String host) {
         ((TextView)findViewById(R.id.tv_ec_host_address)).setText(host);
         TextView tv_ec_host_status = (TextView)findViewById(R.id.tv_ec_host_status);
-        switch (t) {
-            case ATTACH_TRYING:
+        switch (status) {
+            case REGISTER_TRYING:
                 tv_ec_host_status.setText("...");
                 tv_ec_host_status.setTextColor(Color.rgb(128, 0, 0));
                 break;
 
-            case ATTACH_FAILED:
+            case REGISTER_FAILED:
                 tv_ec_host_status.setText("!");
                 tv_ec_host_status.setTextColor(Color.rgb(128, 0, 0));
                 break;
 
-            case ATTACH_SUCCESS:
+            case REGISTER_SUCCEED:
                 tv_ec_host_status.setText("~");
                 tv_ec_host_status.setTextColor(Color.rgb(0, 128, 0));
                 break;
@@ -240,7 +237,7 @@ public class IMUViewActivity extends Activity {
         Log.v(C.log_tag, "--- ON DESTROY PreferenceActivity ---");
         BtDisConnect();
         CommandSender.end();
-        EasyConnect.detach();
+        DAN.deregister();
     }
 
     public void BtDisConnect(){
@@ -420,7 +417,7 @@ public class IMUViewActivity extends Activity {
                 /* Attach to EasyConnect */
                 JSONObject profile = new JSONObject();
                 try {
-                    profile.put("d_name", "MorSensor-"+ EasyConnect.get_mac_addr().substring(8).toUpperCase());
+                    profile.put("d_name", "MorSensor-"+ DAN.get_mac_addr().substring(8).toUpperCase());
                     profile.put("dm_name", C.dm_name);
                     JSONArray feature_list = new JSONArray();
                     logging("Found features:");
@@ -430,8 +427,8 @@ public class IMUViewActivity extends Activity {
                     }
                     profile.put("df_list", feature_list);
                     profile.put("u_name", C.u_name);
-                    profile.put("monitor", EasyConnect.get_mac_addr());
-                    EasyConnect.attach(EasyConnect.get_d_id(EasyConnect.get_mac_addr()), profile);
+                    profile.put("monitor", DAN.get_mac_addr());
+                    DAN.register(DAN.get_d_id(DAN.get_mac_addr()), profile);
 
                     for (byte f: sensor_list) {
                         String text = C.get_feature_button_name_from_sensor(f);
@@ -608,17 +605,17 @@ public class IMUViewActivity extends Activity {
                     try {
                         JSONArray data = new JSONArray();
                         data.put(gyro_x); data.put(gyro_y); data.put(gyro_z);
-                        EasyConnect.push_data("Gyroscope", data);
+                        DAN.push("Gyroscope", data);
                         logging("push(\"Gyroscope\", "+ gyro_x +","+ gyro_y +","+ gyro_z +")");
 
                         data = new JSONArray();
                         data.put(acc_x); data.put(acc_y); data.put(acc_z);
-                        EasyConnect.push_data("Accelerometer", data);
+                        DAN.push("Accelerometer", data);
                         logging("push(\"Accelerometer\", "+ acc_x +","+ acc_y +","+ acc_z +")");
 
                         data = new JSONArray();
                         data.put(mag_x); data.put(mag_y); data.put(mag_z);
-                        EasyConnect.push_data("Magnetometer", data);
+                        DAN.push("Magnetometer", data);
                         logging("push(\"Magnetometer\", "+ mag_x +","+ mag_y +","+ mag_z +")");
 
                     } catch (JSONException e) {
@@ -632,7 +629,7 @@ public class IMUViewActivity extends Activity {
             case 0xC0: // UV
                 if (current_time - uv_timestamp >= 200) {
                     final float uv_data = (float) ((((short) value[3]) * 256 + ((short) value[2])) / 100.0);
-                    EasyConnect.push_data("UV", uv_data);
+                    DAN.push("UV", uv_data);
                     logging("push(\"UV\", " + uv_data + ")");
                     uv_timestamp = current_time;
                 }
@@ -643,9 +640,9 @@ public class IMUViewActivity extends Activity {
                     final float temp_data = (float) ((value[2] * 256 + value[3]) * 175.72 / 65536.0 - 46.85);
                     final float humidity_data = (float) ((value[4] * 256 + value[5]) * 125.0 / 65536.0 - 6.0);
 
-                    EasyConnect.push_data("Temperature", temp_data);
+                    DAN.push("Temperature", temp_data);
                     logging("push(\"Temperature\", " + temp_data + ")");
-                    EasyConnect.push_data("Humidity", humidity_data);
+                    DAN.push("Humidity", humidity_data);
                     logging("push(\"Humidity\", " + humidity_data + ")");
 
                     humidity_timestamp = current_time;
