@@ -31,7 +31,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 public class DAN extends Service {
-    static public final String version = "20160105a";
+    static public final String version = "20160106a";
 
     static public class EventObject {
         enum Type {EVENT, ODF}

@@ -169,7 +169,7 @@ public class IMUViewActivity extends Activity {
         TextView tv_d_name = (TextView)findViewById(R.id.tv_d_name);
         tv_d_name.setText(d_name);
 
-        Button btn_detach = (Button)findViewById(R.id.btn_detach);
+        Button btn_detach = (Button)findViewById(R.id.btn_deregister);
         btn_detach.setOnClickListener(new View.OnClickListener () {
             @Override
             public void onClick (View v) {
@@ -498,7 +498,7 @@ public class IMUViewActivity extends Activity {
                 MorSensorVersion[0] = values[1];
                 MorSensorVersion[1] = values[2];
                 MorSensorVersion[2] = values[3];
-                tv_MorSensorVersion.setText(MorSensorVersion[0] +"."+ MorSensorVersion[1] +"."+ MorSensorVersion[2]);
+                tv_MorSensorVersion.setText(MorSensorVersion[0] + "." + MorSensorVersion[1] + "." + MorSensorVersion[2]);
                 tv_MorSensorVersion.setTextColor(Color.rgb(0, 0, 0));
                 CommandSender.send_command(MorSensorCommand.GetFirmwareVersion());
                 break;

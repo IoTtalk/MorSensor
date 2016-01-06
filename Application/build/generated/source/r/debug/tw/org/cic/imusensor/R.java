@@ -93,7 +93,7 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
         public static final int MorSensor_ID=0x7f090005;
         public static final int MorSensor_Version=0x7f090006;
         public static final int action_settings=0x7f090022;
-        public static final int btn_detach=0x7f090004;
+        public static final int btn_deregister=0x7f090004;
         public static final int device_address=0x7f09001c;
         public static final int device_name=0x7f09001b;
         public static final int ll_feature_switches=0x7f090008;
