@@ -148,14 +148,14 @@ public class IMUViewActivity extends Activity {
         show_ec_status(ECStatus.REGISTER_TRYING, csmapi.ENDPOINT);
 
         DAN.Subscriber ec_status_handler = new DAN.Subscriber() {
-            public void event_handler (DAN.EventObject event_object) {
-                switch (event_object.event_tag) {
+            public void odf_handler (DAN.ODFObject odf_object) {
+                switch (odf_object.event_tag) {
                     case REGISTER_FAILED:
-                        show_ec_status(ECStatus.REGISTER_FAILED, event_object.message);
+                        show_ec_status(ECStatus.REGISTER_FAILED, odf_object.message);
                         break;
 
                     case REGISTER_SUCCEED:
-                        show_ec_status(ECStatus.REGISTER_SUCCEED, event_object.message);
+                        show_ec_status(ECStatus.REGISTER_SUCCEED, odf_object.message);
                         String d_name = DAN.get_d_name();
                         ((TextView)findViewById(R.id.tv_d_name)).setText(d_name);
                         break;
@@ -222,6 +222,9 @@ public class IMUViewActivity extends Activity {
     public synchronized void onPause() {
         super.onPause();
         Log.e(C.log_tag, "- ON PAUSE PreferenceActivity -");
+        if (isFinishing()) {
+            self = null;
+        }
     }
 
     @Override
@@ -238,6 +241,10 @@ public class IMUViewActivity extends Activity {
         BtDisConnect();
         CommandSender.end();
         DAN.deregister();
+    }
+
+    static public boolean activity_running () {
+        return self != null;
     }
 
     public void BtDisConnect(){

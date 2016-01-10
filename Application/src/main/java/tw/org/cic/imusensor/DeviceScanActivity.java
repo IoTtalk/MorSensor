@@ -68,7 +68,8 @@ public class DeviceScanActivity extends ListActivity {
         final Intent intent = getIntent();
         mDeviceAddress = intent.getStringExtra("MAC");
 //        if(mDeviceAddress!=null && mDeviceAddress.equals(MorSensorAddress) && mDeviceAddress.equals(MorSensorAddress2) && mDeviceAddress.equals(MorSensorAddress3)){
-        if(mDeviceAddress != null){
+//        if(mDeviceAddress != null){
+        if (IMUViewActivity.activity_running()) {
             Intent LinkBTIntent = new Intent(this, IMUViewActivity.class);
             LinkBTIntent.putExtra(IMUViewActivity.EXTRAS_DEVICE_ADDRESS, mDeviceAddress);
 
