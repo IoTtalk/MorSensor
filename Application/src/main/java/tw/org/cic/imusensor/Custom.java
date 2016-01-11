@@ -5,14 +5,8 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import java.math.BigDecimal;
-
-/**
- * Created by Lab117 on 2016/1/12.
- */
 public class Custom {
     static public void process_sensor_data (byte[] packet) {
-        long current_time = System.currentTimeMillis();
 
         switch (C.fromByte(packet[1])) {
             case 0xD0: // IMU
@@ -31,9 +25,17 @@ public class Custom {
                 final float mag_y = (float) (((short) packet[17] * 256 + (short) packet[16]) / 3.41 / 100); //Mag y
                 final float mag_z = (float) (((short) packet[19] * 256 + (short) packet[18]) / 3.41 / -100); //Mag z
 
-                IMUViewActivity.show_gyroscope_on_screen(gyro_x, gyro_y, gyro_z);
-                IMUViewActivity.show_accelerometer_on_screen(acc_x, acc_y, acc_z);
-                IMUViewActivity.show_magnetometer_on_screen(mag_x, mag_y, mag_z);
+                IMUViewActivity.show_data_on_screen("Gyro x", gyro_x);
+                IMUViewActivity.show_data_on_screen("Gyro y", gyro_y);
+                IMUViewActivity.show_data_on_screen("Gyro z", gyro_z);
+
+                IMUViewActivity.show_data_on_screen("Acc x", acc_x);
+                IMUViewActivity.show_data_on_screen("Acc y", acc_y);
+                IMUViewActivity.show_data_on_screen("Acc z", acc_z);
+
+                IMUViewActivity.show_data_on_screen("Mag x", mag_x);
+                IMUViewActivity.show_data_on_screen("Mag y", mag_y);
+                IMUViewActivity.show_data_on_screen("Mag z", mag_z);
 
                 try {
                     JSONArray data = new JSONArray();
@@ -59,7 +61,7 @@ public class Custom {
 
             case 0xC0: // UV
                 final float uv_data = (float) ((((short) packet[3]) * 256 + ((short) packet[2])) / 100.0);
-                IMUViewActivity.show_uv_on_screen(uv_data);
+                IMUViewActivity.show_data_on_screen("UV", uv_data);
                 DAN.push("UV", uv_data);
                 logging("push(\"UV\", " + uv_data + ")");
                 break;
@@ -68,11 +70,11 @@ public class Custom {
                 final float temp_data = (float) (((short) packet[2] * 256 + (short) packet[3]) * 175.72 / 65536.0 - 46.85);
                 final float humidity_data = (float) (((short) packet[4] * 256 + (short) packet[5]) * 125.0 / 65536.0 - 6.0);
 
-                IMUViewActivity.show_temperature_on_screen(temp_data);
+                IMUViewActivity.show_data_on_screen("Temp", temp_data);
                 DAN.push("Temperature", temp_data);
                 logging("push(\"Temperature\", " + temp_data + ")");
 
-                IMUViewActivity.show_humidity_on_screen(humidity_data);
+                IMUViewActivity.show_data_on_screen("Hum", humidity_data);
                 DAN.push("Humidity", humidity_data);
                 logging("push(\"Humidity\", " + humidity_data + ")");
                 break;

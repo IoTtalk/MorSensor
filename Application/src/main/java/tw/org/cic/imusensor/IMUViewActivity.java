@@ -20,6 +20,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,6 +28,8 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -80,16 +83,11 @@ public class IMUViewActivity extends Activity {
     static public boolean mConnected = false;
     static private final int REQUEST_CONNECT_DEVICE = 1;
 
-    static TextView tv_GryoX, tv_GryoY, tv_GryoZ, tv_AccX, tv_AccY, tv_AccZ, tv_MagX, tv_MagY, tv_MagZ;
+    static TableLayout table_monitor;
+    static HashMap<String, TextView> monitor_pool;
+    static HashMap<String, Long> timestamp_pool;
     static TextView tv_MorSensorVersion ,tv_FirmwaveVersion, tv_MorSensorID;
     static LinearLayout ll_feature_switches;
-
-    static long gyro_timestamp = 0;
-    static long acc_timestamp = 0;
-    static long mag_timestamp = 0;
-    static long uv_timestamp = 0;
-    static long humidity_timestamp = 0;
-    static long temperature_timestamp = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,15 +98,9 @@ public class IMUViewActivity extends Activity {
 
         self = this;
 
-        tv_GryoX = (TextView)findViewById(R.id.GryoX);
-        tv_GryoY = (TextView)findViewById(R.id.GryoY);
-        tv_GryoZ = (TextView)findViewById(R.id.GryoZ);
-        tv_AccX = (TextView)findViewById(R.id.AccX);
-        tv_AccY = (TextView)findViewById(R.id.AccY);
-        tv_AccZ = (TextView)findViewById(R.id.AccZ);
-        tv_MagX = (TextView)findViewById(R.id.MagX);
-        tv_MagY = (TextView)findViewById(R.id.MagY);
-        tv_MagZ = (TextView)findViewById(R.id.MagZ);
+        table_monitor = (TableLayout)findViewById(R.id.table_monitor);
+        monitor_pool = new HashMap<String, TextView>();
+        timestamp_pool = new HashMap<String, Long>();
 
         ll_feature_switches = (LinearLayout)findViewById(R.id.ll_feature_switches);
 
@@ -555,81 +547,35 @@ public class IMUViewActivity extends Activity {
         }
     }
 
-    static public void show_gyroscope_on_screen (float gyro_x, float gyro_y, float gyro_z) {
-        // It's work around
+    static public void show_data_on_screen (String tag, float value) {
+        if (!monitor_pool.containsKey(tag)) {
+            TableRow tr = new TableRow(self);
 
-        long current_time = System.currentTimeMillis();
-        if (current_time - gyro_timestamp >= 200) {
-            String str_gyro1 = new BigDecimal(gyro_x - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-            String str_gyro2 = new BigDecimal(gyro_y - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-            String str_gyro3 = new BigDecimal(gyro_z - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+            TextView tv_tag = new TextView(self);
+            tv_tag.setText(tag +":");
+            tv_tag.setTextAppearance(self, android.R.style.TextAppearance_Large);
+            tv_tag.setMinWidth(80);
 
-            tv_GryoX.setText(str_gyro1); //Gyro x
-            tv_GryoY.setText(str_gyro2); //Gyro y
-            tv_GryoZ.setText(str_gyro3); //Gyro z
+            TextView tv_value = new TextView(self);
+            tv_value.setTextAppearance(self, android.R.style.TextAppearance_Large);
+            tv_value.setMinWidth(100);
 
-            gyro_timestamp = current_time;
+            tr.addView(tv_tag);
+            tr.addView(tv_value);
+
+            monitor_pool.put(tag, tv_value);
+            timestamp_pool.put(tag, 0l);
+
+            logging("Add view for [" + tag + "]");
+            table_monitor.addView(tr);
         }
-    }
-
-    static public void show_accelerometer_on_screen (float acc_x, float acc_y, float acc_z) {
-        // It's work around
 
         long current_time = System.currentTimeMillis();
-        if (current_time - acc_timestamp >= 200) {
-            String str_acc1 = new BigDecimal(acc_x - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-            String str_acc2 = new BigDecimal(acc_y - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-            String str_acc3 = new BigDecimal(acc_z - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-
-            tv_AccX.setText(str_acc1); //Acc x
-            tv_AccY.setText(str_acc2); //Acc y
-            tv_AccZ.setText(str_acc3); //Acc z
-
-            acc_timestamp = current_time;
-        }
-    }
-
-    static public void show_magnetometer_on_screen(float mag_x, float mag_y, float mag_z) {
-        // It's work around
-
-        long current_time = System.currentTimeMillis();
-        if (current_time - mag_timestamp >= 200) {
-            String str_mag1 = new BigDecimal(mag_x - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-            String str_mag2 = new BigDecimal(mag_y - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-            String str_mag3 = new BigDecimal(mag_z - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-
-            tv_MagX.setText(str_mag1); //Mag x
-            tv_MagY.setText(str_mag2); //Mag y
-            tv_MagZ.setText(str_mag3); //Mag z
-
-            mag_timestamp = current_time;
-        }
-    }
-
-    static public void show_uv_on_screen(float uv_data) {
-        // It's work around
-
-        long current_time = System.currentTimeMillis();
-        if (current_time - uv_timestamp >= 200) {
-            uv_timestamp = current_time;
-        }
-    }
-
-    static public void show_temperature_on_screen(float temperature_data) {
-        // It's work around
-
-        long current_time = System.currentTimeMillis();
-        if (current_time - temperature_timestamp >= 200) {
-            temperature_timestamp = current_time;
-        }
-    }
-
-    static public void show_humidity_on_screen(float humidity_data) {
-        // It's work around
-
-        long current_time = System.currentTimeMillis();
-        if (current_time - humidity_timestamp >= 200) {
-            humidity_timestamp = current_time;
+        if (current_time - timestamp_pool.get(tag) >= 200) {
+            TextView tv_value = monitor_pool.get(tag);
+            String str_value = new BigDecimal(value - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+            tv_value.setText(str_value);
+            timestamp_pool.put(tag, current_time);
         }
     }
 
