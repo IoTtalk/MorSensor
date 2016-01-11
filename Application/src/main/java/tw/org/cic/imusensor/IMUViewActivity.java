@@ -551,14 +551,16 @@ public class IMUViewActivity extends Activity {
         if (!monitor_pool.containsKey(tag)) {
             TableRow tr = new TableRow(self);
 
+            final float scale = self.getResources().getDisplayMetrics().density;
+
             TextView tv_tag = new TextView(self);
             tv_tag.setText(tag +":");
             tv_tag.setTextAppearance(self, android.R.style.TextAppearance_Large);
-            tv_tag.setMinWidth(80);
+            tv_tag.setMinWidth((int) (100 * scale + 0.5f));
 
             TextView tv_value = new TextView(self);
             tv_value.setTextAppearance(self, android.R.style.TextAppearance_Large);
-            tv_value.setMinWidth(100);
+            tv_value.setMinWidth((int) (100 * scale + 0.5f));
 
             tr.addView(tv_tag);
             tr.addView(tv_value);
