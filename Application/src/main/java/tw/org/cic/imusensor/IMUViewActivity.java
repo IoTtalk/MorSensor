@@ -367,6 +367,9 @@ public class IMUViewActivity extends Activity {
                 mConnected = false;
                 state = STATE_RECONNECTING;
                 ll_feature_switches.removeAllViews();
+                table_monitor.removeAllViews();
+                monitor_pool.clear();
+                timestamp_pool.clear();
                 tv_MorSensorID.setTextColor(Color.rgb(255, 0, 0));
                 tv_MorSensorVersion.setTextColor(Color.rgb(255, 0, 0));
                 tv_FirmwaveVersion.setTextColor(Color.rgb(255, 0, 0));

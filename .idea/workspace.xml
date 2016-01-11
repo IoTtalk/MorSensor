@@ -53,13 +53,13 @@
       <file leaf-file-name="IMUViewActivity.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.41802067" vertical-offset="9255" max-vertical-offset="15846">
-              <caret line="558" column="41" selection-start-line="558" selection-start-column="41" selection-end-line="558" selection-end-column="41" />
+            <state vertical-scroll-proportion="0.36041358" vertical-offset="5760" max-vertical-offset="15903">
+              <caret line="369" column="47" selection-start-line="369" selection-start-column="47" selection-end-line="369" selection-end-column="47" />
               <folding>
-                <element signature="e#31955#32005#0" expanded="true" />
-                <element signature="e#32043#32100#0" expanded="true" />
-                <element signature="e#37744#37745#0" expanded="true" />
-                <element signature="e#37799#37800#0" expanded="true" />
+                <element signature="e#32081#32131#0" expanded="true" />
+                <element signature="e#32169#32226#0" expanded="true" />
+                <element signature="e#37870#37871#0" expanded="true" />
+                <element signature="e#37925#37926#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -1662,10 +1662,10 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="5624" max-vertical-offset="12635">
           <caret line="296" column="26" selection-start-line="296" selection-start-column="26" selection-end-line="296" selection-end-column="26" />
           <folding>
-            <element signature="e#31955#32005#0" expanded="true" />
-            <element signature="e#32043#32100#0" expanded="true" />
-            <element signature="e#37744#37745#0" expanded="true" />
-            <element signature="e#37799#37800#0" expanded="true" />
+            <element signature="e#32081#32131#0" expanded="true" />
+            <element signature="e#32169#32226#0" expanded="true" />
+            <element signature="e#37870#37871#0" expanded="true" />
+            <element signature="e#37925#37926#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1691,10 +1691,10 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="5928" max-vertical-offset="12635">
           <caret line="312" column="29" selection-start-line="312" selection-start-column="29" selection-end-line="312" selection-end-column="29" />
           <folding>
-            <element signature="e#31955#32005#0" expanded="true" />
-            <element signature="e#32043#32100#0" expanded="true" />
-            <element signature="e#37744#37745#0" expanded="true" />
-            <element signature="e#37799#37800#0" expanded="true" />
+            <element signature="e#32081#32131#0" expanded="true" />
+            <element signature="e#32169#32226#0" expanded="true" />
+            <element signature="e#37870#37871#0" expanded="true" />
+            <element signature="e#37925#37926#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1734,10 +1734,10 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="475" max-vertical-offset="11894">
           <caret line="51" column="4" selection-start-line="51" selection-start-column="4" selection-end-line="51" selection-end-column="4" />
           <folding>
-            <element signature="e#31955#32005#0" expanded="true" />
-            <element signature="e#32043#32100#0" expanded="true" />
-            <element signature="e#37744#37745#0" expanded="true" />
-            <element signature="e#37799#37800#0" expanded="true" />
+            <element signature="e#32081#32131#0" expanded="true" />
+            <element signature="e#32169#32226#0" expanded="true" />
+            <element signature="e#37870#37871#0" expanded="true" />
+            <element signature="e#37925#37926#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1777,10 +1777,10 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="8360" max-vertical-offset="11894">
           <caret line="466" column="91" selection-start-line="466" selection-start-column="91" selection-end-line="466" selection-end-column="91" />
           <folding>
-            <element signature="e#31955#32005#0" expanded="true" />
-            <element signature="e#32043#32100#0" expanded="true" />
-            <element signature="e#37744#37745#0" expanded="true" />
-            <element signature="e#37799#37800#0" expanded="true" />
+            <element signature="e#32081#32131#0" expanded="true" />
+            <element signature="e#32169#32226#0" expanded="true" />
+            <element signature="e#37870#37871#0" expanded="true" />
+            <element signature="e#37925#37926#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1812,10 +1812,10 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="8056" max-vertical-offset="11837">
           <caret line="450" column="41" selection-start-line="450" selection-start-column="41" selection-end-line="450" selection-end-column="41" />
           <folding>
-            <element signature="e#31955#32005#0" expanded="true" />
-            <element signature="e#32043#32100#0" expanded="true" />
-            <element signature="e#37744#37745#0" expanded="true" />
-            <element signature="e#37799#37800#0" expanded="true" />
+            <element signature="e#32081#32131#0" expanded="true" />
+            <element signature="e#32169#32226#0" expanded="true" />
+            <element signature="e#37870#37871#0" expanded="true" />
+            <element signature="e#37925#37926#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1849,10 +1849,10 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="3971" max-vertical-offset="11229">
           <caret line="235" column="21" selection-start-line="235" selection-start-column="21" selection-end-line="235" selection-end-column="21" />
           <folding>
-            <element signature="e#31955#32005#0" expanded="true" />
-            <element signature="e#32043#32100#0" expanded="true" />
-            <element signature="e#37744#37745#0" expanded="true" />
-            <element signature="e#37799#37800#0" expanded="true" />
+            <element signature="e#32081#32131#0" expanded="true" />
+            <element signature="e#32169#32226#0" expanded="true" />
+            <element signature="e#37870#37871#0" expanded="true" />
+            <element signature="e#37925#37926#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1877,10 +1877,10 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="3971" max-vertical-offset="11229">
           <caret line="235" column="21" selection-start-line="235" selection-start-column="21" selection-end-line="235" selection-end-column="21" />
           <folding>
-            <element signature="e#31955#32005#0" expanded="true" />
-            <element signature="e#32043#32100#0" expanded="true" />
-            <element signature="e#37744#37745#0" expanded="true" />
-            <element signature="e#37799#37800#0" expanded="true" />
+            <element signature="e#32081#32131#0" expanded="true" />
+            <element signature="e#32169#32226#0" expanded="true" />
+            <element signature="e#37870#37871#0" expanded="true" />
+            <element signature="e#37925#37926#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1905,10 +1905,10 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="11894">
           <caret line="235" column="28" selection-start-line="235" selection-start-column="23" selection-end-line="235" selection-end-column="28" />
           <folding>
-            <element signature="e#31955#32005#0" expanded="true" />
-            <element signature="e#32043#32100#0" expanded="true" />
-            <element signature="e#37744#37745#0" expanded="true" />
-            <element signature="e#37799#37800#0" expanded="true" />
+            <element signature="e#32081#32131#0" expanded="true" />
+            <element signature="e#32169#32226#0" expanded="true" />
+            <element signature="e#37870#37871#0" expanded="true" />
+            <element signature="e#37925#37926#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -2083,13 +2083,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.41802067" vertical-offset="9255" max-vertical-offset="15846">
-          <caret line="558" column="41" selection-start-line="558" selection-start-column="41" selection-end-line="558" selection-end-column="41" />
+        <state vertical-scroll-proportion="0.36041358" vertical-offset="5760" max-vertical-offset="15903">
+          <caret line="369" column="47" selection-start-line="369" selection-start-column="47" selection-end-line="369" selection-end-column="47" />
           <folding>
-            <element signature="e#31955#32005#0" expanded="true" />
-            <element signature="e#32043#32100#0" expanded="true" />
-            <element signature="e#37744#37745#0" expanded="true" />
-            <element signature="e#37799#37800#0" expanded="true" />
+            <element signature="e#32081#32131#0" expanded="true" />
+            <element signature="e#32169#32226#0" expanded="true" />
+            <element signature="e#37870#37871#0" expanded="true" />
+            <element signature="e#37925#37926#0" expanded="true" />
           </folding>
         </state>
       </provider>
