@@ -84,9 +84,12 @@ public class IMUViewActivity extends Activity {
     static TextView tv_MorSensorVersion ,tv_FirmwaveVersion, tv_MorSensorID;
     static LinearLayout ll_feature_switches;
 
-    static long imu_timestamp = 0;
+    static long gyro_timestamp = 0;
+    static long acc_timestamp = 0;
+    static long mag_timestamp = 0;
     static long uv_timestamp = 0;
     static long humidity_timestamp = 0;
+    static long temperature_timestamp = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -521,7 +524,7 @@ public class IMUViewActivity extends Activity {
         switch (values[0]) {
             case MorSensorCommand.IN_FIRMWARE_VERSION:
                 state = STATE_WAIT_DATA;
-                logging("i 0x05:Firmware Version "+values[1]+"."+values[2]+"."+values[3]);
+                logging("i 0x05:Firmware Version " + values[1] + "." + values[2] + "." + values[3]);
                 FirmwareVersion[0] = values[1];
                 FirmwareVersion[1] = values[2];
                 FirmwareVersion[2] = values[3];
@@ -542,23 +545,91 @@ public class IMUViewActivity extends Activity {
         }
     }
 
-    static public void state_machine_wait_data (byte[] values) {
-        dump_data_packet(values, "i");
-        switch (values[0]) {
+    static public void state_machine_wait_data (byte[] packet) {
+        dump_data_packet(packet, "i");
+        switch (packet[0]) {
             case MorSensorCommand.IN_SENSOR_DATA:
                 state = STATE_WAIT_DATA;
-                process_sensor_data(values);
+                Custom.process_sensor_data(packet);
                 break;
+        }
+    }
 
-//            case MorSensorCommand.IN_ECHO:
-//                for (int i = 0; i < sensor_list.length; i++) {
-//                    logging("Retrieve sensor data: "+ C.fromByte(sensor_list[i]) +"("+ sensor_list[i] +")");
-//                    if (C.fromByte(sensor_list[i]) == 0x80) {
-//                        CommandSender.send_command(MorSensorCommand.RetrieveSensorData(sensor_list[i]));
-//                    }
-//                }
-//                CommandSender.send_command(MorSensorCommand.Echo());
-//                break;
+    static public void show_gyroscope_on_screen (float gyro_x, float gyro_y, float gyro_z) {
+        // It's work around
+
+        long current_time = System.currentTimeMillis();
+        if (current_time - gyro_timestamp >= 200) {
+            String str_gyro1 = new BigDecimal(gyro_x - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+            String str_gyro2 = new BigDecimal(gyro_y - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+            String str_gyro3 = new BigDecimal(gyro_z - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+
+            tv_GryoX.setText(str_gyro1); //Gyro x
+            tv_GryoY.setText(str_gyro2); //Gyro y
+            tv_GryoZ.setText(str_gyro3); //Gyro z
+
+            gyro_timestamp = current_time;
+        }
+    }
+
+    static public void show_accelerometer_on_screen (float acc_x, float acc_y, float acc_z) {
+        // It's work around
+
+        long current_time = System.currentTimeMillis();
+        if (current_time - acc_timestamp >= 200) {
+            String str_acc1 = new BigDecimal(acc_x - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+            String str_acc2 = new BigDecimal(acc_y - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+            String str_acc3 = new BigDecimal(acc_z - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+
+            tv_AccX.setText(str_acc1); //Acc x
+            tv_AccY.setText(str_acc2); //Acc y
+            tv_AccZ.setText(str_acc3); //Acc z
+
+            acc_timestamp = current_time;
+        }
+    }
+
+    static public void show_magnetometer_on_screen(float mag_x, float mag_y, float mag_z) {
+        // It's work around
+
+        long current_time = System.currentTimeMillis();
+        if (current_time - mag_timestamp >= 200) {
+            String str_mag1 = new BigDecimal(mag_x - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+            String str_mag2 = new BigDecimal(mag_y - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+            String str_mag3 = new BigDecimal(mag_z - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
+
+            tv_MagX.setText(str_mag1); //Mag x
+            tv_MagY.setText(str_mag2); //Mag y
+            tv_MagZ.setText(str_mag3); //Mag z
+
+            mag_timestamp = current_time;
+        }
+    }
+
+    static public void show_uv_on_screen(float uv_data) {
+        // It's work around
+
+        long current_time = System.currentTimeMillis();
+        if (current_time - uv_timestamp >= 200) {
+            uv_timestamp = current_time;
+        }
+    }
+
+    static public void show_temperature_on_screen(float temperature_data) {
+        // It's work around
+
+        long current_time = System.currentTimeMillis();
+        if (current_time - temperature_timestamp >= 200) {
+            temperature_timestamp = current_time;
+        }
+    }
+
+    static public void show_humidity_on_screen(float humidity_data) {
+        // It's work around
+
+        long current_time = System.currentTimeMillis();
+        if (current_time - humidity_timestamp >= 200) {
+            humidity_timestamp = current_time;
         }
     }
 
@@ -569,104 +640,6 @@ public class IMUViewActivity extends Activity {
                 _ += String.format("%02X ", data[i * 5 + j]);
             }
             logging(from +" "+ _);
-        }
-    }
-
-    static public void process_sensor_data(byte[] value) {
-        long current_time = System.currentTimeMillis();
-
-        switch (C.fromByte(value[1])) {
-            case 0xD0: // IMU
-                if (current_time - imu_timestamp >= 200) {
-                    //Gryo: value[2][3] / 32.8
-                    final float gyro_x = (float) (((short) value[2] * 256 + (short) value[3]) / 32.8); //Gryo x
-                    final float gyro_y = (float) (((short) value[4] * 256 + (short) value[5]) / 32.8); //Gryo y
-                    final float gyro_z = (float) (((short) value[6] * 256 + (short) value[7]) / 32.8); //Gryo z
-
-                    //Acc: value[8][9] / 4096
-                    final float acc_x = (float) (((short) value[8] * 256 + (short) value[9]) / 4096.0) * (float)9.8; //Acc x
-                    final float acc_y = (float) (((short) value[10] * 256 + (short) value[11]) / 4096.0) * (float)9.8; //Acc y
-                    final float acc_z = (float) (((short) value[12] * 256 + (short) value[13]) / 4096.0) * (float)9.8; //Acc z
-
-                    //Mag: value[15][14] / 3.41 / 100 (注意:MagZ 需乘上-1)
-                    final float mag_x = (float) (((short) value[15] * 256 + (short) value[14]) / 3.41 / 100); //Mag x
-                    final float mag_y = (float) (((short) value[17] * 256 + (short) value[16]) / 3.41 / 100); //Mag y
-                    final float mag_z = (float) (((short) value[19] * 256 + (short) value[18]) / 3.41 / -100); //Mag z
-
-                    String str_gyro1 = new BigDecimal(gyro_x - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-                    String str_gyro2 = new BigDecimal(gyro_y - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-                    String str_gyro3 = new BigDecimal(gyro_z - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-
-                    String str_acc1 = new BigDecimal(acc_x - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-                    String str_acc2 = new BigDecimal(acc_y - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-                    String str_acc3 = new BigDecimal(acc_z - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-
-                    String str_mag1 = new BigDecimal(mag_x - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-                    String str_mag2 = new BigDecimal(mag_y - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-                    String str_mag3 = new BigDecimal(mag_z - 0.0001).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue() + "";
-                    // to ensure GUI not toooo busy
-                    tv_GryoX.setText(str_gyro1); //Gryo x
-                    tv_GryoY.setText(str_gyro2); //Gryo y
-                    tv_GryoZ.setText(str_gyro3); //Gryo z
-
-                    tv_AccX.setText(str_acc1); //Acc x
-                    tv_AccY.setText(str_acc2); //Acc y
-                    tv_AccZ.setText(str_acc3); //Acc z
-
-                    tv_MagX.setText(str_mag1); //Mag x
-                    tv_MagY.setText(str_mag2); //Mag y
-                    tv_MagZ.setText(str_mag3); //Mag z
-
-                    try {
-                        JSONArray data = new JSONArray();
-                        data.put(gyro_x); data.put(gyro_y); data.put(gyro_z);
-                        DAN.push("Gyroscope", data);
-                        logging("push(\"Gyroscope\", "+ gyro_x +","+ gyro_y +","+ gyro_z +")");
-
-                        data = new JSONArray();
-                        data.put(acc_x); data.put(acc_y); data.put(acc_z);
-                        DAN.push("Accelerometer", data);
-                        logging("push(\"Accelerometer\", "+ acc_x +","+ acc_y +","+ acc_z +")");
-
-                        data = new JSONArray();
-                        data.put(mag_x); data.put(mag_y); data.put(mag_z);
-                        DAN.push("Magnetometer", data);
-                        logging("push(\"Magnetometer\", "+ mag_x +","+ mag_y +","+ mag_z +")");
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                    imu_timestamp = current_time;
-                }
-                break;
-
-            case 0xC0: // UV
-                if (current_time - uv_timestamp >= 200) {
-                    final float uv_data = (float) ((((short) value[3]) * 256 + ((short) value[2])) / 100.0);
-                    DAN.push("UV", uv_data);
-                    logging("push(\"UV\", " + uv_data + ")");
-                    uv_timestamp = current_time;
-                }
-                break;
-
-            case 0x80: // Humidity and Temperature
-                if (current_time - humidity_timestamp >= 200) {
-                    final float temp_data = (float) (((short) value[2] * 256 + (short) value[3]) * 175.72 / 65536.0 - 46.85);
-                    final float humidity_data = (float) (((short) value[4] * 256 + (short) value[5]) * 125.0 / 65536.0 - 6.0);
-
-                    DAN.push("Temperature", temp_data);
-                    logging("push(\"Temperature\", " + temp_data + ")");
-                    DAN.push("Humidity", humidity_data);
-                    logging("push(\"Humidity\", " + humidity_data + ")");
-
-                    humidity_timestamp = current_time;
-                }
-                break;
-
-            default:
-                logging("Unknown sensor id:"+ value[1] +"("+ C.fromByte(value[1]) +")");
-                break;
         }
     }
 
