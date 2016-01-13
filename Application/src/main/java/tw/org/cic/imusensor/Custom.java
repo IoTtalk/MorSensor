@@ -45,7 +45,7 @@ public class Custom {
 
                     data = new JSONArray();
                     data.put(acc_x); data.put(acc_y); data.put(acc_z);
-                    DAN.push("Accelerometer", data);
+                    DAN.push("Acceleration", data);
                     logging("push(\"Accelerometer\", "+ acc_x +","+ acc_y +","+ acc_z +")");
 
                     data = new JSONArray();
