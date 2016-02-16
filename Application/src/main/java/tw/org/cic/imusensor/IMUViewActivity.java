@@ -115,6 +115,8 @@ public class IMUViewActivity extends Activity {
         state = STATE_WAIT_SENSOR_LIST;
         CommandSender.init();
 
+        DAN.init(IMUViewActivity.this, "MorSensor");
+
         if(!mConnected){
             // Use this check to determine whether BLE is supported on the device.  Then you can
             // selectively disable BLE-related features.
@@ -138,8 +140,7 @@ public class IMUViewActivity extends Activity {
 
             StartBLE();
         }
-
-        DAN.init(IMUViewActivity.this, "MorSensor");
+        
         show_ec_status(ECStatus.REGISTER_TRYING, csmapi.ENDPOINT);
 
         DAN.Subscriber ec_status_handler = new DAN.Subscriber() {

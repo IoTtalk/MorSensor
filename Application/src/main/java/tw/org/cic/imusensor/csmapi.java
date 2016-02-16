@@ -41,15 +41,15 @@ public class csmapi {
         return false;
     }
 
-    static public boolean delete (String d_id) {
+    static public boolean deregister(String d_id) {
         try {
-            logging(d_id +" deleting from "+ ENDPOINT);
+            logging(d_id +" deregistering from "+ ENDPOINT);
             String url = ENDPOINT +"/"+ d_id;
             http.response res = http.delete(url);
             if (res.status_code != 200) {
-                logging("[delete] "+ "Response from "+ url);
-                logging("[delete] "+ "Response Code: "+ res.status_code);
-                logging("[delete] "+ res.body);
+                logging("[deregister] "+ "Response from "+ url);
+                logging("[deregister] "+ "Response Code: "+ res.status_code);
+                logging("[deregister] "+ res.body);
             }
             return res.status_code == 200;
         } catch (NullPointerException e) {
