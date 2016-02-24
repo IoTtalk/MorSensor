@@ -30,7 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 public class DAN extends Service {
-    static public final String version = "20160107b";
+    static public final String version = "20160224b";
 
     static public class ODFObject {
         enum Type {CONTROL_CHANNEL, ODF}
@@ -234,11 +234,18 @@ public class DAN extends Service {
     static private class RegisterThread extends Thread {
         static private RegisterThread self;
         private RegisterThread () {}
-        static boolean working_permission;
+        private static boolean working_permission;
+        private static boolean force_register;
+
+        static public void set_force_regsiter (boolean f) {
+            force_register = f;
+        }
 
         static public void start_working () {
             logging("RegisterThread.start_working()");
-            if (ec_status) {
+            if (force_register) {
+                logging("forcing register, skip ec_status checking");
+            } else if (ec_status) {
                 logging("already registered");
                 show_ec_status_on_notification(ec_status);
                 return;
@@ -276,7 +283,7 @@ public class DAN extends Service {
                 boolean attach_success = false;
 
                 while ( working_permission && !attach_success ) {
-                    if (ec_status) {
+                    if ((!force_register) && ec_status) {
                         break;
                     }
                     attach_lock.acquire();
@@ -877,6 +884,10 @@ public class DAN extends Service {
     }
 
     static public void register (String d_id, JSONObject profile) {
+        register(d_id, profile, false);
+    }
+
+    static public void register (String d_id, JSONObject profile, boolean force_register) {
         DAN.d_id = d_id;
         DAN.profile = profile;
         if (!DAN.profile.has("is_sim")) {
@@ -887,6 +898,7 @@ public class DAN extends Service {
             }
         }
 
+        RegisterThread.set_force_regsiter(force_register);
         RegisterThread.start_working();
     }
 

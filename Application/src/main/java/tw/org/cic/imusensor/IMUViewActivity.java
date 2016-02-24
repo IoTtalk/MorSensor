@@ -140,7 +140,7 @@ public class IMUViewActivity extends Activity {
 
             StartBLE();
         }
-        
+
         show_ec_status(ECStatus.REGISTER_TRYING, csmapi.ENDPOINT);
 
         DAN.Subscriber ec_status_handler = new DAN.Subscriber() {
@@ -438,7 +438,7 @@ public class IMUViewActivity extends Activity {
                     profile.put("df_list", feature_list);
                     profile.put("u_name", C.u_name);
                     profile.put("monitor", DAN.get_mac_addr());
-                    DAN.register(DAN.get_d_id(mDeviceAddress), profile);
+                    DAN.register(DAN.get_d_id(mDeviceAddress), profile, true);
 
                     for (byte f: sensor_list) {
                         String text = C.get_feature_button_name_from_sensor(f);
