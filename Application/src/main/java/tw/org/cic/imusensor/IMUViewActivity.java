@@ -116,31 +116,6 @@ public class IMUViewActivity extends Activity {
         CommandSender.init();
 
         DAN.init(IMUViewActivity.this, "MorSensor");
-
-        if(!mConnected){
-            // Use this check to determine whether BLE is supported on the device.  Then you can
-            // selectively disable BLE-related features.
-            if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-                Toast.makeText(this, "ble_not_supported", Toast.LENGTH_SHORT).show();
-                finish();
-            }
-
-            // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
-            // BluetoothAdapter through BluetoothManager.
-            final BluetoothManager bluetoothManager =
-                    (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-            mBluetoothAdapter = bluetoothManager.getAdapter();
-
-            // Checks if Bluetooth is supported on the device.
-            if (mBluetoothAdapter == null) {
-                Toast.makeText(this, "error_bluetooth_not_supported", Toast.LENGTH_LONG).show();
-                finish();
-                return;
-            }
-
-            StartBLE();
-        }
-
         show_ec_status(ECStatus.REGISTER_TRYING, csmapi.ENDPOINT);
 
         DAN.Subscriber ec_status_handler = new DAN.Subscriber() {
@@ -175,6 +150,30 @@ public class IMUViewActivity extends Activity {
                 BtDisConnect();
             }
         });
+
+        if(!mConnected){
+            // Use this check to determine whether BLE is supported on the device.  Then you can
+            // selectively disable BLE-related features.
+            if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+                Toast.makeText(this, "ble_not_supported", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+
+            // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
+            // BluetoothAdapter through BluetoothManager.
+            final BluetoothManager bluetoothManager =
+                    (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+            mBluetoothAdapter = bluetoothManager.getAdapter();
+
+            // Checks if Bluetooth is supported on the device.
+            if (mBluetoothAdapter == null) {
+                Toast.makeText(this, "error_bluetooth_not_supported", Toast.LENGTH_LONG).show();
+                finish();
+                return;
+            }
+
+            StartBLE();
+        }
     }
 
     public void show_ec_status (ECStatus status, String host) {

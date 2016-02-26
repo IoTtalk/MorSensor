@@ -50,13 +50,14 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="IMUViewActivity.java" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="IMUViewActivity.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="7576" max-vertical-offset="16720">
-              <caret line="440" column="76" selection-start-line="440" selection-start-column="76" selection-end-line="440" selection-end-column="76" />
+            <state vertical-scroll-proportion="0.5897741" vertical-offset="1727" max-vertical-offset="15865">
+              <caret line="166" column="0" selection-start-line="166" selection-start-column="0" selection-end-line="166" selection-end-column="0" />
               <folding>
-                <element signature="imports" expanded="true" />
+                <element signature="e#32087#32137#0" expanded="true" />
+                <element signature="e#32175#32232#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -64,36 +65,33 @@
       </file>
       <file leaf-file-name="activity_imu_view.xml" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/res/layout/activity_imu_view.xml">
-          <provider editor-type-id="android-designer">
-            <state />
-          </provider>
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0" vertical-offset="2340" max-vertical-offset="3002">
               <caret line="147" column="49" selection-start-line="147" selection-start-column="49" selection-end-line="147" selection-end-column="49" />
               <folding />
             </state>
           </provider>
+          <provider editor-type-id="android-designer">
+            <state />
+          </provider>
         </entry>
       </file>
       <file leaf-file-name="Custom.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/Custom.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="821" max-vertical-offset="1748">
+            <state vertical-scroll-proportion="0.0" vertical-offset="1235" max-vertical-offset="1843">
               <caret line="65" column="27" selection-start-line="65" selection-start-column="27" selection-end-line="65" selection-end-column="27" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="DAN.java" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="DAN.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/DAN.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.109195404" vertical-offset="0" max-vertical-offset="17594">
-              <caret line="32" column="50" selection-start-line="32" selection-start-column="50" selection-end-line="32" selection-end-column="50" />
-              <folding>
-                <element signature="e#8346#8347#0" expanded="true" />
-                <element signature="e#8388#8389#0" expanded="true" />
-              </folding>
+            <state vertical-scroll-proportion="0.0" vertical-offset="95" max-vertical-offset="17556">
+              <caret line="48" column="40" selection-start-line="48" selection-start-column="40" selection-end-line="48" selection-end-column="40" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -101,7 +99,7 @@
       <file leaf-file-name="csmapi.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/csmapi.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3078">
+            <state vertical-scroll-proportion="0.0" vertical-offset="418" max-vertical-offset="3496">
               <caret line="22" column="30" selection-start-line="22" selection-start-column="30" selection-end-line="22" selection-end-column="30" />
               <folding />
             </state>
@@ -121,7 +119,7 @@
       <file leaf-file-name="C.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/C.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1102">
+            <state vertical-scroll-proportion="0.0" vertical-offset="551" max-vertical-offset="1311">
               <caret line="29" column="40" selection-start-line="29" selection-start-column="40" selection-end-line="29" selection-end-column="40" />
               <folding />
             </state>
@@ -1127,8 +1125,8 @@
         <option value="$PROJECT_DIR$/Application/src/main/res/layout/activity_imu_view.xml" />
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/Custom.java" />
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/csmapi.java" />
-        <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java" />
         <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/DAN.java" />
+        <option value="$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java" />
       </list>
     </option>
   </component>
@@ -1171,6 +1169,75 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope">
+        <subPane subId="Project Files">
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="MorSensor_IMU">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="Application">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="Application">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="Application">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="Application">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="src/main">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="Application">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="Application">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="src/main">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="java">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
+      </pane>
+      <pane id="PackagesPane" />
       <pane id="AndroidView">
         <subPane>
           <PATH>
@@ -1181,7 +1248,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -1320,74 +1386,6 @@
             <PATH_ELEMENT>
               <option name="myItemId" value="imusensor" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
-      <pane id="Scope">
-        <subPane subId="Project Files">
-          <PATH>
-            <PATH_ELEMENT USER_OBJECT="Root">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="MorSensor_IMU">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT USER_OBJECT="Root">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="Application">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="Application">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT USER_OBJECT="Root">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="Application">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="Application">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="src/main">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT USER_OBJECT="Root">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="Application">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="Application">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="src/main">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="java">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
@@ -1617,7 +1615,7 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2750533" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.20415778" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2503477" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Memory Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2573018" sideWeight="0.5" order="12" side_tool="true" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -1658,7 +1656,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="5624" max-vertical-offset="12635">
           <caret line="296" column="26" selection-start-line="296" selection-start-column="26" selection-end-line="296" selection-end-column="26" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#32087#32137#0" expanded="true" />
+            <element signature="e#32175#32232#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1684,7 +1683,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="5928" max-vertical-offset="12635">
           <caret line="312" column="29" selection-start-line="312" selection-start-column="29" selection-end-line="312" selection-end-column="29" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#32087#32137#0" expanded="true" />
+            <element signature="e#32175#32232#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1724,7 +1724,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="475" max-vertical-offset="11894">
           <caret line="51" column="4" selection-start-line="51" selection-start-column="4" selection-end-line="51" selection-end-column="4" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#32087#32137#0" expanded="true" />
+            <element signature="e#32175#32232#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1764,7 +1765,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="8360" max-vertical-offset="11894">
           <caret line="466" column="91" selection-start-line="466" selection-start-column="91" selection-end-line="466" selection-end-column="91" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#32087#32137#0" expanded="true" />
+            <element signature="e#32175#32232#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1796,19 +1798,20 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="8056" max-vertical-offset="11837">
           <caret line="450" column="41" selection-start-line="450" selection-start-column="41" selection-end-line="450" selection-end-column="41" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#32087#32137#0" expanded="true" />
+            <element signature="e#32175#32232#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Application/src/main/res/layout/activity_imu_view.xml">
-      <provider editor-type-id="android-designer">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="703" max-vertical-offset="5130">
           <caret line="37" column="45" selection-start-line="37" selection-start-column="33" selection-end-line="37" selection-end-column="45" />
         </state>
+      </provider>
+      <provider editor-type-id="android-designer">
+        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/BluetoothLeService.java">
@@ -1830,7 +1833,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="3971" max-vertical-offset="11229">
           <caret line="235" column="21" selection-start-line="235" selection-start-column="21" selection-end-line="235" selection-end-column="21" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#32087#32137#0" expanded="true" />
+            <element signature="e#32175#32232#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1855,7 +1859,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="3971" max-vertical-offset="11229">
           <caret line="235" column="21" selection-start-line="235" selection-start-column="21" selection-end-line="235" selection-end-column="21" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#32087#32137#0" expanded="true" />
+            <element signature="e#32175#32232#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1880,7 +1885,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="11894">
           <caret line="235" column="28" selection-start-line="235" selection-start-column="23" selection-end-line="235" selection-end-column="28" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#32087#32137#0" expanded="true" />
+            <element signature="e#32175#32232#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -2007,14 +2013,14 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Application/src/main/res/layout/activity_imu_view.xml">
-      <provider editor-type-id="android-designer">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="2340" max-vertical-offset="3002">
           <caret line="147" column="49" selection-start-line="147" selection-start-column="49" selection-end-line="147" selection-end-column="49" />
           <folding />
         </state>
+      </provider>
+      <provider editor-type-id="android-designer">
+        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/C.java">
@@ -2041,23 +2047,21 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
+    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/DAN.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="7576" max-vertical-offset="16720">
-          <caret line="440" column="76" selection-start-line="440" selection-start-column="76" selection-end-line="440" selection-end-column="76" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
+        <state vertical-scroll-proportion="0.0" vertical-offset="95" max-vertical-offset="17556">
+          <caret line="48" column="40" selection-start-line="48" selection-start-column="40" selection-end-line="48" selection-end-column="40" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/DAN.java">
+    <entry file="file://$PROJECT_DIR$/Application/src/main/java/tw/org/cic/imusensor/IMUViewActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.109195404" vertical-offset="0" max-vertical-offset="17594">
-          <caret line="32" column="50" selection-start-line="32" selection-start-column="50" selection-end-line="32" selection-end-column="50" />
+        <state vertical-scroll-proportion="0.5897741" vertical-offset="1727" max-vertical-offset="15865">
+          <caret line="166" column="0" selection-start-line="166" selection-start-column="0" selection-end-line="166" selection-end-column="0" />
           <folding>
-            <element signature="e#8346#8347#0" expanded="true" />
-            <element signature="e#8388#8389#0" expanded="true" />
+            <element signature="e#32087#32137#0" expanded="true" />
+            <element signature="e#32175#32232#0" expanded="true" />
           </folding>
         </state>
       </provider>
