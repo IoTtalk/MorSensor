@@ -1,6 +1,0 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" tools:context="tw.org.cic.meter.Main2Activity">
-    <item android:id="@+id/action_settings" android:title="@string/action_settings"
-        android:orderInCategory="100" android:showAsAction="never" />
-</menu>
-<!-- From: file:/C:/Users/Lab117/Downloads/MorSensor/MorSensor_IMU%20-%20Test%20Final/Application/src/main/res/menu/menu_main2.xml -->
