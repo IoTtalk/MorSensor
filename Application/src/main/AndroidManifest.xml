@@ -18,7 +18,7 @@
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Holo.Light" >
         <activity
-            android:name="tw.org.cic.imusensor.DeviceScanActivity"
+            android:name="tw.org.cic.imusensor.SelectMorSensorActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
             android:launchMode="singleTask" >
@@ -36,10 +36,6 @@
 
         <service
             android:name="tw.org.cic.imusensor.BluetoothLeService"
-            android:enabled="true" />
-
-        <service
-            android:name=".DAN"
             android:enabled="true" />
 
     </application>

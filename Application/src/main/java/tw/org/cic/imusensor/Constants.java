@@ -5,7 +5,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
-public class C {
+public class Constants {
     static public final String dm_name = "MorSensor";
     static public final String u_name = "yb";
     static public final String log_tag = dm_name;
@@ -59,6 +59,6 @@ public class C {
     }
 
     private static void logging (String _) {
-        Log.i(C.log_tag, "[C.java]" + _);
+        Log.i(Constants.log_tag, "[Constants.java]" + _);
     }
 }

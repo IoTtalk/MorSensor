@@ -95,7 +95,7 @@ class HttpRequest {
         if ( !logging ) return;
         
         //System.out.println("[HttpRequest] " + message);
-        Log.i(C.log_tag, "[HttpRequest] " + message);
+        Log.i(Constants.log_tag, "[HttpRequest] " + message);
         
     }
 

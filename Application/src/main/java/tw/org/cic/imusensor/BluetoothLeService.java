@@ -41,7 +41,7 @@ import java.util.UUID;
  */
 public class BluetoothLeService extends Service {
 //    private final static String TAG = BluetoothLeService.class.getSimpleName();
-    private final static String TAG = C.log_tag;
+    private final static String TAG = Constants.log_tag;
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;

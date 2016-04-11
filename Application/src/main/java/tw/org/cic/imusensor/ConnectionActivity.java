@@ -45,6 +45,8 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
+import DAN.DAN;
+
 public class ConnectionActivity extends Activity {
     static private ConnectionActivity self;
 
@@ -93,7 +95,7 @@ public class ConnectionActivity extends Activity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_imu_view);
-        Log.e(C.log_tag, "-- ConnectionActivity --");
+        Log.e(Constants.log_tag, "-- ConnectionActivity --");
 
         self = this;
 
@@ -114,7 +116,7 @@ public class ConnectionActivity extends Activity {
         state = STATE_WAIT_SENSOR_LIST;
         CommandSender.init();
 
-        DAN.init(ConnectionActivity.this, "MorSensor");
+        DAN.init("MorSensor");
         show_ec_status(ECStatus.REGISTER_TRYING, csmapi.ENDPOINT);
 
         DAN.Subscriber register_handler = new DAN.Subscriber() {
@@ -202,20 +204,20 @@ public class ConnectionActivity extends Activity {
     @Override
     public void onStart() {
         super.onStart();
-        Log.e(C.log_tag, "++ ON START PreferenceActivity ++");
+        Log.e(Constants.log_tag, "++ ON START PreferenceActivity ++");
     }
 
     @Override
     public synchronized void onResume() {
         super.onResume();
-        Log.e(C.log_tag, "+ ON RESUME PreferenceActivity +");
+        Log.e(Constants.log_tag, "+ ON RESUME PreferenceActivity +");
 
     }
 
     @Override
     public synchronized void onPause() {
         super.onPause();
-        Log.e(C.log_tag, "- ON PAUSE PreferenceActivity -");
+        Log.e(Constants.log_tag, "- ON PAUSE PreferenceActivity -");
         if (isFinishing()) {
             self = null;
         }
@@ -224,14 +226,14 @@ public class ConnectionActivity extends Activity {
     @Override
     public void onStop() {
         super.onStop();
-        Log.e(C.log_tag, "-- ON STOP PreferenceActivity --");
+        Log.e(Constants.log_tag, "-- ON STOP PreferenceActivity --");
 
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.v(C.log_tag, "--- ON DESTROY PreferenceActivity ---");
+        Log.v(Constants.log_tag, "--- ON DESTROY PreferenceActivity ---");
         BtDisConnect();
         CommandSender.end();
         DAN.deregister();
@@ -298,14 +300,14 @@ public class ConnectionActivity extends Activity {
                     DeviceScanActivity.mDeviceScanActivity.finish();
                     logging("REQUEST_CONNECT_DEVICE ");
                 }catch (Exception e){
-                    Log.e(C.log_tag, "BLE Connect Error: " + e);
+                    Log.e(Constants.log_tag, "BLE Connect Error: " + e);
                 }
                 break;
         }
     }
 
     private void StartBLE () {
-        Log.v(C.log_tag, "++ StartBLE PreferenceActivity ++");
+        Log.v(Constants.log_tag, "++ StartBLE PreferenceActivity ++");
 
 //        Log.v(TAG, "SttartBLE_mDeviceAddress: "+mDeviceAddress);
         logging("mDeviceAddress: "+ mDeviceAddress);
@@ -333,7 +335,7 @@ public class ConnectionActivity extends Activity {
         public void onServiceConnected(ComponentName componentName, IBinder service) {
             mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
             if (!mBluetoothLeService.initialize()) {
-                Log.e(C.log_tag, "Unable to initialize Bluetooth");
+                Log.e(Constants.log_tag, "Unable to initialize Bluetooth");
                 finish();
             }
             // Automatically connects to the device upon successful start-up initialization.
@@ -419,27 +421,27 @@ public class ConnectionActivity extends Activity {
                 for (int i = 0; i < sensor_list.length; i++) {
                     sensor_list[i] = values[i + 2];
                     logging("Get SensorID:" + sensor_list[i]);
-                    sensor_list_str += C.fromByte(sensor_list[i]) + " ";
+                    sensor_list_str += Constants.fromByte(sensor_list[i]) + " ";
                 }
 
                 /* Attach to EasyConnect */
                 JSONObject profile = new JSONObject();
                 try {
                     profile.put("d_name", "MorSensor-"+ DAN.get_clean_mac_addr(mDeviceAddress).substring(8).toUpperCase());
-                    profile.put("dm_name", C.dm_name);
+                    profile.put("dm_name", Constants.dm_name);
                     JSONArray feature_list = new JSONArray();
                     logging("Found features:");
-                    for (String f: C.get_feature_list_from_sensor_list(sensor_list)) {
+                    for (String f: Constants.get_feature_list_from_sensor_list(sensor_list)) {
                         feature_list.put(f);
                         logging("feature: " + f);
                     }
                     profile.put("df_list", feature_list);
-                    profile.put("u_name", C.u_name);
-                    profile.put("monitor", DAN.get_mac_addr());
-                    DAN.register(DAN.get_d_id(mDeviceAddress), profile, true);
+                    profile.put("u_name", Constants.u_name);
+                    profile.put("monitor", Utils.get_mac_addr(ConnectionActivity.self));
+                    DAN.register(DAN.get_d_id(mDeviceAddress), profile);
 
                     for (byte f: sensor_list) {
-                        String text = C.get_feature_button_name_from_sensor(f);
+                        String text = Constants.get_feature_button_name_from_sensor(f);
                         ToggleButton btn = new ToggleButton(self);
                         btn.setTag(f);
                         btn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -893,6 +895,6 @@ public class ConnectionActivity extends Activity {
     }
 
     static private void logging (String _) {
-       Log.i(C.log_tag, "[ConnectionActivity]"+ _);
+       Log.i(Constants.log_tag, "[ConnectionActivity]"+ _);
     }
 }

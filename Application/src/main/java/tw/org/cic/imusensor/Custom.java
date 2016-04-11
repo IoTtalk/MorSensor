@@ -5,10 +5,12 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import DAN.DAN;
+
 public class Custom {
     static public void process_sensor_data (byte[] packet) {
 
-        switch (C.fromByte(packet[1])) {
+        switch (Constants.fromByte(packet[1])) {
             case 0xD0: // IMU
                 //Gryo: value[2][3] / 32.8
                 final float gyro_x = (float) (((short) packet[2] * 256 + (short) packet[3]) / 32.8); //Gryo x
@@ -80,12 +82,12 @@ public class Custom {
                 break;
 
             default:
-                logging("Unknown sensor id:"+ packet[1] +"("+ C.fromByte(packet[1]) +")");
+                logging("Unknown sensor id:"+ packet[1] +"("+ Constants.fromByte(packet[1]) +")");
                 break;
         }
     }
 
     static private void logging (String _) {
-        Log.i(C.log_tag, "[Custom]" + _);
+        Log.i(Constants.log_tag, "[Custom]" + _);
     }
 }
