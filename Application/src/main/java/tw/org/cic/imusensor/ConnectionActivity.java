@@ -20,7 +20,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -46,8 +45,8 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
-public class IMUViewActivity extends Activity {
-    static private IMUViewActivity self;
+public class ConnectionActivity extends Activity {
+    static private ConnectionActivity self;
 
     static byte[] sensor_list = null;
     static byte[] MorSensorVersion = {0, 0, 0};
@@ -94,7 +93,7 @@ public class IMUViewActivity extends Activity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_imu_view);
-        Log.e(C.log_tag, "-- IMUViewActivity --");
+        Log.e(C.log_tag, "-- ConnectionActivity --");
 
         self = this;
 
@@ -115,10 +114,10 @@ public class IMUViewActivity extends Activity {
         state = STATE_WAIT_SENSOR_LIST;
         CommandSender.init();
 
-        DAN.init(IMUViewActivity.this, "MorSensor");
+        DAN.init(ConnectionActivity.this, "MorSensor");
         show_ec_status(ECStatus.REGISTER_TRYING, csmapi.ENDPOINT);
 
-        DAN.Subscriber ec_status_handler = new DAN.Subscriber() {
+        DAN.Subscriber register_handler = new DAN.Subscriber() {
             public void odf_handler (DAN.ODFObject odf_object) {
                 switch (odf_object.event_tag) {
                     case REGISTER_FAILED:
@@ -133,7 +132,7 @@ public class IMUViewActivity extends Activity {
                 }
             }
         };
-        DAN.subscribe("Control_channel", ec_status_handler);
+        DAN.subscribe("Control_channel", register_handler);
 
         String d_name = DAN.get_d_name();
         logging("Get d_name:"+ d_name);
@@ -894,6 +893,6 @@ public class IMUViewActivity extends Activity {
     }
 
     static private void logging (String _) {
-       Log.i(C.log_tag, "[IMUViewActivity]"+ _);
+       Log.i(C.log_tag, "[ConnectionActivity]"+ _);
     }
 }

@@ -69,9 +69,9 @@ public class DeviceScanActivity extends ListActivity {
         mDeviceAddress = intent.getStringExtra("MAC");
 //        if(mDeviceAddress!=null && mDeviceAddress.equals(MorSensorAddress) && mDeviceAddress.equals(MorSensorAddress2) && mDeviceAddress.equals(MorSensorAddress3)){
 //        if(mDeviceAddress != null){
-        if (IMUViewActivity.activity_running()) {
-            Intent LinkBTIntent = new Intent(this, IMUViewActivity.class);
-            LinkBTIntent.putExtra(IMUViewActivity.EXTRAS_DEVICE_ADDRESS, mDeviceAddress);
+        if (ConnectionActivity.activity_running()) {
+            Intent LinkBTIntent = new Intent(this, ConnectionActivity.class);
+            LinkBTIntent.putExtra(ConnectionActivity.EXTRAS_DEVICE_ADDRESS, mDeviceAddress);
 
             startActivity(LinkBTIntent);
             this.finish();
@@ -174,8 +174,8 @@ public class DeviceScanActivity extends ListActivity {
         final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
         if (device == null) return;
 
-        final Intent intent = new Intent(this, IMUViewActivity.class);
-        intent.putExtra(IMUViewActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+        final Intent intent = new Intent(this, ConnectionActivity.class);
+        intent.putExtra(ConnectionActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
 
         //Check MorSensor MAC
 //        if (device.getAddress().equals(MorSensorAddress) || device.getAddress().equals(MorSensorAddress2) || device.getAddress().equals(MorSensorAddress3)) {
