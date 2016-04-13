@@ -1,8 +1,6 @@
 package tw.org.cic.imusensor;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -28,28 +26,6 @@ public class SelectMorSensorActivity extends Activity {
 	final ArrayList<MorSensorListItem> morsensor_list = new ArrayList<MorSensorListItem>();
     ArrayAdapter<MorSensorListItem> adapter;
     final EventSubscriber event_subscriber = new EventSubscriber();
-    final BluetoothAdapter.LeScanCallback ble_scan_callback =
-            new BluetoothAdapter.LeScanCallback() {
-                @Override
-                public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            MorSensorListItem morsensor_item = new MorSensorListItem(device.getName(), device.getAddress());
-                            if (!morsensor_list.contains(morsensor_item)) {
-                                morsensor_list.add(morsensor_item);
-                            }
-
-                            for (MorSensorListItem i: morsensor_list) {
-                                if (i.equals(morsensor_item)) {
-                                    i.rssi = rssi;
-                                }
-                            }
-                            adapter.notifyDataSetChanged();
-                        }
-                    });
-                }
-            };
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -76,7 +52,9 @@ public class SelectMorSensorActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> parent,
                                     View view, int position, long id) {
+                BLEManager.stop_searching();
                 MorSensorListItem morsensor_item = morsensor_list.get(position);
+                BLEManager.connect(morsensor_item.ida);
             }
         });
 
@@ -86,7 +64,7 @@ public class SelectMorSensorActivity extends Activity {
             finish();
         }
         BLEManager.subscribe(event_subscriber);
-        BLEManager.search(ble_scan_callback);
+        BLEManager.search();
     }
 
     @Override
@@ -95,6 +73,7 @@ public class SelectMorSensorActivity extends Activity {
         if (isFinishing()) {
             BLEManager.stop_searching();
             BLEManager.unsubscribe(event_subscriber);
+            BLEManager.disconnect();
         }
     }
 
@@ -128,7 +107,7 @@ public class SelectMorSensorActivity extends Activity {
                     BLEManager.stop_searching();
                 } else {
                     morsensor_list.clear();
-                    BLEManager.search(ble_scan_callback);
+                    BLEManager.search();
                 }
                 break;
         }
@@ -136,23 +115,20 @@ public class SelectMorSensorActivity extends Activity {
     }
 
     public class MorSensorListItem {
-    	public String name;
-    	public String addr;
-        public int rssi;
+    	BLEManager.IDA ida;
     	public boolean connecting;
-    	public MorSensorListItem(String n, String a) {
-    		this.name = n;
-    		this.addr = a;
+    	public MorSensorListItem(BLEManager.IDA ida) {
+            this.ida = ida;
     		this.connecting = false;
     	}
 
         @Override
         public boolean equals (Object obj) {
-            if (obj instanceof MorSensorListItem) {
-                MorSensorListItem another = (MorSensorListItem) obj;
-                return name.equals(another.name) && addr.equals(another.addr);
+            if (!(obj instanceof MorSensorListItem)) {
+                return false;
             }
-            return false;
+            MorSensorListItem another = (MorSensorListItem) obj;
+            return this.ida.equals(another.ida);
         }
     }
 
@@ -187,9 +163,9 @@ public class SelectMorSensorActivity extends Activity {
 	        }
 	        
 	        MorSensorListItem i = data.get(position);
-	        holder.tv_name.setText(i.name);
-	        holder.tv_addr.setText(i.addr);
-	        holder.tv_rssi.setText(""+ i.rssi);
+	        holder.tv_name.setText(i.ida.name == null ? "<null>" : i.ida.name);
+	        holder.tv_addr.setText(i.ida.addr);
+	        holder.tv_rssi.setText(""+ i.ida.rssi);
 //	        if (i.connecting) {
 //		        holder.connecting.setText("...");
 //	        } else {
@@ -208,17 +184,41 @@ public class SelectMorSensorActivity extends Activity {
 
     class EventSubscriber extends BLEManager.Subscriber {
         @Override
-        public void on_event(BLEManager.EventTag event_tag, String message) {
-            switch (event_tag) {
-                case START_SEARCHING:
-                    invalidateOptionsMenu();
-                    ((TextView)findViewById(R.id.tv_searching_hint)).setVisibility(View.VISIBLE);
-                    break;
-                case STOP_SEARCHING:
-                    invalidateOptionsMenu();
-                    ((TextView)findViewById(R.id.tv_searching_hint)).setVisibility(View.GONE);
-                    break;
-            }
+        public void on_event(final BLEManager.EventTag event_tag, final Object message) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    switch (event_tag) {
+                        case START_SEARCHING:
+                            invalidateOptionsMenu();
+                            findViewById(R.id.tv_searching_hint).setVisibility(View.VISIBLE);
+                            break;
+                        case FOUND_NEW_IDA:
+                            BLEManager.IDA new_found_ida = (BLEManager.IDA) message;
+                            MorSensorListItem morsensor_item = new MorSensorListItem(new_found_ida);
+                            if (!morsensor_list.contains(morsensor_item)) {
+                                morsensor_list.add(morsensor_item);
+                            }
+
+                            for (MorSensorListItem i : morsensor_list) {
+                                if (i.equals(morsensor_item)) {
+                                    i.ida.rssi = new_found_ida.rssi;
+                                    i.ida.name = new_found_ida.name;
+                                    break;
+                                }
+                            }
+                            adapter.notifyDataSetChanged();
+                            break;
+                        case STOP_SEARCHING:
+                            invalidateOptionsMenu();
+                            findViewById(R.id.tv_searching_hint).setVisibility(View.GONE);
+                            break;
+                        case CONNECTION_FAILED:
+                            Toast.makeText(SelectMorSensorActivity.this, (String) message, Toast.LENGTH_LONG).show();
+                            break;
+                    }
+                }
+            });
         }
     }
     
