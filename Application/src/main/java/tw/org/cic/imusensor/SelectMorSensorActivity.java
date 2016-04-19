@@ -45,42 +45,42 @@ public class SelectMorSensorActivity extends Activity {
         
         adapter = new MorSensorListAdapter(this, R.layout.item_morsensor_list, morsensor_list);
 
-        // show available EC ENDPOINTS
+        // show available MorSensors
         final ListView lv_available_morsensors = (ListView)findViewById(R.id.lv_available_morsensors);
         lv_available_morsensors.setAdapter(adapter);
         lv_available_morsensors.setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent,
                                     View view, int position, long id) {
-                BLEManager.stop_searching();
+                MorSensorManager.stop_searching();
                 MorSensorListItem morsensor_item = morsensor_list.get(position);
-                BLEManager.connect(morsensor_item.ida);
+                MorSensorManager.connect(morsensor_item.ida);
             }
         });
 
         // initialize the bluetooth interface
-        if (!BLEManager.init(this)) {
-            Toast.makeText(getApplicationContext(), "BLEManager.init() failed", Toast.LENGTH_LONG).show();
+        if (!MorSensorManager.init(this)) {
+            Toast.makeText(getApplicationContext(), "MorSensorManager.init() failed", Toast.LENGTH_LONG).show();
             finish();
         }
-        BLEManager.subscribe(event_subscriber);
-        BLEManager.search();
+        MorSensorManager.subscribe(event_subscriber);
+        MorSensorManager.search();
     }
 
     @Override
     public void onPause () {
     	super.onPause();
         if (isFinishing()) {
-            BLEManager.stop_searching();
-            BLEManager.unsubscribe(event_subscriber);
-            BLEManager.disconnect();
+            MorSensorManager.stop_searching();
+            MorSensorManager.unsubscribe(event_subscriber);
+            MorSensorManager.disconnect();
         }
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult (int requestCode, int resultCode, Intent data) {
         // User chose not to enable Bluetooth.
-        if (requestCode == BLEManager.REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
+        if (requestCode == MorSensorManager.REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
             finish();
             return;
         }
@@ -88,10 +88,10 @@ public class SelectMorSensorActivity extends Activity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu (Menu menu) {
         getMenuInflater().inflate(R.menu.menu_select_morsensor, menu);
 //        menu.findItem(R.id.item_scan).setVisible(true);
-        if (BLEManager.is_searching()) {
+        if (MorSensorManager.is_searching()) {
             menu.findItem(R.id.item_scan).setTitle(R.string.menu_stop_scanning);
         } else {
             menu.findItem(R.id.item_scan).setTitle(R.string.menu_start_scanning);
@@ -100,14 +100,14 @@ public class SelectMorSensorActivity extends Activity {
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected (MenuItem item) {
         switch (item.getItemId()) {
             case R.id.item_scan:
-                if (BLEManager.is_searching()) {
-                    BLEManager.stop_searching();
+                if (MorSensorManager.is_searching()) {
+                    MorSensorManager.stop_searching();
                 } else {
                     morsensor_list.clear();
-                    BLEManager.search();
+                    MorSensorManager.search();
                 }
                 break;
         }
@@ -115,9 +115,9 @@ public class SelectMorSensorActivity extends Activity {
     }
 
     public class MorSensorListItem {
-    	BLEManager.IDA ida;
+    	MorSensorManager.IDA ida;
     	public boolean connecting;
-    	public MorSensorListItem(BLEManager.IDA ida) {
+    	public MorSensorListItem(MorSensorManager.IDA ida) {
             this.ida = ida;
     		this.connecting = false;
     	}
@@ -182,19 +182,19 @@ public class SelectMorSensorActivity extends Activity {
 	    }
 	}
 
-    class EventSubscriber extends BLEManager.Subscriber {
+    class EventSubscriber extends MorSensorManager.Subscriber {
         @Override
-        public void on_event(final BLEManager.EventTag event_tag, final Object message) {
+        public void on_event(final MorSensorManager.EventTag event_tag, final Object message) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     switch (event_tag) {
-                        case START_SEARCHING:
+                        case SEARCHING_STARTED:
                             invalidateOptionsMenu();
                             findViewById(R.id.tv_searching_hint).setVisibility(View.VISIBLE);
                             break;
                         case FOUND_NEW_IDA:
-                            BLEManager.IDA new_found_ida = (BLEManager.IDA) message;
+                            MorSensorManager.IDA new_found_ida = (MorSensorManager.IDA) message;
                             MorSensorListItem morsensor_item = new MorSensorListItem(new_found_ida);
                             if (!morsensor_list.contains(morsensor_item)) {
                                 morsensor_list.add(morsensor_item);
@@ -209,12 +209,21 @@ public class SelectMorSensorActivity extends Activity {
                             }
                             adapter.notifyDataSetChanged();
                             break;
-                        case STOP_SEARCHING:
+                        case SEARCHING_STOPPED:
                             invalidateOptionsMenu();
                             findViewById(R.id.tv_searching_hint).setVisibility(View.GONE);
                             break;
                         case CONNECTION_FAILED:
                             Toast.makeText(SelectMorSensorActivity.this, (String) message, Toast.LENGTH_LONG).show();
+                            break;
+                        case CONNECTED:
+                            // retrieve sensor list, then start SelectECActivity
+                            logging("write command: GetSensorList");
+                            MorSensorManager.write(MorSensorCommand.GetSensorList());
+                            break;
+                        case DATA_AVAILABLE:
+                            byte[] data = (byte[]) message;
+                            logging("Receive data: "+ (int)data[0] +" "+ (int)data[1] +" "+ (int)data[2] +" "+ (int)data[3] +" "+ (int)data[4] +" "+ (int)data[5]);
                             break;
                     }
                 }

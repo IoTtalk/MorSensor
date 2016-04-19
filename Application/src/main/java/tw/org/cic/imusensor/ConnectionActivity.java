@@ -319,7 +319,7 @@ public class ConnectionActivity extends Activity {
             } else {
                 //Start BluetoothLe Service
                 Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
-                this.getApplicationContext().bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+                this.getApplicationContext().bindService(gattServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
 
                 //Register BluetoothLe Receiver
                 registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());

@@ -38,6 +38,10 @@
             android:name="tw.org.cic.imusensor.BluetoothLeService"
             android:enabled="true" />
 
+        <service
+            android:name="tw.org.cic.imusensor.MorSensorManager"
+            android:enabled="true" />
+
     </application>
 
 </manifest>
