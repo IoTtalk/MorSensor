@@ -78,6 +78,7 @@ public class MorSensorManager extends Service {
     @Override
     public void onDestroy() {
         logging("onDestroy()");
+        self.unregisterReceiver(gatt_update_receiver);
         self = null;
     }
 
@@ -126,6 +127,12 @@ public class MorSensorManager extends Service {
             request_search = true;
             return;
         }
+
+        if (is_searching) {
+            logging("search(): already searching");
+            return;
+        }
+
         // Stops scanning after a pre-defined scan period.
         searching_stop_timer.postDelayed(new Runnable() {
             @Override
@@ -144,6 +151,11 @@ public class MorSensorManager extends Service {
         if (self == null) {
             logging("stop_searching(): Service is not ready yet, keep it first");
             request_search = false;
+            return;
+        }
+
+        if (!is_searching) {
+            logging("stop_searching(): already stopped");
             return;
         }
         is_searching = false;

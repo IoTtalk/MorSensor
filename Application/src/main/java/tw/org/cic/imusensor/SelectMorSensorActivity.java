@@ -74,6 +74,7 @@ public class SelectMorSensorActivity extends Activity {
             MorSensorManager.stop_searching();
             MorSensorManager.unsubscribe(event_subscriber);
             MorSensorManager.disconnect();
+            MorSensorManager.shutdown();
         }
     }
 
