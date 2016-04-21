@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -26,6 +28,7 @@ public class SelectMorSensorActivity extends Activity {
 	final ArrayList<MorSensorListItem> morsensor_list = new ArrayList<MorSensorListItem>();
     ArrayAdapter<MorSensorListItem> adapter;
     final EventSubscriber event_subscriber = new EventSubscriber();
+    IDAManager morsensor_manager;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -52,29 +55,33 @@ public class SelectMorSensorActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> parent,
                                     View view, int position, long id) {
-                MorSensorManager.stop_searching();
+                morsensor_manager.stop_searching();
                 MorSensorListItem morsensor_item = morsensor_list.get(position);
-                MorSensorManager.connect(morsensor_item.ida);
+                morsensor_manager.connect(morsensor_item.ida);
             }
         });
 
         // initialize the bluetooth interface
-        if (!MorSensorManager.init(this)) {
-            Toast.makeText(getApplicationContext(), "MorSensorManager.init() failed", Toast.LENGTH_LONG).show();
-            finish();
+        MorSensorManager.init(this, event_subscriber);
+//        MorSensorManager.subscribe(event_subscriber);
+//        MorSensorManager.search();
+    }
+
+    class InitHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+
         }
-        MorSensorManager.subscribe(event_subscriber);
-        MorSensorManager.search();
     }
 
     @Override
     public void onPause () {
     	super.onPause();
         if (isFinishing()) {
-            MorSensorManager.stop_searching();
-            MorSensorManager.unsubscribe(event_subscriber);
-            MorSensorManager.disconnect();
-            MorSensorManager.shutdown();
+            morsensor_manager.stop_searching();
+            morsensor_manager.unsubscribe(event_subscriber);
+            morsensor_manager.disconnect();
+            ((MorSensorManager)morsensor_manager).shutdown();
         }
     }
 
@@ -92,7 +99,12 @@ public class SelectMorSensorActivity extends Activity {
     public boolean onCreateOptionsMenu (Menu menu) {
         getMenuInflater().inflate(R.menu.menu_select_morsensor, menu);
 //        menu.findItem(R.id.item_scan).setVisible(true);
-        if (MorSensorManager.is_searching()) {
+        if (morsensor_manager == null) {
+            logging("morsensor_manager not ready yet");
+            return true;
+        }
+
+        if (morsensor_manager.is_searching()) {
             menu.findItem(R.id.item_scan).setTitle(R.string.menu_stop_scanning);
         } else {
             menu.findItem(R.id.item_scan).setTitle(R.string.menu_start_scanning);
@@ -104,11 +116,11 @@ public class SelectMorSensorActivity extends Activity {
     public boolean onOptionsItemSelected (MenuItem item) {
         switch (item.getItemId()) {
             case R.id.item_scan:
-                if (MorSensorManager.is_searching()) {
-                    MorSensorManager.stop_searching();
+                if (morsensor_manager.is_searching()) {
+                    morsensor_manager.stop_searching();
                 } else {
                     morsensor_list.clear();
-                    MorSensorManager.search();
+                    morsensor_manager.search();
                 }
                 break;
         }
@@ -116,9 +128,9 @@ public class SelectMorSensorActivity extends Activity {
     }
 
     public class MorSensorListItem {
-    	MorSensorManager.IDA ida;
+    	MorSensorManager.MorSensorIDA ida;
     	public boolean connecting;
-    	public MorSensorListItem(MorSensorManager.IDA ida) {
+    	public MorSensorListItem(MorSensorManager.MorSensorIDA ida) {
             this.ida = ida;
     		this.connecting = false;
     	}
@@ -165,7 +177,7 @@ public class SelectMorSensorActivity extends Activity {
 	        
 	        MorSensorListItem i = data.get(position);
 	        holder.tv_name.setText(i.ida.name == null ? "<null>" : i.ida.name);
-	        holder.tv_addr.setText(i.ida.addr);
+	        holder.tv_addr.setText(i.ida.id);
 	        holder.tv_rssi.setText(""+ i.ida.rssi);
 //	        if (i.connecting) {
 //		        holder.connecting.setText("...");
@@ -183,19 +195,27 @@ public class SelectMorSensorActivity extends Activity {
 	    }
 	}
 
-    class EventSubscriber extends MorSensorManager.Subscriber {
+    class EventSubscriber implements IDAManager.Subscriber {
         @Override
         public void on_event(final MorSensorManager.EventTag event_tag, final Object message) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     switch (event_tag) {
+                        case INITIALIZATION_FAILED:
+                            Toast.makeText(getApplicationContext(), (String) message, Toast.LENGTH_LONG).show();
+                            finish();
+                            break;
+                        case INITIALIZED:
+                            morsensor_manager = MorSensorManager.instance();
+                            morsensor_manager.search();
+                            break;
                         case SEARCHING_STARTED:
                             invalidateOptionsMenu();
                             findViewById(R.id.tv_searching_hint).setVisibility(View.VISIBLE);
                             break;
                         case FOUND_NEW_IDA:
-                            MorSensorManager.IDA new_found_ida = (MorSensorManager.IDA) message;
+                            MorSensorManager.MorSensorIDA new_found_ida = (MorSensorManager.MorSensorIDA) message;
                             MorSensorListItem morsensor_item = new MorSensorListItem(new_found_ida);
                             if (!morsensor_list.contains(morsensor_item)) {
                                 morsensor_list.add(morsensor_item);
@@ -220,7 +240,11 @@ public class SelectMorSensorActivity extends Activity {
                         case CONNECTED:
                             // retrieve sensor list, then start SelectECActivity
                             logging("write command: GetSensorList");
-                            MorSensorManager.write(MorSensorCommand.GetSensorList());
+                            morsensor_manager.write(MorSensorCommand.GetSensorList());
+                            break;
+                        case DISCONNECTION_FAILED:
+                            break;
+                        case DISCONNECTED:
                             break;
                         case DATA_AVAILABLE:
                             byte[] data = (byte[]) message;

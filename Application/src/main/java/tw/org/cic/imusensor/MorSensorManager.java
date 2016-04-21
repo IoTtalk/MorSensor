@@ -23,36 +23,25 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
-public class MorSensorManager extends Service {
+public class MorSensorManager extends Service implements IDAManager {
     static final int REQUEST_ENABLE_BT = 1;
     static final int SCAN_PERIOD = 5000;
 
-    static private final Set<Subscriber> event_subscribers = Collections.synchronizedSet(new HashSet<Subscriber>());
+    static Subscriber init_subscriber;
+    static final Set<IDAManager.Subscriber> event_subscribers = Collections.synchronizedSet(new HashSet<IDAManager.Subscriber>());
     static MorSensorManager self;
     static boolean request_search;
     static boolean is_searching;
     static final Handler searching_stop_timer = new Handler();
     static BluetoothAdapter bluetooth_adapter;
-    static final BLEServiceConnection ble_service_connection = new BLEServiceConnection();
+    static final ServiceConnection ble_service_connection = new BLEServiceConnection();
     static BluetoothLeService bluetooth_le_service;
     static final GattUpdateReceiver gatt_update_receiver = new GattUpdateReceiver();
-    static final BLEScanCallback ble_scan_callback = new BLEScanCallback();
+    static final BluetoothAdapter.LeScanCallback ble_scan_callback = new BLEScanCallback();
     static BluetoothGattCharacteristic write_gatt_characteristic;
     static BluetoothGattCharacteristic read_gatt_characteristic;
 
-    static IDA connecting_ida;
-
-    static public enum EventTag {
-        INITIALIZATION_FAILED,
-        SEARCHING_STARTED,
-        FOUND_NEW_IDA,
-        SEARCHING_STOPPED,
-        CONNECTION_FAILED,
-        CONNECTED,
-        DISCONNECTION_FAILED,
-        DISCONNECTED,
-        DATA_AVAILABLE,
-    }
+    static IDAManager.IDA connecting_ida;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -67,20 +56,6 @@ public class MorSensorManager extends Service {
         //Start BluetoothLe Service
         Intent gattServiceIntent = new Intent(self, BluetoothLeService.class);
         self.getApplicationContext().bindService(gattServiceIntent, ble_service_connection, Context.BIND_AUTO_CREATE);
-
-        //Register BluetoothLe Receiver
-        final IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
-        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
-        self.registerReceiver(gatt_update_receiver, intentFilter);
-
-        CommandSenderThread.instance().start();
-
-        if (request_search) {
-            search();
-        }
     }
 
     @Override
@@ -95,26 +70,37 @@ public class MorSensorManager extends Service {
      * Public API
      */
 
-    static public boolean init(Activity activity) {
+    static public void init(Activity activity, Subscriber s) {
         logging("init()");
+        if (self != null) {
+            logging("already initialized");
+            init_subscriber.on_event(EventTag.INITIALIZED, "Already initialized");
+            return;
+        }
+
+        init_subscriber = s;
+
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) activity.getSystemService(Context.BLUETOOTH_SERVICE);
         bluetooth_adapter = bluetoothManager.getAdapter();
 
         if (bluetooth_adapter == null) {
             logging("init(): INITIALIZATION_FAILED: Bluetooth not supported");
-            broadcast_event(EventTag.INITIALIZATION_FAILED, "Bluetooth not supported");
-            return false;
+            init_subscriber.on_event(EventTag.INITIALIZATION_FAILED, "Bluetooth not supported");
         }
         request_search = false;
         is_searching = false;
         connecting_ida = null;
 
         activity.startService(new Intent(activity, MorSensorManager.class));
-        return true;
     }
 
-    static public void subscribe(Subscriber s) {
+    static public MorSensorManager instance() {
+        return self;
+    }
+
+    @Override
+    public void subscribe(IDAManager.Subscriber s) {
         synchronized (event_subscribers) {
             if (!event_subscribers.contains(s)) {
                 event_subscribers.add(s);
@@ -122,7 +108,8 @@ public class MorSensorManager extends Service {
         }
     }
 
-    static public void unsubscribe(Subscriber s) {
+    @Override
+    public void unsubscribe(IDAManager.Subscriber s) {
         synchronized (event_subscribers) {
             if (event_subscribers.contains(s)) {
                 event_subscribers.remove(s);
@@ -130,7 +117,8 @@ public class MorSensorManager extends Service {
         }
     }
 
-    static public void search() {
+    @Override
+    public void search() {
         logging("search()");
         if (self == null) {
             logging("search(): Service is not ready yet, keep it first");
@@ -156,7 +144,8 @@ public class MorSensorManager extends Service {
         broadcast_event(EventTag.SEARCHING_STARTED, null);
     }
 
-    static public void stop_searching() {
+    @Override
+    public void stop_searching() {
         logging("stop_searching()");
         if (self == null) {
             logging("stop_searching(): Service is not ready yet, keep it first");
@@ -173,59 +162,58 @@ public class MorSensorManager extends Service {
         broadcast_event(EventTag.SEARCHING_STOPPED, null);
     }
 
-    static public boolean is_searching() {
+    @Override
+    public boolean is_searching() {
         return is_searching;
     }
 
-    static public void connect(IDA ida) {
-        logging("connect()");
+    @Override
+    public void connect(IDAManager.IDA ida) {
+        logging("connect("+ ida.id +")");
         connecting_ida = ida;
-        bluetooth_le_service.connect(connecting_ida.addr);
+        bluetooth_le_service.connect(connecting_ida.id);
     }
 
-    static public void write(byte[] command) {
+    @Override
+    public void write(byte[] command) {
         logging("write()");
         CommandSenderThread.instance().pend_out(command);
     }
 
-    static public void disconnect() {
+    @Override
+    public void disconnect() {
         logging("disconnect()");
         bluetooth_le_service.disconnect();
     }
 
-    static public void shutdown() {
+    public void shutdown() {
         logging("shutdown()");
         self.stopSelf();
         CommandSenderThread.instance().kill();
     }
 
-    static public class IDA {
+    static public class MorSensorIDA extends IDAManager.IDA {
         String name;
-        String addr;
         int rssi;
 
-        public IDA(String addr, String name, int rssi) {
-            this.addr = addr;
+        public MorSensorIDA(String addr, String name, int rssi) {
+            this.id = addr;
             this.name = name;
             this.rssi = rssi;
         }
 
         @Override
         public boolean equals(Object another) {
-            if (!(another instanceof IDA)) {
+            if (!(another instanceof MorSensorIDA)) {
                 return false;
             }
 
-            if (this.addr == null) {
+            if (this.id == null) {
                 return false;
             }
 
-            return this.addr.equals(((IDA) another).addr);
+            return this.id.equals(((MorSensorIDA) another).id);
         }
-    }
-
-    static public abstract class Subscriber {
-        abstract public void on_event(final EventTag event_tag, final Object message);
     }
 
 
@@ -236,7 +224,7 @@ public class MorSensorManager extends Service {
     static class BLEScanCallback implements BluetoothAdapter.LeScanCallback {
         @Override
         public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-            broadcast_event(EventTag.FOUND_NEW_IDA, new IDA(device.getAddress(), device.getName(), rssi));
+            broadcast_event(EventTag.FOUND_NEW_IDA, new MorSensorIDA(device.getAddress(), device.getName(), rssi));
         }
     }
 
@@ -245,8 +233,25 @@ public class MorSensorManager extends Service {
         public void onServiceConnected(ComponentName componentName, IBinder service) {
             bluetooth_le_service = ((BluetoothLeService.LocalBinder) service).getService();
             if (!bluetooth_le_service.initialize()) {
-                broadcast_event(EventTag.INITIALIZATION_FAILED, "Bluetooth service initialization failed");
+                init_subscriber.on_event(EventTag.INITIALIZATION_FAILED, "Bluetooth service initialization failed");
                 bluetooth_le_service = null;
+            } else {
+                init_subscriber.on_event(EventTag.INITIALIZED, "Bluetooth service initialized");
+                self.subscribe(init_subscriber);
+
+                //Register BluetoothLe Receiver
+                final IntentFilter intentFilter = new IntentFilter();
+                intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
+                intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
+                intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
+                intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+                self.registerReceiver(gatt_update_receiver, intentFilter);
+
+                CommandSenderThread.instance().start();
+
+                if (request_search) {
+                    self.search();
+                }
             }
         }
 
@@ -442,7 +447,7 @@ public class MorSensorManager extends Service {
         return raw_data;
     }
 
-    static void broadcast_event(EventTag event_tag, Object message) {
+    static void broadcast_event(IDAManager.EventTag event_tag, Object message) {
         synchronized (event_subscribers) {
             for (Subscriber handler : event_subscribers) {
                 handler.on_event(event_tag, message);
