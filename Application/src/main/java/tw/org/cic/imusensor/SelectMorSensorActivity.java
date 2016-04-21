@@ -29,6 +29,7 @@ public class SelectMorSensorActivity extends Activity {
     ArrayAdapter<MorSensorListItem> adapter;
     final EventSubscriber event_subscriber = new EventSubscriber();
     IDAManager morsensor_manager;
+    boolean scan_button_neg;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -61,7 +62,8 @@ public class SelectMorSensorActivity extends Activity {
             }
         });
 
-        // initialize the bluetooth interface
+        scan_button_neg = true;
+
         MorSensorManager.init(this, event_subscriber);
 //        MorSensorManager.subscribe(event_subscriber);
 //        MorSensorManager.search();
@@ -104,7 +106,7 @@ public class SelectMorSensorActivity extends Activity {
             return true;
         }
 
-        if (morsensor_manager.is_searching()) {
+        if (scan_button_neg) {
             menu.findItem(R.id.item_scan).setTitle(R.string.menu_stop_scanning);
         } else {
             menu.findItem(R.id.item_scan).setTitle(R.string.menu_start_scanning);
@@ -116,7 +118,7 @@ public class SelectMorSensorActivity extends Activity {
     public boolean onOptionsItemSelected (MenuItem item) {
         switch (item.getItemId()) {
             case R.id.item_scan:
-                if (morsensor_manager.is_searching()) {
+                if (scan_button_neg) {
                     morsensor_manager.stop_searching();
                 } else {
                     morsensor_list.clear();
@@ -211,6 +213,7 @@ public class SelectMorSensorActivity extends Activity {
                             morsensor_manager.search();
                             break;
                         case SEARCHING_STARTED:
+                            scan_button_neg = true;
                             invalidateOptionsMenu();
                             findViewById(R.id.tv_searching_hint).setVisibility(View.VISIBLE);
                             break;
@@ -231,6 +234,7 @@ public class SelectMorSensorActivity extends Activity {
                             adapter.notifyDataSetChanged();
                             break;
                         case SEARCHING_STOPPED:
+                            scan_button_neg = false;
                             invalidateOptionsMenu();
                             findViewById(R.id.tv_searching_hint).setVisibility(View.GONE);
                             break;
@@ -240,6 +244,8 @@ public class SelectMorSensorActivity extends Activity {
                         case CONNECTED:
                             // retrieve sensor list, then start SelectECActivity
                             logging("write command: GetSensorList");
+                            morsensor_manager.write(MorSensorCommand.GetMorSensorVersion());
+                            morsensor_manager.write(MorSensorCommand.GetFirmwareVersion());
                             morsensor_manager.write(MorSensorCommand.GetSensorList());
                             break;
                         case DISCONNECTION_FAILED:

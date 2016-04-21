@@ -25,7 +25,7 @@ import java.util.concurrent.Semaphore;
 
 public class MorSensorManager extends Service implements IDAManager {
     static final int REQUEST_ENABLE_BT = 1;
-    static final int SCAN_PERIOD = 5000;
+    static final int BLUETOOTH_SCANNING_PERIOD = 5000;
 
     static Subscriber init_subscriber;
     static final Set<IDAManager.Subscriber> event_subscribers = Collections.synchronizedSet(new HashSet<IDAManager.Subscriber>());
@@ -137,7 +137,7 @@ public class MorSensorManager extends Service implements IDAManager {
             public void run() {
                 stop_searching();
             }
-        }, SCAN_PERIOD);
+        }, BLUETOOTH_SCANNING_PERIOD);
 
         is_searching = true;
         bluetooth_adapter.startLeScan(ble_scan_callback);
@@ -160,11 +160,6 @@ public class MorSensorManager extends Service implements IDAManager {
         is_searching = false;
         bluetooth_adapter.stopLeScan(ble_scan_callback);
         broadcast_event(EventTag.SEARCHING_STOPPED, null);
-    }
-
-    @Override
-    public boolean is_searching() {
-        return is_searching;
     }
 
     @Override
@@ -289,15 +284,22 @@ public class MorSensorManager extends Service implements IDAManager {
     }
 
     static class CommandSenderThread extends Thread {
-        static private final Semaphore instance_lock = new Semaphore(1);
-        static private CommandSenderThread self;
+        static final int SCANNING_PERIOD = 50;
+        static final int RESEND_CYCLE = 5;
 
-        private final LinkedBlockingQueue<byte[]> outgoing_queue =
+        static final Semaphore instance_lock = new Semaphore(1);
+        static CommandSenderThread self;
+
+        final LinkedBlockingQueue<byte[]> outgoing_queue =
                 new LinkedBlockingQueue<byte[]>();
-        private final LinkedBlockingQueue<byte[]> incoming_queue =
+        final LinkedBlockingQueue<byte[]> incoming_queue =
                 new LinkedBlockingQueue<byte[]>();
+        int running_cycle;
 
         private CommandSenderThread() {
+            outgoing_queue.clear();
+            incoming_queue.clear();
+            running_cycle = 0;
         }
 
         static public CommandSenderThread instance() {
@@ -306,8 +308,6 @@ public class MorSensorManager extends Service implements IDAManager {
                 if (self == null) {
                     logging("CommandSenderThread.instance(): create instance");
                     self = new CommandSenderThread();
-                    self.outgoing_queue.clear();
-                    self.incoming_queue.clear();
                 }
                 instance_lock.release();
             } catch (InterruptedException e) {
@@ -330,35 +330,34 @@ public class MorSensorManager extends Service implements IDAManager {
             logging("CommandSenderThread started");
             try {
                 while (true) {
-                    if (!outgoing_queue.isEmpty()) {
-                        logging("output_queue is not empty, send out");
-                        // something waiting in output_queue, send one out
-                        //  but keep it in queue, because it may drop
-                        byte[] outgoing_command = outgoing_queue.peek();
-                        write_gatt_characteristic.setValue(outgoing_command);
-                        bluetooth_le_service.writeCharacteristic(write_gatt_characteristic);
-                    }
-
-                    // To prevent starvation, I check the queue size, and only process them.
-                    // MorSensor may send data at very high data rate
-                    int incoming_queue_size = incoming_queue.size();
-                    for (int i = 0; i < incoming_queue_size; i++) {
-                        byte[] outgoing_command = outgoing_queue.peek();
-                        byte[] incoming_command = incoming_queue.take();
-                        byte out_opcode = outgoing_command[0];
-                        byte in_opcode = incoming_command[0];
-
-                        if (out_opcode == in_opcode) {
-                            // in/out command matched, pop one out from outgoing_queue
-                            outgoing_queue.take();
-                        } else if (in_opcode == MorSensorCommand.IN_SENSOR_DATA) {
-                            // data packet comes, keep waiting for command response
-                        } else {
-                            logging("****** In/out command mismatch, something fxcked up ******");
+                    if (running_cycle == 0) {
+                        // check outgoing_queue every <RESEND_CYCLE> cycles
+                        if (!outgoing_queue.isEmpty()) {
+                            logging("output_queue is not empty, send out");
+                            // something waiting in output_queue, send one out
+                            //  but keep it in queue, because it may drop
+                            byte[] outgoing_command = outgoing_queue.peek();
+                            write_gatt_characteristic.setValue(outgoing_command);
+                            bluetooth_le_service.writeCharacteristic(write_gatt_characteristic);
                         }
                     }
 
-                    Thread.sleep(2000);
+                    byte[] outgoing_command = outgoing_queue.peek();
+                    // MorSensor may send data at very high data rate.
+                    // To prevent starvation, I check the queue size,
+                    //  and only process these commands in the queue.
+                    int incoming_queue_size = incoming_queue.size();
+                    for (int i = 0; i < incoming_queue_size; i++) {
+                        byte[] incoming_command = incoming_queue.take();
+                        if (outgoing_command != null && outgoing_command[0] == incoming_command[0]) {
+                            // there is a command pending out, and that command matches its response
+                            // pop it from outgoing_queue
+                            outgoing_queue.take();
+                        }
+                    }
+
+                    Thread.sleep(SCANNING_PERIOD);
+                    running_cycle = (running_cycle + 1) % RESEND_CYCLE;
                 }
             } catch (InterruptedException e) {
                 logging("CommandSenderThread.run(): InterruptedException");
@@ -455,7 +454,7 @@ public class MorSensorManager extends Service implements IDAManager {
         }
     }
 
-    static private void logging(String message) {
+    static void logging(String message) {
         Log.i(Constants.log_tag, "[MorSensorManager] " + message);
     }
 }

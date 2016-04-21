@@ -9,9 +9,10 @@ public interface IDAManager {
         SEARCHING_STOPPED,
         CONNECTION_FAILED,
         CONNECTED,
+        WRITE_FAILED,
+        DATA_AVAILABLE,
         DISCONNECTION_FAILED,
         DISCONNECTED,
-        DATA_AVAILABLE,
     }
 
     public interface Subscriber {
@@ -26,7 +27,6 @@ public interface IDAManager {
     public void unsubscribe(Subscriber s);
     public void search();
     public void stop_searching();
-    public boolean is_searching();
     public void connect(IDA ida);
     public void write(byte[] command);
     public void disconnect();
