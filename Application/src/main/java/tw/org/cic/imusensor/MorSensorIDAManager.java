@@ -17,7 +17,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -40,7 +39,7 @@ public class MorSensorIDAManager extends Service implements IDAManager {
     static final BluetoothAdapter.LeScanCallback ble_scan_callback = new BLEScanCallback();
     static BluetoothGattCharacteristic write_gatt_characteristic;
     static BluetoothGattCharacteristic read_gatt_characteristic;
-    static IDAManager.IDA connecting_ida;
+    static IDAManager.IDA target_ida;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -81,7 +80,7 @@ public class MorSensorIDAManager extends Service implements IDAManager {
             init_subscriber.on_event(EventTag.INITIALIZATION_FAILED, "Bluetooth not supported");
         }
         is_searching = false;
-        connecting_ida = null;
+        target_ida = null;
 
         activity.startService(new Intent(activity, MorSensorIDAManager.class));
     }
@@ -154,8 +153,8 @@ public class MorSensorIDAManager extends Service implements IDAManager {
     @Override
     public void connect(IDAManager.IDA ida) {
         logging("connect("+ ida.id +")");
-        connecting_ida = ida;
-        bluetooth_le_service.connect(connecting_ida.id);
+        target_ida = ida;
+        bluetooth_le_service.connect(target_ida.id);
     }
 
     @Override
@@ -259,7 +258,7 @@ public class MorSensorIDAManager extends Service implements IDAManager {
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 get_gatt_characteristics();
-                broadcast_event(EventTag.CONNECTED, connecting_ida);
+                broadcast_event(EventTag.CONNECTED, target_ida);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 logging("==== ACTION_DATA_AVAILABLE ====");
