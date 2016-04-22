@@ -235,10 +235,22 @@ public class SelectMorSensorActivity extends Activity {
                             dump_data_packet(data);
                             switch (data[0]) {
                                 case MorSensorCommand.IN_MORSENSOR_VERSION:
-                                    logging("MorSensor Version: %d %d %d", data[0], data[1], data[2]);
+                                    logging("MorSensor Version: %d.%d.%d", data[0], data[1], data[2]);
                                     break;
                                 case MorSensorCommand.IN_FIRMWARE_VERSION:
-                                    logging("Firmware Version: %d %d %d", data[0], data[1], data[2]);
+                                    logging("Firmware Version: %d.%d.%d", data[0], data[1], data[2]);
+                                    break;
+                                case MorSensorCommand.IN_SENSOR_LIST:
+                                    ArrayList<String> f_list = new ArrayList<String>();
+                                    for (int i = 0; i < data[1]; i++) {
+                                        logging("Sensor %02X:", data[i + 2]);
+                                        for (String f_name: Constants.get_feature_list_from_sensor_id(data[i + 2])) {
+                                            logging("    %s", f_name);
+                                            f_list.add(f_name);
+                                        }
+                                    }
+                                    finish();
+                                    break;
                             }
                             break;
                     }

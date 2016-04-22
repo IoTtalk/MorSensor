@@ -4,9 +4,10 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Constants {
-    static public final String version = "20160414";
+    static public final String version = "20160422";
     static public final String dm_name = "MorSensor";
     static public final String u_name = "yb";
     static public final String log_tag = dm_name;
@@ -14,55 +15,47 @@ public class Constants {
     static public final int MENU_ITEM_ID_DAN_VERSION = 0;
     static public final int MENU_ITEM_ID_DAI_VERSION = 1;
 
-    static public byte toByte (short s) {
+    static public byte toByte(short s) {
         return (byte) (s & 0xFF);
     }
 
-    static public byte toByte (int i) {
+    static public byte toByte(int i) {
         return (byte) (i & 0xFF);
     }
 
-    static public int fromByte (byte b) {
+    static public int fromByte(byte b) {
         return b & 0xFF;
     }
 
-    static public String[] get_feature_list_from_sensor (byte sensor_id) {
-        ArrayList<String> ret = new ArrayList<String>();
-        switch (fromByte(sensor_id)) {
-            case 0xD0:
-                ret.add("Gyroscope");
-                ret.add("Acceleration");
-                ret.add("Magnetometer");
-                break;
-            case 0xC0:
-                ret.add("UV");
-                break;
-            case 0x80:
-                ret.add("Temperature");
-                ret.add("Humidity");
-                break;
-            default:
-                ret.add("Unknown");
+    static final HashMap<Byte, String[]> sensor_id_to_feature_mapping = new HashMap<Byte, String[]>() {{
+        put(toByte(0xD0), new String[]{"Gyroscope", "Acceleration", "Magnetometer"});
+        put(toByte(0xC0), new String[]{"UV"});
+        put(toByte(0x80), new String[]{"Temperature", "Humidity"});
+    }};
+
+    static public String[] get_feature_list_from_sensor_id(byte sensor_id) {
+        if (sensor_id_to_feature_mapping.containsKey(sensor_id)) {
+            return sensor_id_to_feature_mapping.get(sensor_id);
         }
-        return ret.toArray(new String[0]);
+        return new String[]{};
     }
 
     static public String[] get_feature_list_from_sensor_list(byte[] sensor_list) {
         ArrayList<String> ret = new ArrayList<String>();
-        for (byte sensor_id: sensor_list) {
-            logging("iterate to sensor: "+sensor_id+" "+fromByte(sensor_id));
-            for (String n: get_feature_list_from_sensor(sensor_id)) {
+        for (byte sensor_id : sensor_list) {
+            logging("iterate to sensor: " + sensor_id);
+            for (String n : sensor_id_to_feature_mapping.get(sensor_id)) {
                 ret.add(n);
             }
         }
         return ret.toArray(new String[0]);
     }
 
-    static public String get_feature_button_name_from_sensor (byte sensor_id) {
-        return TextUtils.join(", ", get_feature_list_from_sensor(sensor_id));
+    static public String get_feature_button_name_from_sensor(byte sensor_id) {
+        return TextUtils.join(", ", sensor_id_to_feature_mapping.get(fromByte(sensor_id)));
     }
 
-    private static void logging (String _) {
+    private static void logging(String _) {
         Log.i(Constants.log_tag, "[Constants.java]" + _);
     }
 }

@@ -17,6 +17,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -39,7 +40,6 @@ public class MorSensorIDAManager extends Service implements IDAManager {
     static final BluetoothAdapter.LeScanCallback ble_scan_callback = new BLEScanCallback();
     static BluetoothGattCharacteristic write_gatt_characteristic;
     static BluetoothGattCharacteristic read_gatt_characteristic;
-
     static IDAManager.IDA connecting_ida;
 
     @Override
