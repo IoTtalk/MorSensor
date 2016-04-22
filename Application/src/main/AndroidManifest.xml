@@ -39,7 +39,7 @@
             android:enabled="true" />
 
         <service
-            android:name="tw.org.cic.imusensor.MorSensorManager"
+            android:name=".MorSensorIDAManager"
             android:enabled="true" />
 
     </application>

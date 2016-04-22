@@ -23,14 +23,13 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
-public class MorSensorManager extends Service implements IDAManager {
+public class MorSensorIDAManager extends Service implements IDAManager {
     static final int REQUEST_ENABLE_BT = 1;
     static final int BLUETOOTH_SCANNING_PERIOD = 5000;
 
     static Subscriber init_subscriber;
     static final Set<IDAManager.Subscriber> event_subscribers = Collections.synchronizedSet(new HashSet<IDAManager.Subscriber>());
-    static MorSensorManager self;
-    static boolean request_search;
+    static MorSensorIDAManager self;
     static boolean is_searching;
     static final Handler searching_stop_timer = new Handler();
     static BluetoothAdapter bluetooth_adapter;
@@ -58,13 +57,6 @@ public class MorSensorManager extends Service implements IDAManager {
         self.getApplicationContext().bindService(gattServiceIntent, ble_service_connection, Context.BIND_AUTO_CREATE);
     }
 
-    @Override
-    public void onDestroy() {
-        logging("onDestroy()");
-        self.unregisterReceiver(gatt_update_receiver);
-        self = null;
-    }
-
 
     /**
      * Public API
@@ -88,14 +80,13 @@ public class MorSensorManager extends Service implements IDAManager {
             logging("init(): INITIALIZATION_FAILED: Bluetooth not supported");
             init_subscriber.on_event(EventTag.INITIALIZATION_FAILED, "Bluetooth not supported");
         }
-        request_search = false;
         is_searching = false;
         connecting_ida = null;
 
-        activity.startService(new Intent(activity, MorSensorManager.class));
+        activity.startService(new Intent(activity, MorSensorIDAManager.class));
     }
 
-    static public MorSensorManager instance() {
+    static public MorSensorIDAManager instance() {
         return self;
     }
 
@@ -121,8 +112,7 @@ public class MorSensorManager extends Service implements IDAManager {
     public void search() {
         logging("search()");
         if (self == null) {
-            logging("search(): Service is not ready yet, keep it first");
-            request_search = true;
+            logging("search(): Service is not ready yet");
             return;
         }
 
@@ -148,8 +138,7 @@ public class MorSensorManager extends Service implements IDAManager {
     public void stop_searching() {
         logging("stop_searching()");
         if (self == null) {
-            logging("stop_searching(): Service is not ready yet, keep it first");
-            request_search = false;
+            logging("stop_searching(): Service is not ready yet");
             return;
         }
 
@@ -183,8 +172,11 @@ public class MorSensorManager extends Service implements IDAManager {
 
     public void shutdown() {
         logging("shutdown()");
-        self.stopSelf();
         CommandSenderThread.instance().kill();
+        self.getApplicationContext().unbindService(ble_service_connection);
+        self.unregisterReceiver(gatt_update_receiver);
+        self.stopSelf();
+        self = null;
     }
 
     static public class MorSensorIDA extends IDAManager.IDA {
@@ -243,10 +235,6 @@ public class MorSensorManager extends Service implements IDAManager {
                 self.registerReceiver(gatt_update_receiver, intentFilter);
 
                 CommandSenderThread.instance().start();
-
-                if (request_search) {
-                    self.search();
-                }
             }
         }
 
@@ -285,7 +273,7 @@ public class MorSensorManager extends Service implements IDAManager {
 
     static class CommandSenderThread extends Thread {
         static final int SCANNING_PERIOD = 50;
-        static final int RESEND_CYCLE = 5;
+        static final int RESEND_CYCLE = 10;
 
         static final Semaphore instance_lock = new Semaphore(1);
         static CommandSenderThread self;
@@ -333,7 +321,7 @@ public class MorSensorManager extends Service implements IDAManager {
                     if (running_cycle == 0) {
                         // check outgoing_queue every <RESEND_CYCLE> cycles
                         if (!outgoing_queue.isEmpty()) {
-                            logging("output_queue is not empty, send out");
+                            logging("output_queue is not empty, send command");
                             // something waiting in output_queue, send one out
                             //  but keep it in queue, because it may drop
                             byte[] outgoing_command = outgoing_queue.peek();
@@ -426,24 +414,12 @@ public class MorSensorManager extends Service implements IDAManager {
     }
 
     static public byte[] hex_to_bytes(String hex_string) {
-        char[] hex = hex_string.toCharArray();
-        //轉rawData長度減半
-        int length = hex.length / 2;
-        byte[] raw_data = new byte[length];
-        for (int i = 0; i < length; i++) {
-            //先將hex資料轉10進位數值
-            int high = Character.digit(hex[i * 2], 16);
-            int low = Character.digit(hex[i * 2 + 1], 16);
-            //將第一個值的二進位值左平移4位,ex: 00001000 => 10000000 (8=>128)
-            //然後與第二個值的二進位值作聯集ex: 10000000 | 00001100 => 10001100 (137)
-            int value = (high << 4) | low;
-            //與FFFFFFFF作補集
-            if (value > 127)
-                value -= 256;
-            //最後轉回byte就OK
-            raw_data[i] = (byte) value;
+        int len = hex_string.length();
+        byte[] ret = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            ret[i / 2] = (byte) ((Character.digit(hex_string.charAt(i), 16) << 4) | Character.digit(hex_string.charAt(i + 1), 16));
         }
-        return raw_data;
+        return ret;
     }
 
     static void broadcast_event(IDAManager.EventTag event_tag, Object message) {

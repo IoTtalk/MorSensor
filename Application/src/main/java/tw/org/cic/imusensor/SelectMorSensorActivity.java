@@ -22,75 +22,56 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
-import DAN.DAN;
-
 public class SelectMorSensorActivity extends Activity {
-	final ArrayList<MorSensorListItem> morsensor_list = new ArrayList<MorSensorListItem>();
+    final ArrayList<MorSensorListItem> morsensor_list = new ArrayList<MorSensorListItem>();
     ArrayAdapter<MorSensorListItem> adapter;
-    final EventSubscriber event_subscriber = new EventSubscriber();
-    IDAManager morsensor_manager;
+    final IDAManager.Subscriber event_subscriber = new EventSubscriber();
+    IDAManager morsensor_idamanager;
     boolean scan_button_neg;
-	
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        logging("================== SelectECActivity start ==================");
+        logging("================== SelectMorSensorActivity start ==================");
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_select_morsensor);
         getActionBar().setTitle(R.string.title_devices);
 
-        DAN.init(Constants.log_tag);
-        if (DAN.session_status()) {
-        	logging("Already registered, jump to SessionActivity");
-//            Intent intent = new Intent(SelectECActivity.this, FeatureActivity.class);
-//            startActivity(intent);
-            finish();
-        }
-        
         adapter = new MorSensorListAdapter(this, R.layout.item_morsensor_list, morsensor_list);
 
         // show available MorSensors
-        final ListView lv_available_morsensors = (ListView)findViewById(R.id.lv_available_morsensors);
+        final ListView lv_available_morsensors = (ListView) findViewById(R.id.lv_available_morsensors);
         lv_available_morsensors.setAdapter(adapter);
         lv_available_morsensors.setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent,
                                     View view, int position, long id) {
-                morsensor_manager.stop_searching();
+                morsensor_idamanager.stop_searching();
                 MorSensorListItem morsensor_item = morsensor_list.get(position);
-                morsensor_manager.connect(morsensor_item.ida);
+                morsensor_idamanager.connect(morsensor_item.ida);
             }
         });
 
         scan_button_neg = true;
 
-        MorSensorManager.init(this, event_subscriber);
-//        MorSensorManager.subscribe(event_subscriber);
-//        MorSensorManager.search();
-    }
-
-    class InitHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-
-        }
+        MorSensorIDAManager.init(this, event_subscriber);
     }
 
     @Override
-    public void onPause () {
-    	super.onPause();
+    public void onPause() {
+        super.onPause();
         if (isFinishing()) {
-            morsensor_manager.stop_searching();
-            morsensor_manager.unsubscribe(event_subscriber);
-            morsensor_manager.disconnect();
-            ((MorSensorManager)morsensor_manager).shutdown();
+            morsensor_idamanager.stop_searching();
+            morsensor_idamanager.unsubscribe(event_subscriber);
+            morsensor_idamanager.disconnect();
+            ((MorSensorIDAManager) morsensor_idamanager).shutdown();
         }
     }
 
     @Override
-    protected void onActivityResult (int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // User chose not to enable Bluetooth.
-        if (requestCode == MorSensorManager.REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
+        if (requestCode == MorSensorIDAManager.REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
             finish();
             return;
         }
@@ -98,13 +79,9 @@ public class SelectMorSensorActivity extends Activity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu (Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_select_morsensor, menu);
 //        menu.findItem(R.id.item_scan).setVisible(true);
-        if (morsensor_manager == null) {
-            logging("morsensor_manager not ready yet");
-            return true;
-        }
 
         if (scan_button_neg) {
             menu.findItem(R.id.item_scan).setTitle(R.string.menu_stop_scanning);
@@ -115,14 +92,14 @@ public class SelectMorSensorActivity extends Activity {
     }
 
     @Override
-    public boolean onOptionsItemSelected (MenuItem item) {
+    public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.item_scan:
                 if (scan_button_neg) {
-                    morsensor_manager.stop_searching();
+                    morsensor_idamanager.stop_searching();
                 } else {
                     morsensor_list.clear();
-                    morsensor_manager.search();
+                    morsensor_idamanager.search();
                 }
                 break;
         }
@@ -130,15 +107,16 @@ public class SelectMorSensorActivity extends Activity {
     }
 
     public class MorSensorListItem {
-    	MorSensorManager.MorSensorIDA ida;
-    	public boolean connecting;
-    	public MorSensorListItem(MorSensorManager.MorSensorIDA ida) {
+        MorSensorIDAManager.MorSensorIDA ida;
+        public boolean connecting;
+
+        public MorSensorListItem(MorSensorIDAManager.MorSensorIDA ida) {
             this.ida = ida;
-    		this.connecting = false;
-    	}
+            this.connecting = false;
+        }
 
         @Override
-        public boolean equals (Object obj) {
+        public boolean equals(Object obj) {
             if (!(obj instanceof MorSensorListItem)) {
                 return false;
             }
@@ -147,59 +125,59 @@ public class SelectMorSensorActivity extends Activity {
         }
     }
 
-	public class MorSensorListAdapter extends ArrayAdapter<MorSensorListItem> {
-	    Context context;
-	    int layout_resource_id;
-	    ArrayList<MorSensorListItem> data = null;
-	    
-	    public MorSensorListAdapter(Context context, int layout_resource_id, ArrayList<MorSensorListItem> data) {
-	        		super(context, layout_resource_id, data);
-	        this.context = context;
-	        this.layout_resource_id = layout_resource_id;
-	        this.data = data;
-	    }
-	    
-	    @Override
-	    public View getView (int position, View convertView, ViewGroup parent) {
-	        View row = convertView;
-	        MorSensorHolder holder = null;
-	        
-	        if(row == null) {
-	            LayoutInflater inflater = ((Activity)context).getLayoutInflater();
-	            row = inflater.inflate(layout_resource_id, parent, false);
-	            holder = new MorSensorHolder();
-	            holder.tv_name = (TextView)row.findViewById(R.id.tv_name);
-	            holder.tv_addr = (TextView)row.findViewById(R.id.tv_addr);
-	            holder.tv_rssi = (TextView)row.findViewById(R.id.tv_rssi);
+    public class MorSensorListAdapter extends ArrayAdapter<MorSensorListItem> {
+        Context context;
+        int layout_resource_id;
+        ArrayList<MorSensorListItem> data = null;
+
+        public MorSensorListAdapter(Context context, int layout_resource_id, ArrayList<MorSensorListItem> data) {
+            super(context, layout_resource_id, data);
+            this.context = context;
+            this.layout_resource_id = layout_resource_id;
+            this.data = data;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View row = convertView;
+            MorSensorHolder holder = null;
+
+            if (row == null) {
+                LayoutInflater inflater = ((Activity) context).getLayoutInflater();
+                row = inflater.inflate(layout_resource_id, parent, false);
+                holder = new MorSensorHolder();
+                holder.tv_name = (TextView) row.findViewById(R.id.tv_name);
+                holder.tv_addr = (TextView) row.findViewById(R.id.tv_addr);
+                holder.tv_rssi = (TextView) row.findViewById(R.id.tv_rssi);
 //	            holder.connecting = (TextView)row.findViewById(R.id.tv_connecting);
-	            row.setTag(holder);
-	        } else {
-	            holder = (MorSensorHolder)row.getTag();
-	        }
-	        
-	        MorSensorListItem i = data.get(position);
-	        holder.tv_name.setText(i.ida.name == null ? "<null>" : i.ida.name);
-	        holder.tv_addr.setText(i.ida.id);
-	        holder.tv_rssi.setText(""+ i.ida.rssi);
+                row.setTag(holder);
+            } else {
+                holder = (MorSensorHolder) row.getTag();
+            }
+
+            MorSensorListItem i = data.get(position);
+            holder.tv_name.setText(i.ida.name == null ? "<null>" : i.ida.name);
+            holder.tv_addr.setText(i.ida.id);
+            holder.tv_rssi.setText("" + i.ida.rssi);
 //	        if (i.connecting) {
 //		        holder.connecting.setText("...");
 //	        } else {
 //	        	holder.connecting.setText("");
 //	        }
-	        return row;
-	    }
-	
-	    class MorSensorHolder {
+            return row;
+        }
+
+        class MorSensorHolder {
             TextView tv_name;
             TextView tv_addr;
             TextView tv_rssi;
 //	        TextView connecting;
-	    }
-	}
+        }
+    }
 
     class EventSubscriber implements IDAManager.Subscriber {
         @Override
-        public void on_event(final MorSensorManager.EventTag event_tag, final Object message) {
+        public void on_event(final MorSensorIDAManager.EventTag event_tag, final Object message) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -209,8 +187,8 @@ public class SelectMorSensorActivity extends Activity {
                             finish();
                             break;
                         case INITIALIZED:
-                            morsensor_manager = MorSensorManager.instance();
-                            morsensor_manager.search();
+                            morsensor_idamanager = MorSensorIDAManager.instance();
+                            morsensor_idamanager.search();
                             break;
                         case SEARCHING_STARTED:
                             scan_button_neg = true;
@@ -218,7 +196,7 @@ public class SelectMorSensorActivity extends Activity {
                             findViewById(R.id.tv_searching_hint).setVisibility(View.VISIBLE);
                             break;
                         case FOUND_NEW_IDA:
-                            MorSensorManager.MorSensorIDA new_found_ida = (MorSensorManager.MorSensorIDA) message;
+                            MorSensorIDAManager.MorSensorIDA new_found_ida = (MorSensorIDAManager.MorSensorIDA) message;
                             MorSensorListItem morsensor_item = new MorSensorListItem(new_found_ida);
                             if (!morsensor_list.contains(morsensor_item)) {
                                 morsensor_list.add(morsensor_item);
@@ -244,9 +222,9 @@ public class SelectMorSensorActivity extends Activity {
                         case CONNECTED:
                             // retrieve sensor list, then start SelectECActivity
                             logging("write command: GetSensorList");
-                            morsensor_manager.write(MorSensorCommand.GetMorSensorVersion());
-                            morsensor_manager.write(MorSensorCommand.GetFirmwareVersion());
-                            morsensor_manager.write(MorSensorCommand.GetSensorList());
+                            morsensor_idamanager.write(MorSensorCommand.GetMorSensorVersion());
+                            morsensor_idamanager.write(MorSensorCommand.GetFirmwareVersion());
+                            morsensor_idamanager.write(MorSensorCommand.GetSensorList());
                             break;
                         case DISCONNECTION_FAILED:
                             break;
@@ -254,15 +232,37 @@ public class SelectMorSensorActivity extends Activity {
                             break;
                         case DATA_AVAILABLE:
                             byte[] data = (byte[]) message;
-                            logging("Receive data: "+ (int)data[0] +" "+ (int)data[1] +" "+ (int)data[2] +" "+ (int)data[3] +" "+ (int)data[4] +" "+ (int)data[5]);
+                            dump_data_packet(data);
+                            switch (data[0]) {
+                                case MorSensorCommand.IN_MORSENSOR_VERSION:
+                                    logging("MorSensor Version: %d %d %d", data[0], data[1], data[2]);
+                                    break;
+                                case MorSensorCommand.IN_FIRMWARE_VERSION:
+                                    logging("Firmware Version: %d %d %d", data[0], data[1], data[2]);
+                            }
                             break;
                     }
                 }
             });
         }
     }
-    
-    static public void logging (String message) {
+
+    public void dump_data_packet(byte[] data) {
+        logging("Receive data packet:");
+        for (int i = 0; i < 4; i++) {
+            String _ = "";
+            for (int j = 0; j < 5; j++) {
+                _ += String.format("%02X ", data[i * 5 + j]);
+            }
+            logging(_);
+        }
+    }
+
+    static private void logging (String format, Object... args) {
+        logging(String.format(format, args));
+    }
+
+    static public void logging(String message) {
         Log.i(Constants.log_tag, "[SelectMorSensorActivity] " + message);
     }
 
