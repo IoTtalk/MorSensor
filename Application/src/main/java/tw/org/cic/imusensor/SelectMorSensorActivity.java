@@ -63,8 +63,8 @@ public class SelectMorSensorActivity extends Activity {
         if (isFinishing()) {
             morsensor_idamanager.stop_searching();
             morsensor_idamanager.unsubscribe(event_subscriber);
-            morsensor_idamanager.disconnect();
-            ((MorSensorIDAManager) morsensor_idamanager).shutdown();
+//            morsensor_idamanager.disconnect();
+//            ((MorSensorIDAManager) morsensor_idamanager).shutdown();
         }
     }
 
@@ -241,14 +241,17 @@ public class SelectMorSensorActivity extends Activity {
                                     logging("Firmware Version: %d.%d.%d", data[0], data[1], data[2]);
                                     break;
                                 case MorSensorCommand.IN_SENSOR_LIST:
-                                    ArrayList<String> f_list = new ArrayList<String>();
+                                    ArrayList<String> df_list = new ArrayList<String>();
                                     for (int i = 0; i < data[1]; i++) {
                                         logging("Sensor %02X:", data[i + 2]);
                                         for (String f_name: Constants.get_feature_list_from_sensor_id(data[i + 2])) {
                                             logging("    %s", f_name);
-                                            f_list.add(f_name);
+                                            df_list.add(f_name);
                                         }
                                     }
+                                    Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
+                                    intent.putStringArrayListExtra(Constants.INTENT_EXTRA_FEATURE_LIST, df_list);
+                                    startActivity(intent);
                                     finish();
                                     break;
                             }

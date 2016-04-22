@@ -61,6 +61,12 @@ public class Utils {
     	NotificationManager notification_manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     	notification_manager.cancelAll();
     }
+
+    static public String get_wifi_ssid (Context context) {
+        final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        final WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        return wifiInfo.getSSID();
+    }
     
     static public void logging (String message) {
         Log.i(Constants.log_tag, "[Utils] " + message);
