@@ -36,7 +36,7 @@
             android:launchMode="singleTask"/>
 
         <activity
-            android:name=".ConnectionActivity"
+            android:name=".FeatureManagerActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
             android:launchMode="singleTask"/>

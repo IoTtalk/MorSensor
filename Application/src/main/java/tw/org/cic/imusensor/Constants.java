@@ -22,6 +22,8 @@ public class Constants {
     static public final int REQUEST_ENABLE_BT = 1;
     static public final int BLUETOOTH_SCANNING_PERIOD = 5000;
 
+    static public final String INFO_MORSENSOR_VERSION = "MORSENSOR_VERSION";
+    static public final String INFO_FIRMWARE_VERSION = "FIRMWARE_VERSION";
     static public final String INFO_SENSOR_LIST = "SENSOR_LIST";
 
     static public byte toByte(short s) {

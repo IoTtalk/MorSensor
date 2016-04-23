@@ -255,11 +255,13 @@ public class SelectMorSensorActivity extends Activity {
                                     String morsensor_version_str = String.format("%d.%d.%d", data[0], data[1], data[2]);
                                     logging("MorSensor Version: %s", morsensor_version_str);
                                     ((TextView)findViewById(R.id.tv_morsensor_version)).setText("MorSensor ver.:"+ morsensor_version_str);
+                                    ((MorSensorIDAManager)morsensor_idamanager).put_info(Constants.INFO_MORSENSOR_VERSION, morsensor_version_str);
                                     break;
                                 case MorSensorCommand.IN_FIRMWARE_VERSION:
                                     String firmware_version_str = String.format("%d.%d.%d", data[0], data[1], data[2]);
                                     logging("Firmware Version: %s", firmware_version_str);
                                     ((TextView)findViewById(R.id.tv_firmware_version)).setText("Firmware ver.:"+ firmware_version_str);
+                                    ((MorSensorIDAManager)morsensor_idamanager).put_info(Constants.INFO_FIRMWARE_VERSION, firmware_version_str);
                                     break;
                                 case MorSensorCommand.IN_SENSOR_LIST:
                                     ArrayList<Byte> sensor_list = new ArrayList<Byte>();

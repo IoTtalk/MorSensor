@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import DAN.DAN;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -27,7 +28,6 @@ public class SelectECActivity extends Activity {
 	final ArrayList<ECListItem> ec_endpoint_list = new ArrayList<ECListItem>();
     ArrayAdapter<ECListItem> adapter;
 	final DAN.Subscriber event_subscriber = new EventSubscriber();
-    IDAManager morsensor_idamanager;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -50,7 +50,7 @@ public class SelectECActivity extends Activity {
             	String clean_mac_addr = DAN.get_clean_mac_addr(Utils.get_mac_addr(SelectECActivity.this));
             	String EC_ENDPOINT = ec_list_item.ec_endpoint;
                 final ArrayList<String> df_list = new ArrayList<String>();
-                for (byte b: (ArrayList<Byte>)((MorSensorIDAManager) morsensor_idamanager).get_info(Constants.INFO_SENSOR_LIST)) {
+                for (byte b: (ArrayList<Byte>) MorSensorIDAManager.instance().get_info(Constants.INFO_SENSOR_LIST)) {
                     for (String df_name: Constants.get_feature_list_from_sensor_id(b)) {
                         df_list.add(df_name);
                     }
@@ -58,7 +58,7 @@ public class SelectECActivity extends Activity {
 
             	JSONObject profile = new JSONObject();
     	        try {
-    		        profile.put("d_name", "Android"+ clean_mac_addr);
+    		        profile.put("d_name", "MorSensor"+ clean_mac_addr.substring(0, 2) + clean_mac_addr.substring(10));
     		        profile.put("dm_name", Constants.dm_name);
     		        JSONArray feature_list = new JSONArray();
     		        for (String f: df_list) {
@@ -77,7 +77,6 @@ public class SelectECActivity extends Activity {
             }
         });
 
-        morsensor_idamanager = MorSensorIDAManager.instance();
         DAN.init(Constants.log_tag);
     	DAN.subscribe("Control_channel", event_subscriber);
     }
@@ -85,14 +84,15 @@ public class SelectECActivity extends Activity {
     @Override
     public void onPause () {
     	super.onPause();
-		DAN.unsubcribe(event_subscriber);
     	if (isFinishing()) {
-            morsensor_idamanager.disconnect();
-            ((MorSensorIDAManager) morsensor_idamanager).shutdown();
-
-            Utils.remove_all_notification(SelectECActivity.this);
-            DAN.deregister();
-            DAN.shutdown();
+            DAN.unsubcribe(event_subscriber);
+            if (!DAN.session_status()) {
+                MorSensorIDAManager.instance().disconnect();
+                MorSensorIDAManager.instance().shutdown();
+                Utils.remove_all_notification(SelectECActivity.this);
+                DAN.deregister();
+                DAN.shutdown();
+            }
     	}
     }
     
@@ -124,10 +124,10 @@ public class SelectECActivity extends Activity {
 				break;
 			case REGISTER_SUCCEED:
     	        Utils.show_ec_status_on_notification(SelectECActivity.this, DAN.ec_endpoint(), true);
-//	            Intent intent = new Intent(SelectECActivity.this, FeatureActivity.class);
-//	            startActivity(intent);
-//	            finish();
-				break;
+	            Intent intent = new Intent(SelectECActivity.this, FeatureManagerActivity.class);
+	            startActivity(intent);
+	            finish();
+                return;
 			default:
 				break;
 	    	}
