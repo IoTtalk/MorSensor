@@ -17,7 +17,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -326,9 +325,6 @@ public class MorSensorIDAManager extends Service implements IDAManager {
     }
 
     static class CommandSenderThread extends Thread {
-        static final int SCANNING_PERIOD = 50;
-        static final int RESEND_CYCLE = 10;
-
         static final Semaphore instance_lock = new Semaphore(1);
         static CommandSenderThread self;
 
@@ -377,7 +373,7 @@ public class MorSensorIDAManager extends Service implements IDAManager {
             try {
                 while (!outgoing_queue.isEmpty() || !ending) {
                     if (running_cycle == 0) {
-                        // check outgoing_queue every <RESEND_CYCLE> cycles
+                        // check outgoing_queue every <COMMAND_RESEND_CYCLES> cycles
                         if (!outgoing_queue.isEmpty()) {
                             // something waiting in output_queue, send one out
                             //  but keep it in queue, because it may drop
@@ -413,14 +409,14 @@ public class MorSensorIDAManager extends Service implements IDAManager {
                         fail_count += 1;
                     }
 
-                    if (fail_count >= 30 * RESEND_CYCLE) {
-                        logging("send command failed up to 100 times, abort this command");
+                    if (fail_count >= Constants.COMMAND_FAIL_RETRY * Constants.COMMAND_RESEND_CYCLES) {
+                        logging("send command failed up to %d times, abort this command", Constants.COMMAND_FAIL_RETRY);
                         outgoing_queue.take();
                         fail_count = 0;
                     }
 
-                    Thread.sleep(SCANNING_PERIOD);
-                    running_cycle = (running_cycle + 1) % RESEND_CYCLE;
+                    Thread.sleep(Constants.COMMAND_SCANNING_PERIOD);
+                    running_cycle = (running_cycle + 1) % Constants.COMMAND_RESEND_CYCLES;
                 }
             } catch (InterruptedException e) {
                 logging("CommandSenderThread.run(): InterruptedException");
