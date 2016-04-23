@@ -35,6 +35,14 @@ public class SelectECActivity extends Activity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_select_ec);
+
+        if (DAN.session_status()) {
+            logging("Already registered to EC, skip this activity");
+            Intent intent = new Intent(SelectECActivity.this, FeatureManagerActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
         
         adapter = new ECListAdapter(this, R.layout.item_ec_list, ec_endpoint_list);
         reload_ec_list();

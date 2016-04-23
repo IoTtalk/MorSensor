@@ -70,6 +70,12 @@ public class MorSensorIDAManager extends Service implements IDAManager {
         self.getApplicationContext().bindService(gattServiceIntent, ble_service_connection, Context.BIND_AUTO_CREATE);
     }
 
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
+        return START_NOT_STICKY;
+    }
+
 
     /**
      * Public API
@@ -181,6 +187,7 @@ public class MorSensorIDAManager extends Service implements IDAManager {
     public void disconnect() {
         logging("disconnect()");
         user_request_disconnect = true;
+        CommandSenderThread.instance().kill();
         bluetooth_le_service.disconnect();
     }
 
@@ -199,7 +206,6 @@ public class MorSensorIDAManager extends Service implements IDAManager {
 
     public void shutdown() {
         logging("shutdown()");
-        CommandSenderThread.instance().kill();
         self.getApplicationContext().unbindService(ble_service_connection);
         self.unregisterReceiver(gatt_update_receiver);
         self.stopSelf();
@@ -250,12 +256,22 @@ public class MorSensorIDAManager extends Service implements IDAManager {
                 return;
             }
 
+            if (init_subscriber == null) {
+                logging("init_subscriber is null");
+                self.getApplicationContext().unbindService(ble_service_connection);
+                self.stopSelf();
+                self = null;
+                return;
+            }
+
             bluetooth_le_service = ((BluetoothLeService.LocalBinder) service).getService();
 
             if (!bluetooth_le_service.initialize()) {
                 init_subscriber.on_event(EventTag.INITIALIZATION_FAILED, "Bluetooth service initialization failed");
                 bluetooth_le_service = null;
+
             } else {
+                logging("Bluetooth service initialized");
                 init_subscriber.on_event(EventTag.INITIALIZED, "Bluetooth service initialized");
                 self.subscribe(init_subscriber);
 
@@ -266,8 +282,6 @@ public class MorSensorIDAManager extends Service implements IDAManager {
                 intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
                 intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
                 self.registerReceiver(gatt_update_receiver, intentFilter);
-
-                CommandSenderThread.instance().start();
             }
         }
 
@@ -297,11 +311,12 @@ public class MorSensorIDAManager extends Service implements IDAManager {
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 get_gatt_characteristics();
+                CommandSenderThread.instance().start();
                 is_connected = true;
                 broadcast_event(EventTag.CONNECTED, target_ida);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-                logging("==== ACTION_DATA_AVAILABLE ====");
+//                logging("==== ACTION_DATA_AVAILABLE ====");
                 byte[] incoming_data = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
                 CommandSenderThread.instance().pend_in(incoming_data);
                 broadcast_event(EventTag.DATA_AVAILABLE, incoming_data);
@@ -322,11 +337,15 @@ public class MorSensorIDAManager extends Service implements IDAManager {
         final LinkedBlockingQueue<byte[]> incoming_queue =
                 new LinkedBlockingQueue<byte[]>();
         int running_cycle;
+        boolean ending;
+        int fail_count;
 
         private CommandSenderThread() {
             outgoing_queue.clear();
             incoming_queue.clear();
             running_cycle = 0;
+            ending = false;
+            fail_count = 0;
         }
 
         static public CommandSenderThread instance() {
@@ -356,14 +375,14 @@ public class MorSensorIDAManager extends Service implements IDAManager {
         public void run() {
             logging("CommandSenderThread started");
             try {
-                while (true) {
+                while (!outgoing_queue.isEmpty() || !ending) {
                     if (running_cycle == 0) {
                         // check outgoing_queue every <RESEND_CYCLE> cycles
                         if (!outgoing_queue.isEmpty()) {
-                            logging("output_queue is not empty, send command");
                             // something waiting in output_queue, send one out
                             //  but keep it in queue, because it may drop
                             byte[] outgoing_command = outgoing_queue.peek();
+                            logging("output_queue is not empty, send command %02X", outgoing_command[0]);
                             MorSensorIDAManager.self.write_gatt_characteristic.setValue(outgoing_command);
                             MorSensorIDAManager.self.bluetooth_le_service.writeCharacteristic(MorSensorIDAManager.self.write_gatt_characteristic);
                         }
@@ -374,13 +393,30 @@ public class MorSensorIDAManager extends Service implements IDAManager {
                     // To prevent starvation, I check the queue size,
                     //  and only process these commands in the queue.
                     int incoming_queue_size = incoming_queue.size();
+                    if (incoming_queue_size != 0) {
+                        logging("incoming_queue.size() = " + incoming_queue_size);
+                    }
                     for (int i = 0; i < incoming_queue_size; i++) {
                         byte[] incoming_command = incoming_queue.take();
                         if (outgoing_command != null && outgoing_command[0] == incoming_command[0]) {
                             // there is a command pending out, and that command matches its response
                             // pop it from outgoing_queue
+                            logging("response %02X received", outgoing_command[0]);
                             outgoing_queue.take();
+                            outgoing_command = null;
                         }
+                    }
+
+                    if (outgoing_command == null) {
+                        fail_count = 0;
+                    } else {
+                        fail_count += 1;
+                    }
+
+                    if (fail_count >= 30 * RESEND_CYCLE) {
+                        logging("send command failed up to 100 times, abort this command");
+                        outgoing_queue.take();
+                        fail_count = 0;
                     }
 
                     Thread.sleep(SCANNING_PERIOD);
@@ -403,6 +439,7 @@ public class MorSensorIDAManager extends Service implements IDAManager {
 
                 self.interrupt();
                 try {
+                    logging("CommandSenderThread.kill(): waiting for CommandSenderThread");
                     self.join();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -421,31 +458,31 @@ public class MorSensorIDAManager extends Service implements IDAManager {
      * Private Helper Functions
      */
 
-    static void get_gatt_characteristics() {
+    void get_gatt_characteristics() {
         for (BluetoothGattService gatt_service : self.bluetooth_le_service.getSupportedGattServices()) {
             for (BluetoothGattCharacteristic gatt_characteristic : gatt_service.getCharacteristics()) {
 
                 if (gatt_characteristic.getUuid().toString().contains("00002a37-0000-1000-8000-00805f9b34fb")) {
                     final int charaProp = gatt_characteristic.getProperties();
                     if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                        if (self.read_gatt_characteristic != null) {
-                            self.bluetooth_le_service.setCharacteristicNotification(self.read_gatt_characteristic, false);
-                            self.read_gatt_characteristic = null;
+                        if (read_gatt_characteristic != null) {
+                            bluetooth_le_service.setCharacteristicNotification(self.read_gatt_characteristic, false);
+                            read_gatt_characteristic = null;
                         }
                     }
                     if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                        self.read_gatt_characteristic = gatt_characteristic;
-                        self.bluetooth_le_service.setCharacteristicNotification(self.read_gatt_characteristic, true);
+                        read_gatt_characteristic = gatt_characteristic;
+                        bluetooth_le_service.setCharacteristicNotification(self.read_gatt_characteristic, true);
                     }
                 }
 
                 if (gatt_characteristic.getUuid().toString().contains("00001525-1212-efde-1523-785feabcd123")) {
                     final int charaProp = gatt_characteristic.getProperties();
                     if ((charaProp | BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
-                        if (self.write_gatt_characteristic != null) {
-                            self.write_gatt_characteristic = null;
+                        if (write_gatt_characteristic != null) {
+                            write_gatt_characteristic = null;
                         }
-                        self.write_gatt_characteristic = gatt_characteristic;
+                        write_gatt_characteristic = gatt_characteristic;
                     }
                 }
             }
@@ -461,12 +498,16 @@ public class MorSensorIDAManager extends Service implements IDAManager {
         return ret;
     }
 
-    static void broadcast_event(IDAManager.EventTag event_tag, Object message) {
-        synchronized (self.event_subscribers) {
-            for (Subscriber handler : self.event_subscribers) {
+    void broadcast_event(IDAManager.EventTag event_tag, Object message) {
+        synchronized (event_subscribers) {
+            for (Subscriber handler : event_subscribers) {
                 handler.on_event(event_tag, message);
             }
         }
+    }
+
+    static private void logging (String format, Object... args) {
+        logging(String.format(format, args));
     }
 
     static void logging(String message) {

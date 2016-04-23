@@ -37,6 +37,16 @@ public class SelectMorSensorActivity extends Activity {
         setContentView(R.layout.activity_select_morsensor);
         getActionBar().setTitle(R.string.title_devices);
 
+
+        morsensor_idamanager = MorSensorIDAManager.instance();
+        if (morsensor_idamanager != null && morsensor_idamanager.is_connected()) {
+            logging("Already connected to a MorSensor, skip this activity");
+            Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         adapter = new MorSensorListAdapter(this, R.layout.item_morsensor_list, morsensor_list);
 
         // show available MorSensors
@@ -197,12 +207,6 @@ public class SelectMorSensorActivity extends Activity {
                             return;
                         case INITIALIZED:
                             morsensor_idamanager = MorSensorIDAManager.instance();
-                            if (morsensor_idamanager.is_connected()) {
-                                Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
-                                startActivity(intent);
-                                finish();
-                                return;
-                            }
                             morsensor_idamanager.search();
                             break;
                         case SEARCHING_STARTED:
@@ -268,6 +272,7 @@ public class SelectMorSensorActivity extends Activity {
                                     for (int i = 0; i < data[1]; i++) {
                                         logging("Sensor %02X:", data[i + 2]);
                                         sensor_list.add(data[i + 2]);
+                                        morsensor_idamanager.write(MorSensorCommand.SetSensorStopTransmission(data[i + 2]));
                                     }
                                     ((MorSensorIDAManager)morsensor_idamanager).put_info(Constants.INFO_SENSOR_LIST, sensor_list);
                                     Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
