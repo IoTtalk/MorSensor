@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -21,6 +19,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+
+import DAN.DAN;
 
 public class SelectMorSensorActivity extends Activity {
     final ArrayList<MorSensorListItem> morsensor_list = new ArrayList<MorSensorListItem>();
@@ -48,6 +48,10 @@ public class SelectMorSensorActivity extends Activity {
                                     View view, int position, long id) {
                 morsensor_idamanager.stop_searching();
                 MorSensorListItem morsensor_item = morsensor_list.get(position);
+                TextView tv_hint = (TextView)findViewById(R.id.tv_hint);
+                tv_hint.setText(getResources().getString(R.string.connecting));
+                tv_hint.setVisibility(View.VISIBLE);
+                findViewById(R.id.ll_morsensor_info).setVisibility(View.VISIBLE);
                 morsensor_idamanager.connect(morsensor_item.ida);
             }
         });
@@ -63,15 +67,16 @@ public class SelectMorSensorActivity extends Activity {
         if (isFinishing()) {
             morsensor_idamanager.stop_searching();
             morsensor_idamanager.unsubscribe(event_subscriber);
-//            morsensor_idamanager.disconnect();
-//            ((MorSensorIDAManager) morsensor_idamanager).shutdown();
+            if (!morsensor_idamanager.is_connected()) {
+                ((MorSensorIDAManager) morsensor_idamanager).shutdown();
+            }
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // User chose not to enable Bluetooth.
-        if (requestCode == MorSensorIDAManager.REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
+        if (requestCode == Constants.REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
             finish();
             return;
         }
@@ -82,6 +87,10 @@ public class SelectMorSensorActivity extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_select_morsensor, menu);
 //        menu.findItem(R.id.item_scan).setVisible(true);
+
+        menu.add(0, Constants.MENU_ITEM_ID_DAN_VERSION, 0, "DAN Version: "+ DAN.version);
+        menu.add(0, Constants.MENU_ITEM_ID_DAI_VERSION, 0, "DAI Version: "+ Constants.version);
+        menu.add(0, Constants.MENU_ITEM_WIFI_SSID, 0, "WiFi: "+ Utils.get_wifi_ssid(getApplicationContext()));
 
         if (scan_button_neg) {
             menu.findItem(R.id.item_scan).setTitle(R.string.menu_stop_scanning);
@@ -185,15 +194,23 @@ public class SelectMorSensorActivity extends Activity {
                         case INITIALIZATION_FAILED:
                             Toast.makeText(getApplicationContext(), (String) message, Toast.LENGTH_LONG).show();
                             finish();
-                            break;
+                            return;
                         case INITIALIZED:
                             morsensor_idamanager = MorSensorIDAManager.instance();
+                            if (morsensor_idamanager.is_connected()) {
+                                Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
+                                startActivity(intent);
+                                finish();
+                                return;
+                            }
                             morsensor_idamanager.search();
                             break;
                         case SEARCHING_STARTED:
                             scan_button_neg = true;
                             invalidateOptionsMenu();
-                            findViewById(R.id.tv_searching_hint).setVisibility(View.VISIBLE);
+                            TextView tv_hint = (TextView)findViewById(R.id.tv_hint);
+                            tv_hint.setText(getResources().getString(R.string.searching));
+                            tv_hint.setVisibility(View.VISIBLE);
                             break;
                         case FOUND_NEW_IDA:
                             MorSensorIDAManager.MorSensorIDA new_found_ida = (MorSensorIDAManager.MorSensorIDA) message;
@@ -214,7 +231,7 @@ public class SelectMorSensorActivity extends Activity {
                         case SEARCHING_STOPPED:
                             scan_button_neg = false;
                             invalidateOptionsMenu();
-                            findViewById(R.id.tv_searching_hint).setVisibility(View.GONE);
+                            findViewById(R.id.tv_hint).setVisibility(View.GONE);
                             break;
                         case CONNECTION_FAILED:
                             Toast.makeText(SelectMorSensorActivity.this, (String) message, Toast.LENGTH_LONG).show();
@@ -235,25 +252,26 @@ public class SelectMorSensorActivity extends Activity {
                             dump_data_packet(data);
                             switch (data[0]) {
                                 case MorSensorCommand.IN_MORSENSOR_VERSION:
-                                    logging("MorSensor Version: %d.%d.%d", data[0], data[1], data[2]);
+                                    String morsensor_version_str = String.format("%d.%d.%d", data[0], data[1], data[2]);
+                                    logging("MorSensor Version: %s", morsensor_version_str);
+                                    ((TextView)findViewById(R.id.tv_morsensor_version)).setText("MorSensor ver.:"+ morsensor_version_str);
                                     break;
                                 case MorSensorCommand.IN_FIRMWARE_VERSION:
-                                    logging("Firmware Version: %d.%d.%d", data[0], data[1], data[2]);
+                                    String firmware_version_str = String.format("%d.%d.%d", data[0], data[1], data[2]);
+                                    logging("Firmware Version: %s", firmware_version_str);
+                                    ((TextView)findViewById(R.id.tv_firmware_version)).setText("Firmware ver.:"+ firmware_version_str);
                                     break;
                                 case MorSensorCommand.IN_SENSOR_LIST:
-                                    ArrayList<String> df_list = new ArrayList<String>();
+                                    ArrayList<Byte> sensor_list = new ArrayList<Byte>();
                                     for (int i = 0; i < data[1]; i++) {
                                         logging("Sensor %02X:", data[i + 2]);
-                                        for (String f_name: Constants.get_feature_list_from_sensor_id(data[i + 2])) {
-                                            logging("    %s", f_name);
-                                            df_list.add(f_name);
-                                        }
+                                        sensor_list.add(data[i + 2]);
                                     }
+                                    ((MorSensorIDAManager)morsensor_idamanager).put_info(Constants.INFO_SENSOR_LIST, sensor_list);
                                     Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
-                                    intent.putStringArrayListExtra(Constants.INTENT_EXTRA_FEATURE_LIST, df_list);
                                     startActivity(intent);
                                     finish();
-                                    break;
+                                    return;
                             }
                             break;
                     }

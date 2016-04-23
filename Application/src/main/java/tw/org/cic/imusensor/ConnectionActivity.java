@@ -424,7 +424,7 @@ public class ConnectionActivity extends Activity {
                     sensor_list_str += Constants.fromByte(sensor_list[i]) + " ";
                 }
 
-                /* Attach to EasyConnect */
+                /* Register to EasyConnect */
                 JSONObject profile = new JSONObject();
                 try {
                     profile.put("d_name", "MorSensor-"+ DAN.get_clean_mac_addr(mDeviceAddress).substring(8).toUpperCase());

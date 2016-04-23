@@ -30,4 +30,5 @@ public interface IDAManager {
     public void connect(IDA ida);
     public void write(byte[] command);
     public void disconnect();
+    public boolean is_connected();
 }

@@ -27,7 +27,6 @@ public class SelectECActivity extends Activity {
 	final ArrayList<ECListItem> ec_endpoint_list = new ArrayList<ECListItem>();
     ArrayAdapter<ECListItem> adapter;
 	final DAN.Subscriber event_subscriber = new EventSubscriber();
-    ArrayList<String> df_list;
     IDAManager morsensor_idamanager;
 	
     @Override
@@ -36,9 +35,6 @@ public class SelectECActivity extends Activity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_select_ec);
-
-        Bundle b = getIntent().getExtras();
-        df_list = b.getStringArrayList(Constants.INTENT_EXTRA_FEATURE_LIST);
         
         adapter = new ECListAdapter(this, R.layout.item_ec_list, ec_endpoint_list);
         reload_ec_list();
@@ -53,6 +49,13 @@ public class SelectECActivity extends Activity {
             	ECListItem ec_list_item = ec_endpoint_list.get(position);
             	String clean_mac_addr = DAN.get_clean_mac_addr(Utils.get_mac_addr(SelectECActivity.this));
             	String EC_ENDPOINT = ec_list_item.ec_endpoint;
+                final ArrayList<String> df_list = new ArrayList<String>();
+                for (byte b: (ArrayList<Byte>)((MorSensorIDAManager) morsensor_idamanager).get_info(Constants.INFO_SENSOR_LIST)) {
+                    for (String df_name: Constants.get_feature_list_from_sensor_id(b)) {
+                        df_list.add(df_name);
+                    }
+                }
+
             	JSONObject profile = new JSONObject();
     	        try {
     		        profile.put("d_name", "Android"+ clean_mac_addr);

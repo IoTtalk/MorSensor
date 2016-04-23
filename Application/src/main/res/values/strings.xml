@@ -14,6 +14,11 @@
      limitations under the License.
 -->
 <resources>
+    <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
+    <string name="searching">Searching...</string>
+    <string name="connecting">Connecting...</string>
+    <string name="collecting">Collecting...</string>
+
     <string name="ble_not_supported">BLE is not supported</string>
     <string name="label_read_data">Read Data:</string>
     <string name="label_write_data">Write Data:</string>
@@ -24,8 +29,6 @@
     <string name="connected">Connected</string>
     <string name="disconnected">Disconnected</string>
     <string name="title_devices">BLE Device Scan</string>
-    <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
-    <string name="searching">Searching...</string>
 
     <string name="unknown_device">Unknown device</string>
     <string name="unknown_characteristic">Unknown characteristic</string>
