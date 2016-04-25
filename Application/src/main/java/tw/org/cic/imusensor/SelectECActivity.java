@@ -45,7 +45,9 @@ public class SelectECActivity extends Activity {
         }
         
         adapter = new ECListAdapter(this, R.layout.item_ec_list, ec_endpoint_list);
-        reload_ec_list();
+		for (String i: DAN.available_ec()) {
+			ec_endpoint_list.add(new ECListItem(i));
+		}
 
         // show available EC ENDPOINTS
         final ListView lv_available_ec_endpoints = (ListView)findViewById(R.id.lv_available_ec_endpoints);
@@ -79,7 +81,7 @@ public class SelectECActivity extends Activity {
     			} catch (JSONException e) {
     				e.printStackTrace();
     			}
-    	        ec_list_item.connecting = true;
+				ec_list_item.status = ECListItem.Status.CONNECTING;
     	        adapter.notifyDataSetChanged();
     	        Utils.show_ec_status_on_notification(SelectECActivity.this, EC_ENDPOINT, false);
             }
@@ -118,6 +120,11 @@ public class SelectECActivity extends Activity {
     	    	});
 				break;
 			case REGISTER_FAILED:
+				for (ECListItem ec_list_item: ec_endpoint_list) {
+					if (ec_list_item.ec_endpoint == odf_object.message) {
+						ec_list_item.status = ECListItem.Status.FAILED;
+					}
+				}
 				runOnUiThread(new Thread () {
     	    		@Override
     	    		public void run () {
@@ -125,7 +132,7 @@ public class SelectECActivity extends Activity {
     							getApplicationContext(),
     							"Register to "+ odf_object.message +" failed.",
     							Toast.LENGTH_LONG).show();
-    	    	        reload_ec_list();
+						adapter.notifyDataSetChanged();
     	    		}
     	    	});
     	        Utils.remove_all_notification(SelectECActivity.this);
@@ -141,15 +148,22 @@ public class SelectECActivity extends Activity {
 	    	}
 	    }
 	}
-    
-    public class ECListItem {
-    	public String ec_endpoint;
-    	public boolean connecting;
-    	public ECListItem (String e) {
-    		this.ec_endpoint = e;
-    		this.connecting = false;
-    	}
-    }
+
+	public static class ECListItem {
+		public enum Status {
+			UNKNOWN,
+			FAILED,
+			CONNECTING,
+			// no SUCCEED needed, because once successfully connected to an EC,
+			//  there would be no reason to stay in this Activity
+		}
+		public String ec_endpoint;
+		public Status status;
+		public ECListItem (String e) {
+			this.ec_endpoint = e;
+			this.status = Status.UNKNOWN;
+		}
+	}
 
 	public class ECListAdapter extends ArrayAdapter<ECListItem> {
 	    Context context;
@@ -181,11 +195,17 @@ public class SelectECActivity extends Activity {
 	        
 	        ECListItem i = data.get(position);
 	        holder.ec_endpoint.setText(i.ec_endpoint.replace("http://", "").replace(":9999", ""));
-	        if (i.connecting) {
-		        holder.connecting.setText("...");
-	        } else {
-	        	holder.connecting.setText("");
-	        }
+			switch (i.status) {
+				case UNKNOWN:
+					holder.connecting.setText("");
+					break;
+				case FAILED:
+					holder.connecting.setText("x");
+					break;
+				case CONNECTING:
+					holder.connecting.setText("...");
+					break;
+			}
 	        return row;
 	    }
 	
@@ -193,14 +213,6 @@ public class SelectECActivity extends Activity {
 	        TextView ec_endpoint;
 	        TextView connecting;
 	    }
-	}
-	
-	public void reload_ec_list () {
-		ec_endpoint_list.clear();
-        for (String i: DAN.available_ec()) {
-        	ec_endpoint_list.add(new ECListItem(i));
-        }
-		adapter.notifyDataSetChanged();
 	}
     
     @Override
