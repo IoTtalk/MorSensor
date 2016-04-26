@@ -305,12 +305,16 @@ public class MorSensorIDAManager extends Service implements IDAManager {
                     is_connected = false;
                 } else {
                     // accidentally disconnected
+                    broadcast_event(EventTag.CONNECTION_FAILED, target_ida);
+                    bluetooth_le_service.connect(target_ida.id);
                 }
 
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 get_gatt_characteristics();
-                CommandSenderThread.instance().start();
+                if (!CommandSenderThread.instance().isAlive()) {
+                    CommandSenderThread.instance().start();
+                }
                 is_connected = true;
                 broadcast_event(EventTag.CONNECTED, target_ida);
 

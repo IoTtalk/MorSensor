@@ -70,23 +70,6 @@
         <TableLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-            <TableRow>
-                <TextView
-                    android:layout_width="0sp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="5dp"
-                    android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:text="MorSensor ID:"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:text=""
-                    android:id="@+id/tv_sensor_list"
-                    android:minWidth="60dp"/>
-            </TableRow>
 
             <TableRow>
                 <TextView
@@ -133,12 +116,18 @@
             android:layout_marginBottom="5dp"
             android:background="@android:color/darker_gray" />
 
-        <LinearLayout
-            android:orientation="vertical"
+        <TableLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/ll_feature_switches">
-        </LinearLayout>
+            android:id="@+id/tl_feature_switches">
+        </TableLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:background="@android:color/darker_gray" />
 
         <TableLayout
             android:id="@+id/table_monitor"
