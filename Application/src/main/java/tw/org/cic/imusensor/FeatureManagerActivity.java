@@ -37,10 +37,6 @@ public class FeatureManagerActivity extends Activity {
     final int indicator_light_wait = Color.rgb(180, 180, 0);
     final int indicator_light_done = Color.rgb(0, 180, 0);
 
-    static TableLayout table_monitor;
-    static HashMap<String, TextView> monitor_pool;
-    static HashMap<String, Long> timestamp_pool;
-
     final IDAManager morsensor_idamanager = MorSensorIDAManager.instance();
     final DAN.Subscriber dan_event_subscriber = new DANEventSubscriber();
     final IDAManager.Subscriber ida_event_subscriber = new IDAEventSubscriber();
@@ -53,10 +49,6 @@ public class FeatureManagerActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_feature_manager);
         logging("================== FeatureManagerActivity start ==================");
-
-        table_monitor = (TableLayout)findViewById(R.id.table_monitor);
-        monitor_pool = new HashMap<String, TextView>();
-        timestamp_pool = new HashMap<String, Long>();
 
         state = State.NORMAL;
 

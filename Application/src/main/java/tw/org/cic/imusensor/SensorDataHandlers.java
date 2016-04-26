@@ -24,18 +24,6 @@ public class SensorDataHandlers {
         final float mag_y = (float) (((short) packet[17] * 256 + (short) packet[16]) / 3.41 / 100); //Mag y
         final float mag_z = (float) (((short) packet[19] * 256 + (short) packet[18]) / 3.41 / -100); //Mag z
 
-//                FeatureManagerActivity.show_data_on_screen("Gyro x", gyro_x);
-//                FeatureManagerActivity.show_data_on_screen("Gyro y", gyro_y);
-//                FeatureManagerActivity.show_data_on_screen("Gyro z", gyro_z);
-//
-//                FeatureManagerActivity.show_data_on_screen("Acc x", acc_x);
-//                FeatureManagerActivity.show_data_on_screen("Acc y", acc_y);
-//                FeatureManagerActivity.show_data_on_screen("Acc z", acc_z);
-//
-//                FeatureManagerActivity.show_data_on_screen("Mag x", mag_x);
-//                FeatureManagerActivity.show_data_on_screen("Mag y", mag_y);
-//                FeatureManagerActivity.show_data_on_screen("Mag z", mag_z);
-
         try {
             JSONArray data = new JSONArray();
             data.put(gyro_x); data.put(gyro_y); data.put(gyro_z);
@@ -59,7 +47,6 @@ public class SensorDataHandlers {
 
     static public void sensor_handler_C0(byte[] packet) { // UV
         final float uv_data = (float) ((((short) packet[3]) * 256 + ((short) packet[2])) / 100.0);
-//                FeatureManagerActivity.show_data_on_screen("UV", uv_data);
         DAN.push("UV", uv_data);
         logging("push(\"UV\", " + uv_data + ")");
     }
@@ -68,11 +55,9 @@ public class SensorDataHandlers {
         final float temp_data = (float) (((short) packet[2] * 256 + (short) packet[3]) * 175.72 / 65536.0 - 46.85);
         final float humidity_data = (float) (((short) packet[4] * 256 + (short) packet[5]) * 125.0 / 65536.0 - 6.0);
 
-//                FeatureManagerActivity.show_data_on_screen("Temp", temp_data);
         DAN.push("Temperature", temp_data);
         logging("push(\"Temperature\", " + temp_data + ")");
 
-//                FeatureManagerActivity.show_data_on_screen("Hum", humidity_data);
         DAN.push("Humidity", humidity_data);
         logging("push(\"Humidity\", " + humidity_data + ")");
     }
