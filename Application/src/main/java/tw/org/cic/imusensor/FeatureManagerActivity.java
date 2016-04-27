@@ -1,6 +1,8 @@
 package tw.org.cic.imusensor;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,6 +10,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -41,6 +44,7 @@ public class FeatureManagerActivity extends Activity {
     final DAN.Subscriber dan_event_subscriber = new DANEventSubscriber();
     final IDAManager.Subscriber ida_event_subscriber = new IDAEventSubscriber();
     final HashSet<Byte> waiting_sensor = new HashSet<Byte>();
+    AlertDialog dialog;
     State state;
 
     @Override
@@ -51,6 +55,21 @@ public class FeatureManagerActivity extends Activity {
         logging("================== FeatureManagerActivity start ==================");
 
         state = State.NORMAL;
+        AlertDialog.Builder dialog_builder = new AlertDialog.Builder(FeatureManagerActivity.this);
+        dialog_builder.setTitle("MorSensor disconnected!");
+        dialog_builder.setMessage("Wait for it, or click \"Deregister\" button to leave");
+        dialog_builder.setPositiveButton("Deregister", new DialogInterface.OnClickListener () {
+            public void onClick (DialogInterface dialog, int id) {
+                DAN.deregister();
+                DAN.shutdown();
+                morsensor_idamanager.disconnect();
+                MorSensorIDAManager.instance().shutdown();
+                Utils.remove_all_notification(FeatureManagerActivity.this);
+                finish();
+                return;
+            }
+        });
+        dialog = dialog_builder.create();
 
         show_ec_status(true, DAN.ec_endpoint());
         ((TextView)findViewById(R.id.tv_d_name)).setText(DAN.get_d_name());
@@ -197,11 +216,13 @@ public class FeatureManagerActivity extends Activity {
                             tl_feature_switches.removeAllViews();
                         }
                     });
+                    dialog.show();
                     break;
                 case CONNECTED:
                     logging("(re)CONNECTED");
                     state = State.WAITING_FEATURE_LIST;
                     morsensor_idamanager.write(MorSensorCommand.GetSensorList());
+                    dialog.cancel();
                     break;
                 case WRITE_FAILED:
                     break;
@@ -229,6 +250,7 @@ public class FeatureManagerActivity extends Activity {
             }
         }
     }
+
 
     private void handle_sensor_data (byte[] data) {
         if (data[0] == MorSensorCommand.IN_SENSOR_DATA) {
