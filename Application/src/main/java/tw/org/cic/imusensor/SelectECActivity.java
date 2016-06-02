@@ -8,9 +8,12 @@ import org.json.JSONObject;
 
 import DAN.DAN;
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -24,7 +27,23 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class SelectECActivity extends Activity {
+public class SelectECActivity extends Activity implements ServiceConnection {
+	/* -------------------------- */
+    /* Code for ServiceConnection */
+    /* ========================== */
+	IDAapi morsensor_ida_api;
+	@Override
+	public void onServiceConnected(ComponentName name, IBinder service) {
+		morsensor_ida_api = ((MorSensorIDAapi.LocalBinder) service).getService();
+	}
+
+	@Override
+	public void onServiceDisconnected(ComponentName name) {
+		logging("onServiceDisconnected()");
+		morsensor_ida_api = null;
+	}
+	/* -------------------------- */
+
 	final ArrayList<ECListItem> ec_endpoint_list = new ArrayList<ECListItem>();
     ArrayAdapter<ECListItem> adapter;
 	final DAN.Subscriber event_subscriber = new EventSubscriber();
@@ -60,7 +79,7 @@ public class SelectECActivity extends Activity {
             	String clean_mac_addr = DAN.get_clean_mac_addr(Utils.get_mac_addr(SelectECActivity.this));
             	String EC_ENDPOINT = ec_list_item.ec_endpoint;
                 final ArrayList<String> df_list = new ArrayList<String>();
-                for (byte b: (ArrayList<Byte>) MorSensorIDAManager.instance().get_info(Constants.INFO_SENSOR_LIST)) {
+                for (byte b: (ArrayList<Byte>) ((MorSensorIDAapi)morsensor_ida_api).get_info(Constants.INFO_SENSOR_LIST)) {
                     for (String df_name: Constants.get_feature_list_from_sensor_id(b)) {
                         df_list.add(df_name);
                     }
@@ -87,8 +106,7 @@ public class SelectECActivity extends Activity {
             }
         });
 
-        DAN.init(Constants.log_tag);
-    	DAN.subscribe("Control_channel", event_subscriber);
+        DAN.init(Constants.log_tag, event_subscriber);
     }
     
     @Override
@@ -97,8 +115,8 @@ public class SelectECActivity extends Activity {
     	if (isFinishing()) {
             DAN.unsubcribe(event_subscriber);
             if (!DAN.session_status()) {
-                MorSensorIDAManager.instance().disconnect();
-                MorSensorIDAManager.instance().shutdown();
+                morsensor_ida_api.disconnect();
+//                morsensor_ida_api.shutdown();
                 Utils.remove_all_notification(SelectECActivity.this);
                 DAN.deregister();
                 DAN.shutdown();
@@ -107,8 +125,8 @@ public class SelectECActivity extends Activity {
     }
     
     class EventSubscriber extends DAN.Subscriber {
-	    public void odf_handler (final DAN.ODFObject odf_object) {
-	    	switch (odf_object.event_tag) {
+	    public void odf_handler (String feature, final DAN.ODFObject odf_object) {
+	    	switch (odf_object.event) {
 			case FOUND_NEW_EC:
 				logging("FOUND_NEW_EC: "+ odf_object.message);
 				ec_endpoint_list.add(new ECListItem(odf_object.message));

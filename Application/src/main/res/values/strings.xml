@@ -15,9 +15,10 @@
 -->
 <resources>
     <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
-    <string name="searching">Searching...</string>
-    <string name="connecting">Connecting...</string>
-    <string name="collecting">Collecting...</string>
+    <string name="searching">Searching…</string>
+    <string name="connecting">Connecting…</string>
+    <string name="collecting">Collecting…</string>
+    <string name="menu_scanning">Scanning…</string>
 
     <string name="ble_not_supported">BLE is not supported</string>
     <string name="label_read_data">Read Data:</string>
@@ -37,8 +38,7 @@
     <!-- Menu items -->
     <string name="menu_connect">Connect</string>
     <string name="menu_disconnect">Disconnect</string>
-    <string name="menu_stop_scanning">Stop</string>
-    <string name="menu_start_scanning">Scan</string>
+    <string name="menu_scan">Scan</string>
     <string name="title_activity_main2">Main2Activity</string>
 
     <string name="hello_world">Hello world!</string>

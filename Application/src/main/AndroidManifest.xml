@@ -46,7 +46,7 @@
             android:enabled="true" />
 
         <service
-            android:name=".MorSensorIDAManager"
+            android:name=".MorSensorIDAapi"
             android:enabled="true" />
 
     </application>

@@ -47,19 +47,19 @@ public class SensorDataHandlers {
 
     static public void sensor_handler_C0(byte[] packet) { // UV
         final float uv_data = (float) ((((short) packet[3]) * 256 + ((short) packet[2])) / 100.0);
-        DAN.push("UV", uv_data);
-        logging("push(\"UV\", " + uv_data + ")");
+        DAN.push("UV", new float[]{uv_data});
+        logging("push(\"UV\", [" + uv_data + "])");
     }
 
     static public void sensor_handler_80(byte[] packet) { // Temperature & Humidity
         final float temp_data = (float) (((short) packet[2] * 256 + (short) packet[3]) * 175.72 / 65536.0 - 46.85);
         final float humidity_data = (float) (((short) packet[4] * 256 + (short) packet[5]) * 125.0 / 65536.0 - 6.0);
 
-        DAN.push("Temperature", temp_data);
-        logging("push(\"Temperature\", " + temp_data + ")");
+        DAN.push("Temperature", new float[]{temp_data});
+        logging("push(\"Temperature\", [" + temp_data + "])");
 
-        DAN.push("Humidity", humidity_data);
-        logging("push(\"Humidity\", " + humidity_data + ")");
+        DAN.push("Humidity", new float[]{humidity_data});
+        logging("push(\"Humidity\", [" + humidity_data + "])");
     }
 
     static private void logging (String _) {

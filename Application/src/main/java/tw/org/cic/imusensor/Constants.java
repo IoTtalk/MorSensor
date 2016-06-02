@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Constants {
-    static public final String version = "20160423";
+    static public final String version = "20160506";
     static public final String dm_name = "MorSensor";
     static public final String u_name = "yb";
     static public final String log_tag = dm_name;
@@ -18,7 +18,7 @@ public class Constants {
     static public final int MENU_ITEM_REREGISTER = 3;
     static public final int MENU_ITEM_WIFI_SSID = 4;
 
-    /* MorSensorIDAManager related values */
+    /* MorSensorIDAapi related values */
     static public final int REQUEST_ENABLE_BT = 1;
     static public final int BLUETOOTH_SCANNING_PERIOD = 5000;
 
