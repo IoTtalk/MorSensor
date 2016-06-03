@@ -133,6 +133,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     BluetoothGattCharacteristic write_gatt_characteristic;
     BluetoothGattCharacteristic read_gatt_characteristic;
     String target_id;
+    boolean user_request_disconnect;
     final HashMap<String, Object> info = new HashMap<String, Object>();
 
     @Override
@@ -198,7 +199,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
     @Override
     public void write(String odf, JSONArray data) {
-        logging("write()");
+        logging("write(%s)", odf);
         try {
             if (odf.equals("Control")) {
                 String command = data.getString(0);
@@ -220,8 +221,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 } else {
                     /* Reports the exception to EC */
                 }
-            } else if (odf.equals("Acceleration")) {
-                /* Writes the ODF data to the IoT device */
             } else {
                 /* Reports the exception to EC */
             }
@@ -232,8 +231,8 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
     @Override
     public void disconnect() {
-//        logging("disconnect()");
-//        user_request_disconnect = true;
+        logging("disconnect()");
+        user_request_disconnect = true;
         bluetooth_le_service.disconnect();
     }
 
@@ -267,13 +266,17 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     }
 
     void send_event(Event event, String message) {
+        JSONArray args = new JSONArray();
+        args.put(message);
+        send_event(event, args);
+    }
+
+    void send_event(Event event, JSONArray args) {
         if (idf_handler_ref != null) {
             try {
                 JSONArray data = new JSONArray();
                 data.put(event.name());
                 JSONObject param2 = new JSONObject();
-                JSONArray args = new JSONArray();
-                args.put(message);
                 param2.put("args", args);
                 data.put(param2);
                 idf_handler_ref.receive("Control", data);
@@ -313,7 +316,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
 
     boolean is_connected;
-    boolean user_request_disconnect;
 
 
     /**
@@ -325,10 +327,11 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             BluetoothDevice device = result.getDevice();
-            String device_addr = device.getAddress();
-            put_info(device_addr, device.getName());
-            put_info(device_addr +"rssi", result.getRssi());
-            send_event(Event.IDA_DISCOVERED, device_addr);
+            JSONArray args = new JSONArray();
+            args.put(device.getAddress());
+            args.put(device.getName());
+            args.put(result.getRssi());
+            send_event(Event.IDA_DISCOVERED, args);
         }
     }
 
@@ -342,6 +345,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_DISCONNECTED ====");
                 if (user_request_disconnect) {
+                    // user chose to disconnect
                     is_connected = false;
                 } else {
                     // accidentally disconnected

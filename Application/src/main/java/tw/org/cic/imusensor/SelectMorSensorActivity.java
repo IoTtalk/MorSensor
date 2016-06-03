@@ -85,6 +85,7 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
     public void onPause() {
         super.onPause();
         if (isFinishing()) {
+            morsensor_ida_api.disconnect();
             unbindService(this);
 //            morsensor_ida_api.stop_searching();
 //            morsensor_ida_api.unsubscribe(event_subscriber);
@@ -143,8 +144,8 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
 
         public MorSensorListItem(String id) {
             this.id = id;
-            this.name = "<testing>";
-            this.rssi = 123;
+            this.name = "<null>";
+            this.rssi = 0;
             this.connecting = false;
         }
 
@@ -191,7 +192,7 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
             MorSensorListItem morsensor_list_item = data.get(position);
             holder.tv_name.setText(morsensor_list_item.name == null ? "<null>" : morsensor_list_item.name);
             holder.tv_addr.setText(morsensor_list_item.id);
-            holder.tv_rssi.setText("" + morsensor_list_item.rssi);
+            holder.tv_rssi.setText(String.format("%d", morsensor_list_item.rssi));
 //	        if (i.connecting) {
 //		        holder.connecting.setText("...");
 //	        } else {
@@ -209,17 +210,22 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
     }
 
     @Override
-    public void receive(String odf, JSONArray data) {
+    public void receive(final String odf, final JSONArray data) {
         try {
             if (odf.equals("Control")) {
-                final IDAapi.Event event = IDAapi.Event.valueOf(data.getString(0));
-                final String message = data.getJSONObject(1).getJSONArray("args").getString(0);
+                final String command = data.getString(0);
+                final JSONArray args = data.getJSONObject(1).getJSONArray("args");
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        switch (event) {
-                            case INITIALIZATION_FAILED:
-                                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+                        switch (command) {
+                            case "INITIALIZATION_FAILED":
+                                try {
+                                    String message = args.getString(0);
+                                    Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+                                } catch (JSONException e) {
+                                    logging("JSONException of INITIALIZATION_FAILED");
+                                }
                                 finish();
                                 return;
                             case INITIALIZATION_SUCCEEDED:
@@ -233,19 +239,25 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                 tv_hint.setVisibility(View.VISIBLE);
                                 break;
                             case IDA_DISCOVERED:
-                                MorSensorListItem morsensor_item = new MorSensorListItem(message);
-                                if (!morsensor_list.contains(morsensor_item)) {
-                                    morsensor_list.add(morsensor_item);
-                                }
+                                try {
+                                    String id = args.getString(0);
+                                    String name = args.getString(1);
+                                    int rssi = args.getInt(2);
+                                    MorSensorListItem morsensor_item = new MorSensorListItem(id);
 
-                                for (MorSensorListItem morsensor_list_item : morsensor_list) {
-                                    if (morsensor_list_item.equals(morsensor_item)) {
-                                        morsensor_list_item.rssi = (int) ((MorSensorIDAapi)morsensor_ida_api).get_info(message +"rssi");
-                                        morsensor_list_item.name = (String) ((MorSensorIDAapi)morsensor_ida_api).get_info(message);
-                                        break;
+                                    int index = morsensor_list.indexOf(morsensor_item);
+                                    if (index == -1) {
+                                        morsensor_list.add(morsensor_item);
+                                    } else {
+                                        morsensor_item = morsensor_list.get(index);
                                     }
+
+                                    morsensor_item.name = name;
+                                    morsensor_item.rssi = rssi;
+                                    adapter.notifyDataSetChanged();
+                                } catch (JSONException e) {
+                                    logging("JSONException of IDA_DISCOVERED");
                                 }
-                                adapter.notifyDataSetChanged();
                                 break;
                             case SEARCH_STOPPED:
                                 ble_scanning = false;
@@ -253,11 +265,19 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                 findViewById(R.id.tv_hint).setVisibility(View.GONE);
                                 break;
                             case CONNECTION_FAILED:
-                                Toast.makeText(SelectMorSensorActivity.this, (String) message, Toast.LENGTH_LONG).show();
+                                try {
+                                    String message = "CONNECTION_FAILED "+ args.getString(0);
+                                    Toast.makeText(SelectMorSensorActivity.this, message, Toast.LENGTH_LONG).show();
+                                } catch (JSONException e) {
+                                    logging("JSONException of CONNECTION_FAILED");
+                                }
                                 break;
                             case CONNECTION_SUCCEEDED:
+                                logging("CONNECTION_SUCCEEDED");
                                 // retrieve sensor list, then start SelectECActivity
-                                logging("write command: GetSensorList");
+                                JSONArray args = new JSONArray();
+                                args.put("GET_MORSENSOR_VERSION");
+                                morsensor_ida_api.write("Control", args);
 //                                morsensor_ida_api.write(MorSensorCommand.GetMorSensorVersion());
 //                                morsensor_ida_api.write(MorSensorCommand.GetFirmwareVersion());
 //                                morsensor_ida_api.write(MorSensorCommand.GetSensorList());
