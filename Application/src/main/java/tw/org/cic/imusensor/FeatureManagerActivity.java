@@ -180,7 +180,7 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
 //            tv_feature_names.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
 //            tv_feature_names.setTextAppearance(this, android.R.style.TextAppearance_Medium);
 //            String feature_names = "";
-//            for (String df_name: Constants.get_feature_list_from_sensor_id(sensor_id)) {
+//            for (String df_name: Constants.get_df_list(sensor_id)) {
 //                feature_names += df_name +" ";
 //            }
 //            tv_feature_names.setText(feature_names);
@@ -362,7 +362,7 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
 //            String clean_mac_addr = DAN.get_clean_mac_addr(Utils.get_mac_addr(FeatureManagerActivity.this));
 //            final ArrayList<String> df_list = new ArrayList<String>();
 //            for (byte b: (ArrayList<Byte>) MorSensorIDAapi.instance().get_info(Constants.INFO_SENSOR_LIST)) {
-//                for (String df_name: Constants.get_feature_list_from_sensor_id(b)) {
+//                for (String df_name: Constants.get_df_list(b)) {
 //                    df_list.add(df_name);
 //                }
 //            }

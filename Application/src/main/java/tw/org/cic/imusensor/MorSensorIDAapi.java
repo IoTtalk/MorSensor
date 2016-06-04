@@ -77,13 +77,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     /* ========================== */
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
-        if (user_request_disconnect) {
-            is_connected = false;
-            this.getApplicationContext().unbindService(this);
-            this.stopSelf();
-            return;
-        }
-
         if (idf_handler_ref == null) {
             logging("idf_handler_ref is null");
             this.getApplicationContext().unbindService(this);
@@ -94,13 +87,13 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         bluetooth_le_service = ((BluetoothLeService.LocalBinder) service).getService();
 
         if (!bluetooth_le_service.initialize()) {
-            send_event(Event.INITIALIZATION_FAILED, "Bluetooth service initialization failed");
+            send_event(Event.INITIALIZATION_FAILED.name(), "Bluetooth service initialization failed");
             bluetooth_le_service = null;
 
         } else {
             logging("Bluetooth service initialized");
             is_initializing = false;
-            send_event(Event.INITIALIZATION_SUCCEEDED, "Initialized");
+            send_event(Event.INITIALIZATION_SUCCEEDED.name(), "Initialized");
 
             //Register BluetoothLe Receiver
             final IntentFilter intentFilter = new IntentFilter();
@@ -132,9 +125,9 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     final GattUpdateReceiver gatt_update_receiver = new GattUpdateReceiver();
     BluetoothGattCharacteristic write_gatt_characteristic;
     BluetoothGattCharacteristic read_gatt_characteristic;
-    String target_id;
-    boolean user_request_disconnect;
-    final HashMap<String, Object> info = new HashMap<String, Object>();
+    String target_id = null;
+    final HashMap<String, Object> info = new HashMap<>();
+    final HashMap<String, Byte> feature_sensor_id_mapping = new HashMap<>();
 
     @Override
     public void init(IDFhandler idf_handler_obj, Object... args) {
@@ -147,14 +140,14 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         BluetoothAdapter bluetooth_adapter = bluetoothManager.getAdapter();
         if (bluetooth_adapter == null) {
             logging("init(): INITIALIZATION_FAILED: Bluetooth not supported");
-            send_event(Event.INITIALIZATION_FAILED, "Bluetooth not supported");
+            send_event(Event.INITIALIZATION_FAILED.name(), "Bluetooth not supported");
             return;
         }
 
         bluetooth_le_scanner = bluetooth_adapter.getBluetoothLeScanner();
         if (bluetooth_le_scanner == null) {
             logging("init(): INITIALIZATION_FAILED: Cannot get bluetooth scanner");
-            send_event(Event.INITIALIZATION_FAILED, "Cannot get bluetooth scanner");
+            send_event(Event.INITIALIZATION_FAILED.name(), "Cannot get bluetooth scanner");
             return;
         }
 
@@ -186,7 +179,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
         is_searching = true;
         bluetooth_le_scanner.startScan(scan_call_back);
-        send_event(Event.SEARCH_STARTED, "");
+        send_event(Event.SEARCH_STARTED.name(), "");
     }
 
     @Override
@@ -218,21 +211,29 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                     resume();
                 } else if (command.equals("SUSPEND")) {
                     suspend();
+                } else if (command.equals("GET_MORSENSOR_VERSION")) {
+                    command_sender_thread.pend_out(MorSensorCommand.GetMorSensorVersion());
+                } else if (command.equals("GET_FIRMWARE_VERSION")) {
+                    command_sender_thread.pend_out(MorSensorCommand.GetFirmwareVersion());
+                } else if (command.equals("GET_FEATURE_LIST")) {
+                    command_sender_thread.pend_out(MorSensorCommand.GetSensorList());
                 } else {
+                    logging("write(%s): Unknown command: %s", odf, command);
                     /* Reports the exception to EC */
                 }
             } else {
+                logging("write(%s): Unknown ODF", odf);
                 /* Reports the exception to EC */
             }
         } catch (JSONException e) {
-            logging("JSONException in write()");
+            logging("JSONException in write(%s)", odf);
         }
     }
 
     @Override
     public void disconnect() {
         logging("disconnect()");
-        user_request_disconnect = true;
+        target_id = null;
         bluetooth_le_service.disconnect();
     }
 
@@ -246,7 +247,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
         is_searching = false;
         bluetooth_le_scanner.stopScan(scan_call_back);
-        send_event(Event.SEARCH_STOPPED, "");
+        send_event(Event.SEARCH_STOPPED.name(), "");
     }
 
     void subscribe (String df_name) {
@@ -265,17 +266,17 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         //CommandSenderThread.instance().pend_out(command);
     }
 
-    void send_event(Event event, String message) {
+    void send_event(String command, String arg) {
         JSONArray args = new JSONArray();
-        args.put(message);
-        send_event(event, args);
+        args.put(arg);
+        send_event(command, args);
     }
 
-    void send_event(Event event, JSONArray args) {
+    void send_event(String command, JSONArray args) {
         if (idf_handler_ref != null) {
             try {
                 JSONArray data = new JSONArray();
-                data.put(event.name());
+                data.put(command);
                 JSONObject param2 = new JSONObject();
                 param2.put("args", args);
                 data.put(param2);
@@ -304,20 +305,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     /* --------------- */
 
 
-
-
-
-
-
-
-
-
-
-
-
-    boolean is_connected;
-
-
     /**
      * Private Helper Classes
      */
@@ -331,7 +318,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             args.put(device.getAddress());
             args.put(device.getName());
             args.put(result.getRssi());
-            send_event(Event.IDA_DISCOVERED, args);
+            send_event(Event.IDA_DISCOVERED.name(), args);
         }
     }
 
@@ -344,27 +331,43 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_DISCONNECTED ====");
-                if (user_request_disconnect) {
-                    // user chose to disconnect
-                    is_connected = false;
-                } else {
+                if (target_id != null) {
                     // accidentally disconnected
-                    send_event(Event.CONNECTION_FAILED, target_id);
+                    send_event(Event.CONNECTION_FAILED.name(), target_id);
                     bluetooth_le_service.connect(target_id);
                 }
 
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 get_characteristics();
-                is_connected = true;
-                send_event(Event.CONNECTION_SUCCEEDED, target_id);
+                send_event(Event.CONNECTION_SUCCEEDED.name(), target_id);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
 //                logging("==== ACTION_DATA_AVAILABLE ====");
-                byte[] incoming_data = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
-                command_sender_thread.pend_in(incoming_data);
-//                send_event(Event., incoming_data);
-
+                byte[] packet = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                command_sender_thread.pend_in(packet);
+                switch (packet[0]) {
+                    case MorSensorCommand.IN_MORSENSOR_VERSION:
+                        String morsensor_version = String.format("%d.%d.%d", packet[0], packet[1], packet[2]);
+                        send_event("GET_MORSENSOR_VERSION", morsensor_version);
+                        break;
+                    case MorSensorCommand.IN_FIRMWARE_VERSION:
+                        String firmware_version = String.format("%d.%d.%d", packet[0], packet[1], packet[2]);
+                        send_event("GET_FIRMWARE_VERSION", firmware_version);
+                        break;
+                    case MorSensorCommand.IN_SENSOR_LIST:
+                        JSONArray args = new JSONArray();
+                        for (int i = 0; i < packet[1]; i++) {
+                            byte sensor_id = packet[i + 2];
+                            logging("Sensor %02X:", sensor_id);
+                            for (String df_name: Constants.get_df_list(sensor_id)) {
+                                args.put(df_name);
+                            }
+                            command_sender_thread.pend_out(MorSensorCommand.SetSensorStopTransmission(sensor_id));
+                        }
+                        send_event("GET_FEATURE_LIST", args);
+                        break;
+                }
             }
         }
     }
@@ -408,6 +411,9 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                             bluetooth_le_service.writeCharacteristic(write_gatt_characteristic);
                         }
                     }
+
+                    // TODO: if target_id == null, which indicates user decided to disconnect,
+                    //  take all commands from outgoing_queue
 
                     byte[] outgoing_command = outgoing_queue.peek();
                     // MorSensor may send data at very high data rate.

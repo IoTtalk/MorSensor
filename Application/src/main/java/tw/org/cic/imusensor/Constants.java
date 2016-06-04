@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class Constants {
     static public final String version = "20160506";
@@ -42,32 +43,23 @@ public class Constants {
         return b & 0xFF;
     }
 
-    static final HashMap<Byte, String[]> sensor_id_to_feature_mapping = new HashMap<Byte, String[]>() {{
-        put(toByte(0xD0), new String[]{"Gyroscope", "Acceleration", "Magnetometer"});
-        put(toByte(0xC0), new String[]{"UV"});
-        put(toByte(0x80), new String[]{"Temperature", "Humidity"});
+    static final HashMap<String, Byte> df_name_to_sensor_id = new HashMap<String, Byte>() {{
+        put("Gyroscope",    toByte(0xD0));
+        put("Acceleration", toByte(0xD0));
+        put("Magnetometer", toByte(0xD0));
+        put("UV",           toByte(0xC0));
+        put("Temperature",  toByte(0x80));
+        put("Humidity",     toByte(0x80));
     }};
 
-    static public String[] get_feature_list_from_sensor_id(byte sensor_id) {
-        if (sensor_id_to_feature_mapping.containsKey(sensor_id)) {
-            return sensor_id_to_feature_mapping.get(sensor_id);
-        }
-        return new String[]{};
-    }
-
-    static public String[] get_feature_list_from_sensor_list(byte[] sensor_list) {
-        ArrayList<String> ret = new ArrayList<String>();
-        for (byte sensor_id : sensor_list) {
-            logging("iterate to sensor: " + sensor_id);
-            for (String n : sensor_id_to_feature_mapping.get(sensor_id)) {
-                ret.add(n);
+    static public ArrayList<String> get_df_list(byte sensor_id) {
+        ArrayList<String> ret = new ArrayList<>();
+        for (Map.Entry<String, Byte> df_name_sid: df_name_to_sensor_id.entrySet()) {
+            if (df_name_sid.getValue() == sensor_id) {
+                ret.add(df_name_sid.getKey());
             }
         }
-        return ret.toArray(new String[0]);
-    }
-
-    static public String get_feature_button_name_from_sensor(byte sensor_id) {
-        return TextUtils.join(", ", sensor_id_to_feature_mapping.get(fromByte(sensor_id)));
+        return ret;
     }
 
     private static void logging(String _) {

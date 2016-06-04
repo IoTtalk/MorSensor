@@ -78,22 +78,12 @@ public class SelectECActivity extends Activity implements ServiceConnection {
             	ECListItem ec_list_item = ec_endpoint_list.get(position);
             	String clean_mac_addr = DAN.get_clean_mac_addr(Utils.get_mac_addr(SelectECActivity.this));
             	String EC_ENDPOINT = ec_list_item.ec_endpoint;
-                final ArrayList<String> df_list = new ArrayList<String>();
-                for (byte b: (ArrayList<Byte>) ((MorSensorIDAapi)morsensor_ida_api).get_info(Constants.INFO_SENSOR_LIST)) {
-                    for (String df_name: Constants.get_feature_list_from_sensor_id(b)) {
-                        df_list.add(df_name);
-                    }
-                }
 
             	JSONObject profile = new JSONObject();
     	        try {
     		        profile.put("d_name", "MorSensor"+ clean_mac_addr.substring(0, 2) + clean_mac_addr.substring(10));
     		        profile.put("dm_name", Constants.dm_name);
-    		        JSONArray feature_list = new JSONArray();
-    		        for (String f: df_list) {
-    		        	feature_list.put(f);
-    		        }
-    		        profile.put("df_list", feature_list);
+    		        profile.put("df_list", ((MorSensorApplication) getApplication()).df_list);
     		        profile.put("u_name", Constants.u_name);
     		        profile.put("monitor", clean_mac_addr);
     	        	DAN.register(EC_ENDPOINT, clean_mac_addr, profile);
@@ -115,8 +105,9 @@ public class SelectECActivity extends Activity implements ServiceConnection {
     	if (isFinishing()) {
             DAN.unsubcribe(event_subscriber);
             if (!DAN.session_status()) {
-                morsensor_ida_api.disconnect();
-//                morsensor_ida_api.shutdown();
+                if (morsensor_ida_api != null) {
+                    morsensor_ida_api.disconnect();
+                }
                 Utils.remove_all_notification(SelectECActivity.this);
                 DAN.deregister();
                 DAN.shutdown();

@@ -23,6 +23,7 @@ import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 
@@ -49,6 +50,7 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
     final ArrayList<MorSensorListItem> morsensor_list = new ArrayList<>();
     ArrayAdapter<MorSensorListItem> adapter;
     boolean ble_scanning;
+    boolean morsensor_connected;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -85,13 +87,12 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
     public void onPause() {
         super.onPause();
         if (isFinishing()) {
-            morsensor_ida_api.disconnect();
+            ((MorSensorIDAapi)morsensor_ida_api).idf_handler_ref = null;
             unbindService(this);
-//            morsensor_ida_api.stop_searching();
-//            morsensor_ida_api.unsubscribe(event_subscriber);
-//            if (!morsensor_ida_api.is_connected()) {
-//                ((MorSensorIDAapi) morsensor_ida_api).shutdown();
-//            }
+            if (!morsensor_connected) {
+                Intent intent = new Intent(this, MorSensorIDAapi.class);
+                stopService(intent);
+            }
         }
     }
 
@@ -228,17 +229,17 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                 }
                                 finish();
                                 return;
-                            case INITIALIZATION_SUCCEEDED:
+                            case "INITIALIZATION_SUCCEEDED":
                                 morsensor_ida_api.search();
                                 break;
-                            case SEARCH_STARTED:
+                            case "SEARCH_STARTED":
                                 ble_scanning = true;
                                 invalidateOptionsMenu();
                                 TextView tv_hint = (TextView) findViewById(R.id.tv_hint);
                                 tv_hint.setText(getResources().getString(R.string.searching));
                                 tv_hint.setVisibility(View.VISIBLE);
                                 break;
-                            case IDA_DISCOVERED:
+                            case "IDA_DISCOVERED":
                                 try {
                                     String id = args.getString(0);
                                     String name = args.getString(1);
@@ -259,12 +260,12 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                     logging("JSONException of IDA_DISCOVERED");
                                 }
                                 break;
-                            case SEARCH_STOPPED:
+                            case "SEARCH_STOPPED":
                                 ble_scanning = false;
                                 invalidateOptionsMenu();
                                 findViewById(R.id.tv_hint).setVisibility(View.GONE);
                                 break;
-                            case CONNECTION_FAILED:
+                            case "CONNECTION_FAILED":
                                 try {
                                     String message = "CONNECTION_FAILED "+ args.getString(0);
                                     Toast.makeText(SelectMorSensorActivity.this, message, Toast.LENGTH_LONG).show();
@@ -272,20 +273,67 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                     logging("JSONException of CONNECTION_FAILED");
                                 }
                                 break;
-                            case CONNECTION_SUCCEEDED:
+                            case "CONNECTION_SUCCEEDED":
+                                morsensor_connected = true;
                                 logging("CONNECTION_SUCCEEDED");
-                                // retrieve sensor list, then start SelectECActivity
-                                JSONArray args = new JSONArray();
-                                args.put("GET_MORSENSOR_VERSION");
-                                morsensor_ida_api.write("Control", args);
-//                                morsensor_ida_api.write(MorSensorCommand.GetMorSensorVersion());
-//                                morsensor_ida_api.write(MorSensorCommand.GetFirmwareVersion());
-//                                morsensor_ida_api.write(MorSensorCommand.GetSensorList());
+                                try {
+                                    JSONArray write_data = new JSONArray();
+                                    write_data.put("GET_MORSENSOR_VERSION");
+                                    JSONObject write_args = new JSONObject();
+                                    write_args.put("args", new JSONArray());
+                                    write_data.put(write_args);
+                                    morsensor_ida_api.write("Control", write_data);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
                                 break;
-                            case DISCONNECTION_FAILED:
+                            case "DISCONNECTION_FAILED":
                                 break;
-                            case DISCONNECTION_SUCCEEDED:
+                            case "DISCONNECTION_SUCCEEDED":
                                 break;
+                            case "GET_MORSENSOR_VERSION":
+                                try {
+                                    String morsensor_version = args.getString(0);
+                                    logging("GET_MORSENSOR_VERSION: %s", morsensor_version);
+                                    ((TextView) findViewById(R.id.tv_morsensor_version)).setText("MorSensor ver.:" + morsensor_version);
+
+                                    JSONArray write_data = new JSONArray();
+                                    write_data.put("GET_FIRMWARE_VERSION");
+                                    JSONObject write_args = new JSONObject();
+                                    write_args.put("args", new JSONArray());
+                                    write_data.put(write_args);
+                                    morsensor_ida_api.write("Control", write_data);
+                                } catch (JSONException e) {
+                                    logging("JSONException of GET_MORSENSOR_VERSION");
+                                }
+                                break;
+                            case "GET_FIRMWARE_VERSION":
+                                try {
+                                    String firmware_version = args.getString(0);
+                                    logging("GET_FIRMWARE_VERSION: %s", firmware_version);
+                                    ((TextView) findViewById(R.id.tv_firmware_version)).setText("Firmware ver.:" + firmware_version);
+
+                                    JSONArray write_data = new JSONArray();
+                                    write_data.put("GET_FEATURE_LIST");
+                                    JSONObject write_args = new JSONObject();
+                                    write_args.put("args", new JSONArray());
+                                    write_data.put(write_args);
+                                    morsensor_ida_api.write("Control", write_data);
+                                } catch (JSONException e) {
+                                    logging("JSONException of GET_FIRMWARE_VERSION");
+                                }
+                                break;
+                            case "GET_FEATURE_LIST":
+//                                try {
+                                    logging("GET_FEATURE_LIST: %s", args.toString());
+//                                } catch (JSONException e) {
+//                                    logging("JSONException of GET_FEATURE_LIST");
+//                                }
+                                ((MorSensorApplication) getApplication()).df_list = args;
+                                Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
+                                startActivity(intent);
+                                finish();
+                                return;
                         }
                     }
                 });
