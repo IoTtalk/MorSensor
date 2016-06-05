@@ -291,10 +291,10 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                 break;
                             case "DISCONNECTION_SUCCEEDED":
                                 break;
-                            case "GET_MORSENSOR_VERSION":
+                            case "MORSENSOR_VERSION":
                                 try {
                                     String morsensor_version = args.getString(0);
-                                    logging("GET_MORSENSOR_VERSION: %s", morsensor_version);
+                                    logging("MORSENSOR_VERSION: %s", morsensor_version);
                                     ((TextView) findViewById(R.id.tv_morsensor_version)).setText("MorSensor ver.:" + morsensor_version);
 
                                     JSONArray write_data = new JSONArray();
@@ -304,13 +304,13 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                     write_data.put(write_args);
                                     morsensor_ida_api.write("Control", write_data);
                                 } catch (JSONException e) {
-                                    logging("JSONException of GET_MORSENSOR_VERSION");
+                                    logging("JSONException of MORSENSOR_VERSION");
                                 }
                                 break;
-                            case "GET_FIRMWARE_VERSION":
+                            case "FIRMWARE_VERSION":
                                 try {
                                     String firmware_version = args.getString(0);
-                                    logging("GET_FIRMWARE_VERSION: %s", firmware_version);
+                                    logging("FIRMWARE_VERSION: %s", firmware_version);
                                     ((TextView) findViewById(R.id.tv_firmware_version)).setText("Firmware ver.:" + firmware_version);
 
                                     JSONArray write_data = new JSONArray();
@@ -320,12 +320,12 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                     write_data.put(write_args);
                                     morsensor_ida_api.write("Control", write_data);
                                 } catch (JSONException e) {
-                                    logging("JSONException of GET_FIRMWARE_VERSION");
+                                    logging("JSONException of FIRMWARE_VERSION");
                                 }
                                 break;
-                            case "GET_FEATURE_LIST":
+                            case "FEATURE_LIST":
 //                                try {
-                                    logging("GET_FEATURE_LIST: %s", args.toString());
+                                    logging("FEATURE_LIST: %s", args.toString());
 //                                } catch (JSONException e) {
 //                                    logging("JSONException of GET_FEATURE_LIST");
 //                                }
