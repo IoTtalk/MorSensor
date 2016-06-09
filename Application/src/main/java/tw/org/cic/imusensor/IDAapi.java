@@ -18,13 +18,9 @@ public interface IDAapi {
     interface IDFhandler {
         void receive(String idf, JSONArray data);
     }
-    interface NetworkCommand {
-        String name();
-        void run(JSONArray args);
-    }
     void init(IDFhandler idf_handler_obj, Object... args);
+    void write(String odf, JSONArray data);
     void search();
     void connect(String id);
-    void write(String odf, JSONArray data);
     void disconnect();
 }

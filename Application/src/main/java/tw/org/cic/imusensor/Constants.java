@@ -21,7 +21,7 @@ public class Constants {
 
     /* MorSensorIDAapi related values */
     static public final int REQUEST_ENABLE_BT = 1;
-    static public final int BLUETOOTH_SCANNING_PERIOD = 5000;
+    static public final int BLUETOOTH_SCANNING_PERIOD = 10000;
 
     static public final String INFO_MORSENSOR_VERSION = "MORSENSOR_VERSION";
     static public final String INFO_FIRMWARE_VERSION = "FIRMWARE_VERSION";

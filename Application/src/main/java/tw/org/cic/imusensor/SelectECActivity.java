@@ -101,11 +101,11 @@ public class SelectECActivity extends Activity implements ServiceConnection {
     
     @Override
     public void onPause () {
-    	super.onPause();
     	if (isFinishing()) {
             DAN.unsubcribe(event_subscriber);
             if (!DAN.session_status()) {
                 if (morsensor_ida_api != null) {
+					logging("already connected to a MorSensor, disconnect");
                     morsensor_ida_api.disconnect();
                 }
                 Utils.remove_all_notification(SelectECActivity.this);
@@ -113,6 +113,7 @@ public class SelectECActivity extends Activity implements ServiceConnection {
                 DAN.shutdown();
             }
     	}
+        super.onPause();
     }
     
     class EventSubscriber extends DAN.Subscriber {

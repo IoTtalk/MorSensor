@@ -278,7 +278,7 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                 logging("CONNECTION_SUCCEEDED");
                                 try {
                                     JSONArray write_data = new JSONArray();
-                                    write_data.put("GET_MORSENSOR_VERSION");
+                                    write_data.put("MORSENSOR_VERSION");
                                     JSONObject write_args = new JSONObject();
                                     write_args.put("args", new JSONArray());
                                     write_data.put(write_args);
@@ -298,7 +298,7 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                     ((TextView) findViewById(R.id.tv_morsensor_version)).setText("MorSensor ver.:" + morsensor_version);
 
                                     JSONArray write_data = new JSONArray();
-                                    write_data.put("GET_FIRMWARE_VERSION");
+                                    write_data.put("FIRMWARE_VERSION");
                                     JSONObject write_args = new JSONObject();
                                     write_args.put("args", new JSONArray());
                                     write_data.put(write_args);
@@ -314,7 +314,7 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                     ((TextView) findViewById(R.id.tv_firmware_version)).setText("Firmware ver.:" + firmware_version);
 
                                     JSONArray write_data = new JSONArray();
-                                    write_data.put("GET_FEATURE_LIST");
+                                    write_data.put("DF_LIST");
                                     JSONObject write_args = new JSONObject();
                                     write_args.put("args", new JSONArray());
                                     write_data.put(write_args);
@@ -323,9 +323,9 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                                     logging("JSONException of FIRMWARE_VERSION");
                                 }
                                 break;
-                            case "FEATURE_LIST":
+                            case "DF_LIST":
 //                                try {
-                                    logging("FEATURE_LIST: %s", args.toString());
+                                    logging("DF_LIST: %s", args.toString());
 //                                } catch (JSONException e) {
 //                                    logging("JSONException of GET_FEATURE_LIST");
 //                                }
