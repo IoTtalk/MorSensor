@@ -23,13 +23,7 @@ public class Constants {
     static public final int REQUEST_ENABLE_BT = 1;
     static public final int BLUETOOTH_SCANNING_PERIOD = 10000;
 
-    static public final String INFO_MORSENSOR_VERSION = "MORSENSOR_VERSION";
-    static public final String INFO_FIRMWARE_VERSION = "FIRMWARE_VERSION";
-    static public final String INFO_SENSOR_LIST = "SENSOR_LIST";
-
-    static final int COMMAND_SCANNING_PERIOD = 50;
-    static final int COMMAND_RESEND_CYCLES = 10;
-    static final int COMMAND_FAIL_RETRY = 30;
+    static final int COMMAND_TIMEOUT = 1000;
 
     static public byte toByte(short s) {
         return (byte) (s & 0xFF);

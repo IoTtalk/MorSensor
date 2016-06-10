@@ -47,7 +47,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     @Override
     public void onCreate() {
         logging("onCreate()");
-        command_sender_thread.start();
     }
 
     @Override
@@ -55,16 +54,16 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         logging("onDestroy()");
         this.getApplicationContext().unbindService(this);
         this.unregisterReceiver(gatt_update_receiver);
-
-        logging("onDestroy(): cleaning command_sender_thread");
-        command_sender_thread.interrupt();
-        try {
-            logging("onDestroy(): waiting for command_sender_thread.join()");
-            command_sender_thread.join();
-        } catch (InterruptedException e) {
-            logging("onDestroy(): InterruptedException");
-        }
-        logging("onDestroy(): command_sender_thread cleaned");
+//
+//        logging("onDestroy(): cleaning command_sender_thread");
+//        command_sender_thread.interrupt();
+//        try {
+//            logging("onDestroy(): waiting for command_sender_thread.join()");
+//            command_sender_thread.join();
+//        } catch (InterruptedException e) {
+//            logging("onDestroy(): InterruptedException");
+//        }
+//        logging("onDestroy(): command_sender_thread cleaned");
     }
 
     @Override
@@ -251,19 +250,19 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     }
 
     void subscribe (String df_name) {
-        //MessageQueue.instance().pend_out(command);
+        //MessageQueue.instance().write(command);
     }
 
     void unsubscribe (String df_name) {
-        //MessageQueue.instance().pend_out(command);
+        //MessageQueue.instance().write(command);
     }
 
     void resume () {
-        //MessageQueue.instance().pend_out(command);
+        //MessageQueue.instance().write(command);
     }
 
     void suspend () {
-        //MessageQueue.instance().pend_out(command);
+        //MessageQueue.instance().write(command);
     }
 
     void send_command_to_dai (String command, String arg) {
@@ -292,7 +291,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     }
 
     void send_command_to_morsensor(byte[] command) {
-        command_sender_thread.pend_out(command);
+        command_sender_thread.write(command);
     }
 
     public void put_info(String key, Object value) {
@@ -353,93 +352,70 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
 //                logging("==== ACTION_DATA_AVAILABLE ====");
                 byte[] packet = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
-                command_sender_thread.pend_in(packet);
+                command_sender_thread.receive(packet);
                 handle_morsensor_packet(new ByteArrayInputStream(packet));
             }
         }
     }
 
-    class MessageQueue extends Thread {
-        final LinkedBlockingQueue<byte[]> outgoing_queue = new LinkedBlockingQueue<>();
-        final LinkedBlockingQueue<byte[]> incoming_queue = new LinkedBlockingQueue<>();
-        int running_cycle;
-        boolean ending;
-        int fail_count;
+    class MessageQueue {
+        final LinkedBlockingQueue<byte[]> cmd_queue = new LinkedBlockingQueue<>();
+        final Handler timer = new Handler();
+        final Runnable timeout_task = new Runnable () {
+            @Override
+            public void run () {
+                logging("Timeout!");
+                send_pending_cmd();
+            }
+        };
 
-        private MessageQueue() {
-            outgoing_queue.clear();
-            incoming_queue.clear();
-            running_cycle = 0;
-            ending = false;
-            fail_count = 0;
-        }
-
-        public void pend_out(byte[] command) {
-            outgoing_queue.add(command);
-        }
-
-        public void pend_in(byte[] command) {
-            incoming_queue.add(command);
-        }
-
-        @Override
-        public void run() {
-            logging("MessageQueue started");
+        public void write(byte[] cmd) {
+            logging("MessageQueue.write(%02X)", cmd[0]);
             try {
-                while (!outgoing_queue.isEmpty() || !ending) {
-                    if (running_cycle == 0) {
-                        // check outgoing_queue every <COMMAND_RESEND_CYCLES> cycles
-                        if (!outgoing_queue.isEmpty()) {
-                            // something waiting in output_queue, send one out
-                            //  but keep it in queue, because it may drop
-                            byte[] outgoing_command = outgoing_queue.peek();
-                            logging("output_queue is not empty, send command %02X", outgoing_command[0]);
-                            write_gatt_characteristic.setValue(outgoing_command);
-                            bluetooth_le_service.writeCharacteristic(write_gatt_characteristic);
-                        }
-                    }
-
-                    // TODO: if target_id == null, which indicates user decided to disconnect,
-                    //  take all commands from outgoing_queue
-
-                    byte[] outgoing_command = outgoing_queue.peek();
-                    // MorSensor may send data at very high data rate.
-                    // To prevent starvation, I check the queue size,
-                    //  and only process these commands in the queue.
-                    int incoming_queue_size = incoming_queue.size();
-                    if (incoming_queue_size != 0) {
-                        logging("incoming_queue.size() = " + incoming_queue_size);
-                    }
-                    for (int i = 0; i < incoming_queue_size; i++) {
-                        byte[] incoming_command = incoming_queue.take();
-                        if (outgoing_command != null && outgoing_command[0] == incoming_command[0]) {
-                            // there is a command pending out, and that command matches its response
-                            // pop it from outgoing_queue
-                            logging("response %02X received", outgoing_command[0]);
-                            outgoing_queue.take();
-                            outgoing_command = null;
-                        }
-                    }
-
-                    if (outgoing_command == null) {
-                        fail_count = 0;
-                    } else {
-                        fail_count += 1;
-                    }
-
-                    if (fail_count >= Constants.COMMAND_FAIL_RETRY * Constants.COMMAND_RESEND_CYCLES) {
-                        logging("send command failed up to %d times, abort this command", Constants.COMMAND_FAIL_RETRY);
-                        outgoing_queue.take();
-                        fail_count = 0;
-                    }
-
-                    Thread.sleep(Constants.COMMAND_SCANNING_PERIOD);
-                    running_cycle = (running_cycle + 1) % Constants.COMMAND_RESEND_CYCLES;
+                cmd_queue.put(cmd);
+                if (cmd_queue.size() == 1) {
+                    logging("MessageQueue.write(%02X): got only one command, send it", cmd[0]);
+                    send_pending_cmd();
                 }
             } catch (InterruptedException e) {
-                logging("MessageQueue.run(): InterruptedException");
+                logging("MessageQueue.write(%02X): cmd_queue full", cmd[0]);
             }
-            logging("MessageQueue ended");
+        }
+
+        public void receive(byte[] cmd) {
+            logging("MessageQueue.receive(%02X)", cmd[0]);
+            byte[] pending_cmd = cmd_queue.peek();
+            if (pending_cmd != null) {
+                if (cmd[0] == pending_cmd[0]) {
+                    logging("MessageQueue.receive(%02X): match, cancel old timer", cmd[0]);
+                    try {
+                        /* cancel the timer */
+                        timer.removeCallbacks(timeout_task);
+                        cmd_queue.take();
+
+                        /* if cmd_queue is not empty, send next command */
+                        if (!cmd_queue.isEmpty()) {
+                            logging("MessageQueue.receive(%02X): send next command", cmd[0]);
+                            send_pending_cmd();
+                        }
+                    } catch (InterruptedException e) {
+                        logging("MessageQueue.receive(): InterruptedException");
+                    }
+                }
+            }
+        }
+
+        private void send_pending_cmd () {
+            byte[] outgoing_cmd = cmd_queue.peek();
+            if (outgoing_cmd == null) {
+                logging("MessageQueue.send_pending_cmd(): [bug] no pending command");
+                return;
+            }
+            logging("MessageQueue.send_pending_cmd(): send command %02X", outgoing_cmd[0]);
+            write_gatt_characteristic.setValue(outgoing_cmd);
+            bluetooth_le_service.writeCharacteristic(write_gatt_characteristic);
+            logging("MessageQueue.send_pending_cmd(): start timer");
+            timer.postDelayed(timeout_task, Constants.COMMAND_TIMEOUT);
         }
     }
 
@@ -571,7 +547,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                         int sensor_count = reader.read();
                         for (int i = 0; i < sensor_count; i++) {
                             byte sensor_id = (byte) reader.read();
-                            logging("Sensor %02X:", sensor_id);
+                            logging("Found sensor %02X", sensor_id);
                             for (String df_name: Constants.get_df_list(sensor_id)) {
                                 df_list.put(df_name);
                             }
@@ -586,7 +562,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 public void run(JSONArray args, ByteArrayInputStream reader) {
                     if (reader == null) {
                     } else {
-                        logging("Transmission stopped: %02X", reader.read());
+                        logging("Sensor transmission stopped: %02X", reader.read());
                     }
                 }
             },
@@ -596,7 +572,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                     } else {
                         int sensor_id = reader.read();
                         int mode = reader.read();
-                        logging("Transmission Mode(%02X): %02X", sensor_id, mode);
+                        logging("Sensor transmission Mode(%02X): %d", sensor_id, mode);
                     }
                 }
             }
