@@ -29,7 +29,7 @@ import java.util.ArrayList;
 
 import DAN.DAN;
 
-public class SelectMorSensorActivity extends Activity implements ServiceConnection, IDAapi.IDFhandler {
+public class SelectMorSensorActivity extends Activity implements ServiceConnection {
     /* -------------------------- */
     /* Code for ServiceConnection */
     /* ========================== */
@@ -87,7 +87,6 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
     public void onPause() {
         super.onPause();
         if (isFinishing()) {
-            ((MorSensorIDAapi)morsensor_ida_api).idf_handler_ref = null;
             unbindService(this);
             if (!morsensor_connected) {
                 Intent intent = new Intent(this, MorSensorIDAapi.class);
@@ -210,7 +209,6 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
         }
     }
 
-    @Override
     public void receive(final String odf, final JSONArray data) {
         try {
             if (odf.equals("Control")) {

@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import DAN.DAN;
+
 public class MorSensorIDAapi extends Service implements ServiceConnection, IDAapi {
     /* -------------------------------- */
     /* Code for MorSensorIDAapi Service */
@@ -78,13 +80,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     /* ========================== */
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
-        if (idf_handler_ref == null) {
-            logging("idf_handler_ref is null");
-            this.getApplicationContext().unbindService(this);
-            this.stopSelf();
-            return;
-        }
-
         bluetooth_le_service = ((BluetoothLeService.LocalBinder) service).getService();
 
         if (!bluetooth_le_service.initialize()) {
@@ -128,7 +123,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     }
 
     static String log_tag = MorSensorIDAapi.class.getSimpleName();
-    public IDFhandler idf_handler_ref;
     BluetoothLeScanner bluetooth_le_scanner;
     final ScanCallback scan_call_back = new BLEScanCallback();
     boolean is_initializing;
@@ -143,9 +137,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     final HashMap<String, Object> info = new HashMap<>();
 
     @Override
-    public void init(IDFhandler idf_handler_obj, Object... args) {
-        idf_handler_ref = idf_handler_obj;
-
+    public void init(Object... args) {
         is_initializing = true;
 
         init_cmds();
@@ -278,15 +270,9 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             JSONObject param2 = new JSONObject();
             param2.put("args", args);
             data.put(param2);
-            send_data_to_dai("Control", data);
+            DAN.push("Control", data);
         } catch (JSONException e) {
             logging("JSONException in send_command_to_dai()");
-        }
-    }
-
-    void send_data_to_dai (String idf, JSONArray data) {
-        if (idf_handler_ref != null) {
-            idf_handler_ref.receive(idf, data);
         }
     }
 

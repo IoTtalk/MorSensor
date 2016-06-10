@@ -15,10 +15,7 @@ public interface IDAapi {
         DISCONNECTION_FAILED,
         DISCONNECTION_SUCCEEDED,
     }
-    interface IDFhandler {
-        void receive(String idf, JSONArray data);
-    }
-    void init(IDFhandler idf_handler_obj, Object... args);
+    void init(Object... args);
     void write(String odf, JSONArray data);
     void search();
     void connect(String id);

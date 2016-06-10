@@ -1,12 +1,5 @@
 package tw.org.cic.imusensor;
 
-import java.util.ArrayList;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import DAN.DAN;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -26,6 +19,13 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+
+import DAN.DAN;
 
 public class SelectECActivity extends Activity implements ServiceConnection {
 	/* -------------------------- */
