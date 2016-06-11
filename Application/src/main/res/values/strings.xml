@@ -19,6 +19,7 @@
     <string name="connecting">Connecting…</string>
     <string name="collecting">Collecting…</string>
     <string name="menu_scanning">Scanning…</string>
+    <string name="ellipses">…</string>
 
     <string name="ble_not_supported">BLE is not supported</string>
     <string name="label_read_data">Read Data:</string>

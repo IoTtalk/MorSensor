@@ -81,11 +81,10 @@
                     android:text="MorSensor Ver.:"/>
 
                 <TextView
+                    android:id="@+id/tv_morsensor_version"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:text=""
-                    android:id="@+id/tv_morsensor_version"
                     android:minWidth="60dp"/>
             </TableRow>
 
@@ -99,11 +98,10 @@
                     android:text="Firmware Ver.:"/>
 
                 <TextView
+                    android:id="@+id/tv_firmware_version"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:text=""
-                    android:id="@+id/tv_firmware_version"
                     android:minWidth="60dp"/>
             </TableRow>
 

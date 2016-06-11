@@ -15,7 +15,7 @@ public interface IDAapi {
         DISCONNECTION_FAILED,
         DISCONNECTION_SUCCEEDED,
     }
-    void init(Object... args);
+    void init();
     void write(String odf, JSONArray data);
     void search();
     void connect(String id);

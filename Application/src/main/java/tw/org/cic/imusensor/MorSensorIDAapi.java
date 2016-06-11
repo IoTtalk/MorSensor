@@ -18,18 +18,15 @@ import android.content.ServiceConnection;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import DAN.DAN;
 
 public class MorSensorIDAapi extends Service implements ServiceConnection, IDAapi {
     /* -------------------------------- */
@@ -56,16 +53,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         logging("onDestroy()");
         this.getApplicationContext().unbindService(this);
         this.unregisterReceiver(gatt_update_receiver);
-//
-//        logging("onDestroy(): cleaning command_sender_thread");
-//        command_sender_thread.interrupt();
-//        try {
-//            logging("onDestroy(): waiting for command_sender_thread.join()");
-//            command_sender_thread.join();
-//        } catch (InterruptedException e) {
-//            logging("onDestroy(): InterruptedException");
-//        }
-//        logging("onDestroy(): command_sender_thread cleaned");
     }
 
     @Override
@@ -83,13 +70,13 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         bluetooth_le_service = ((BluetoothLeService.LocalBinder) service).getService();
 
         if (!bluetooth_le_service.initialize()) {
-            send_command_to_dai(Event.INITIALIZATION_FAILED.name(), "Bluetooth service initialization failed");
+            display_info(Event.INITIALIZATION_FAILED.name(), "Bluetooth service initialization failed");
             bluetooth_le_service = null;
 
         } else {
             logging("Bluetooth service initialized");
             is_initializing = false;
-            send_command_to_dai(Event.INITIALIZATION_SUCCEEDED.name(), "Initialized");
+            display_info(Event.INITIALIZATION_SUCCEEDED.name());
 
             //Register BluetoothLe Receiver
             final IntentFilter intentFilter = new IntentFilter();
@@ -98,6 +85,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
             intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
             this.registerReceiver(gatt_update_receiver, intentFilter);
+            this.search();
         }
     }
 
@@ -108,6 +96,38 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         bluetooth_le_service = null;
     }
     /* -------------------------- */
+
+    /* ------------------------------- */
+    /* Code for MorSensorInfoDisplayer */
+    /* =============================== */
+    static abstract class AbstactMorSensorInfoDisplayer extends Handler {
+        class Information {
+            String key;
+            Object[] values;
+            public Information(String key, Object... values) {
+                this.key = key;
+                this.values = values;
+            }
+        }
+        final public void input_info (String key, Object... values) {
+            Message msg_obj = this.obtainMessage();
+            msg_obj.obj = new Information(key, values);
+            this.sendMessage(msg_obj);
+        }
+        @Override
+        final public void handleMessage (Message msg) {
+            Information info = (Information) msg.obj;
+            display(info.key, info.values);
+        }
+        abstract public void display (String key, Object... values);
+    }
+    public AbstactMorSensorInfoDisplayer morsensor_info_displayer;
+    public void display_info (String key, Object... values) {
+        if (morsensor_info_displayer != null) {
+            morsensor_info_displayer.input_info(key, values);
+        }
+    }
+    /* ------------------------------- */
 
     static abstract class Command {
         public Command(String name, int... opcodes) {
@@ -128,16 +148,19 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     boolean is_initializing;
     boolean is_searching;
     final Handler searching_auto_stop_timer = new Handler();
-    final MessageQueue command_sender_thread = new MessageQueue();
+    final MessageQueue message_queue = new MessageQueue();
     BluetoothLeService bluetooth_le_service;
     final GattUpdateReceiver gatt_update_receiver = new GattUpdateReceiver();
     BluetoothGattCharacteristic write_gatt_characteristic;
     BluetoothGattCharacteristic read_gatt_characteristic;
     String target_id = null;
-    final HashMap<String, Object> info = new HashMap<>();
+    byte[] sensor_list;
+    boolean[] selected;
+    boolean[] status_responsed;
+    boolean suspended;
 
     @Override
-    public void init(Object... args) {
+    public void init() {
         is_initializing = true;
 
         init_cmds();
@@ -147,14 +170,14 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         BluetoothAdapter bluetooth_adapter = bluetoothManager.getAdapter();
         if (bluetooth_adapter == null) {
             logging("init(): INITIALIZATION_FAILED: Bluetooth not supported");
-            send_command_to_dai(Event.INITIALIZATION_FAILED.name(), "Bluetooth not supported");
+            display_info(Event.INITIALIZATION_FAILED.name(), "Bluetooth not supported");
             return;
         }
 
         bluetooth_le_scanner = bluetooth_adapter.getBluetoothLeScanner();
         if (bluetooth_le_scanner == null) {
             logging("init(): INITIALIZATION_FAILED: Cannot get bluetooth scanner");
-            send_command_to_dai(Event.INITIALIZATION_FAILED.name(), "Cannot get bluetooth scanner");
+            display_info(Event.INITIALIZATION_FAILED.name(), "Cannot get bluetooth scanner");
             return;
         }
 
@@ -186,7 +209,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
         is_searching = true;
         bluetooth_le_scanner.startScan(scan_call_back);
-        send_command_to_dai(Event.SEARCH_STARTED.name(), "");
+        display_info(Event.SEARCH_STARTED.name());
     }
 
     @Override
@@ -217,7 +240,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 /* Reports the exception to EC */
             }
         } catch (JSONException e) {
-            logging("JSONException in write(%s)", odf);
+            logging("write(%s): JSONException", odf);
         }
     }
 
@@ -238,54 +261,30 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
         is_searching = false;
         bluetooth_le_scanner.stopScan(scan_call_back);
-        send_command_to_dai(Event.SEARCH_STOPPED.name(), "");
+        display_info(Event.SEARCH_STOPPED.name());
     }
 
-    void subscribe (String df_name) {
-        //MessageQueue.instance().write(command);
-    }
-
-    void unsubscribe (String df_name) {
-        //MessageQueue.instance().write(command);
-    }
-
-    void resume () {
-        //MessageQueue.instance().write(command);
-    }
-
-    void suspend () {
-        //MessageQueue.instance().write(command);
-    }
-
-    void send_command_to_dai (String command, String arg) {
-        JSONArray args = new JSONArray();
-        args.put(arg);
-        send_command_to_dai(command, args);
-    }
-
-    void send_command_to_dai (String command, JSONArray args) {
-        try {
-            JSONArray data = new JSONArray();
-            data.put(command);
-            JSONObject param2 = new JSONObject();
-            param2.put("args", args);
-            data.put(param2);
-            DAN.push("Control", data);
-        } catch (JSONException e) {
-            logging("JSONException in send_command_to_dai()");
-        }
-    }
+//    void send_command_to_iottalk (String command, String arg) {
+//        JSONArray args = new JSONArray();
+//        args.put(arg);
+//        send_command_to_iottalk(command, args);
+//    }
+//
+//    void send_command_to_iottalk (String command, JSONArray args) {
+//        try {
+//            JSONArray data = new JSONArray();
+//            data.put(command);
+//            JSONObject param2 = new JSONObject();
+//            param2.put("args", args);
+//            data.put(param2);
+//            DAN.push("Control", data);
+//        } catch (JSONException e) {
+//            logging("send_command_to_iottalk(): JSONException");
+//        }
+//    }
 
     void send_command_to_morsensor(byte[] command) {
-        command_sender_thread.write(command);
-    }
-
-    public void put_info(String key, Object value) {
-        info.put(key, value);
-    }
-
-    public Object get_info(String key) {
-        return info.get(key);
+        message_queue.write(command);
     }
 
     static private void logging (String format, Object... args) {
@@ -307,11 +306,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             BluetoothDevice device = result.getDevice();
-            JSONArray args = new JSONArray();
-            args.put(device.getAddress());
-            args.put(device.getName());
-            args.put(result.getRssi());
-            send_command_to_dai(Event.IDA_DISCOVERED.name(), args);
+            display_info(Event.IDA_DISCOVERED.name(), device.getAddress(), device.getName(), result.getRssi());
         }
     }
 
@@ -326,20 +321,22 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 logging("==== ACTION_GATT_DISCONNECTED ====");
                 if (target_id != null) {
                     // accidentally disconnected
-                    send_command_to_dai(Event.CONNECTION_FAILED.name(), target_id);
+                    display_info(Event.CONNECTION_FAILED.name(), target_id);
                     bluetooth_le_service.connect(target_id);
                 }
 
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 get_characteristics();
-                send_command_to_dai(Event.CONNECTION_SUCCEEDED.name(), target_id);
+                display_info(Event.CONNECTION_SUCCEEDED.name(), target_id);
+                send_command_to_morsensor(MorSensorCommand.GetMorSensorVersion());
+                send_command_to_morsensor(MorSensorCommand.GetFirmwareVersion());
+                send_command_to_morsensor(MorSensorCommand.GetSensorList());
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
 //                logging("==== ACTION_DATA_AVAILABLE ====");
                 byte[] packet = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
-                command_sender_thread.receive(packet);
-                handle_morsensor_packet(new ByteArrayInputStream(packet));
+                message_queue.receive(packet);
             }
         }
     }
@@ -355,25 +352,25 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             }
         };
 
-        public void write(byte[] cmd) {
-            logging("MessageQueue.write(%02X)", cmd[0]);
+        public void write(byte[] packet) {
+            logging("MessageQueue.write(%02X)", packet[0]);
             try {
-                cmd_queue.put(cmd);
+                cmd_queue.put(packet);
                 if (cmd_queue.size() == 1) {
-                    logging("MessageQueue.write(%02X): got only one command, send it", cmd[0]);
+                    logging("MessageQueue.write(%02X): got only one command, send it", packet[0]);
                     send_pending_cmd();
                 }
             } catch (InterruptedException e) {
-                logging("MessageQueue.write(%02X): cmd_queue full", cmd[0]);
+                logging("MessageQueue.write(%02X): cmd_queue full", packet[0]);
             }
         }
 
-        public void receive(byte[] cmd) {
-            logging("MessageQueue.receive(%02X)", cmd[0]);
+        public void receive(byte[] packet) {
+            logging("MessageQueue.receive(%02X)", packet[0]);
             byte[] pending_cmd = cmd_queue.peek();
             if (pending_cmd != null) {
-                if (cmd[0] == pending_cmd[0]) {
-                    logging("MessageQueue.receive(%02X): match, cancel old timer", cmd[0]);
+                if (packet[0] == pending_cmd[0]) {
+                    logging("MessageQueue.receive(%02X): match, cancel old timer", packet[0]);
                     try {
                         /* cancel the timer */
                         timer.removeCallbacks(timeout_task);
@@ -381,7 +378,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
                         /* if cmd_queue is not empty, send next command */
                         if (!cmd_queue.isEmpty()) {
-                            logging("MessageQueue.receive(%02X): send next command", cmd[0]);
+                            logging("MessageQueue.receive(%02X): send next command", packet[0]);
                             send_pending_cmd();
                         }
                     } catch (InterruptedException e) {
@@ -389,6 +386,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                     }
                 }
             }
+            handle_morsensor_packet(new ByteArrayInputStream(packet));
         }
 
         private void send_pending_cmd () {
@@ -490,11 +488,38 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                         try {
                             String flags = args.getString(0);
                             logging("DF_STATUS: %s", flags);
+                            for (int i = 0; i < flags.length(); i++) {
+                                if (flags.charAt(i) == '1') {
+                                    selected[i] = true;
+                                } else {
+                                    selected[i] = false;
+                                }
+                            }
                         } catch (JSONException e) {
-                            logging("JSONException in DF_STATUS");
+                            logging("DF_STATUS: JSONException");
                         }
                     } else {
-
+                    }
+                }
+            },
+            new Command("RESUME") {
+                @Override
+                public void run(JSONArray args, ByteArrayInputStream reader) {
+                    if (reader == null) {
+                        suspended = false;
+                    } else {
+                    }
+                }
+            },
+            new Command("SUSPEND") {
+                @Override
+                public void run(JSONArray args, ByteArrayInputStream reader) {
+                    if (reader == null) {
+                        suspended = true;
+                        for (byte sensor_id: sensor_list) {
+                            send_command_to_morsensor(MorSensorCommand.SetSensorStopTransmission(sensor_id));
+                        }
+                    } else {
                     }
                 }
             },
@@ -507,7 +532,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                         int minor = reader.read();
                         int patch = reader.read();
                         String morsensor_version = String.format("%d.%d.%d", major, minor, patch);
-                        send_command_to_dai("MORSENSOR_VERSION", morsensor_version);
+                        display_info("MORSENSOR_VERSION", morsensor_version);
                     }
                 }
             },
@@ -520,7 +545,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                         int minor = reader.read();
                         int patch = reader.read();
                         String firmware_version = String.format("%d.%d.%d", major, minor, patch);
-                        send_command_to_dai("FIRMWARE_VERSION", firmware_version);
+                        display_info("FIRMWARE_VERSION", firmware_version);
                     }
                 }
             },
@@ -531,8 +556,10 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                     } else {
                         JSONArray df_list = new JSONArray();
                         int sensor_count = reader.read();
+                        sensor_list = new byte[sensor_count];
                         for (int i = 0; i < sensor_count; i++) {
                             byte sensor_id = (byte) reader.read();
+                            sensor_list[i] = sensor_id;
                             logging("Found sensor %02X", sensor_id);
                             for (String df_name: Constants.get_df_list(sensor_id)) {
                                 df_list.put(df_name);
@@ -540,7 +567,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                             send_command_to_morsensor(MorSensorCommand.SetSensorStopTransmission(sensor_id));
                             send_command_to_morsensor(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_id));
                         }
-                        send_command_to_dai("DF_LIST", df_list);
+                        display_info("DF_LIST", df_list);
                     }
                 }
             },

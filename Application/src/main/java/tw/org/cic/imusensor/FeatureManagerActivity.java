@@ -3,7 +3,9 @@ package tw.org.cic.imusensor;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -27,7 +29,7 @@ import java.util.HashSet;
 
 import DAN.DAN;
 
-public class FeatureManagerActivity extends Activity implements ServiceConnection, IDAapi.IDFhandler {
+public class FeatureManagerActivity extends Activity implements ServiceConnection {
     /* -------------------------- */
     /* Code for ServiceConnection */
     /* ========================== */
@@ -35,8 +37,6 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         morsensor_ida_api = ((MorSensorIDAapi.LocalBinder) service).getService();
-//        morsensor_ida_api.init(this);
-        ((MorSensorIDAapi)morsensor_ida_api).idf_handler_ref = this;
     }
 
     @Override
@@ -46,15 +46,14 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
     }
     /* -------------------------- */
 
-
-    @Override
-    public void receive(String odf, JSONArray data) {
-        if (odf.equals("Contorl")) {
+    class MorSensorInfoDisplayer extends MorSensorIDAapi.AbstactMorSensorInfoDisplayer {
+        @Override
+        public void display(String key, Object... values) {
 
         }
     }
 
-    enum State {
+        enum State {
         NORMAL,
         DISCONNECTING,
         RECONNECTING,
@@ -78,69 +77,57 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_feature_manager);
         logging("================== FeatureManagerActivity start ==================");
-//
-//        state = State.NORMAL;
-//        AlertDialog.Builder dialog_builder = new AlertDialog.Builder(FeatureManagerActivity.this);
-//        dialog_builder.setTitle("MorSensor disconnected!");
-//        dialog_builder.setMessage("Wait for it, or click \"Deregister\" button to leave");
-//        dialog_builder.setPositiveButton("Deregister", new DialogInterface.OnClickListener () {
-//            public void onClick (DialogInterface dialog, int id) {
-//                DAN.deregister();
-//                DAN.shutdown();
-//                morsensor_ida_api.disconnect();
-////                MorSensorIDAapi.instance().shutdown();
-//                Utils.remove_all_notification(FeatureManagerActivity.this);
-//                finish();
-//                return;
-//            }
-//        });
-//        dialog = dialog_builder.create();
-//
-//        show_ec_status(true, DAN.ec_endpoint());
-//        ((TextView)findViewById(R.id.tv_d_name)).setText(DAN.get_d_name());
-//
-//        String morsensor_version_str = (String) MorSensorIDAapi.instance().get_info(Constants.INFO_MORSENSOR_VERSION);
-//        ((TextView)findViewById(R.id.tv_morsensor_version)).setText(morsensor_version_str);
-//
-//        String firmware_version_str = (String) MorSensorIDAapi.instance().get_info(Constants.INFO_FIRMWARE_VERSION);
-//        ((TextView)findViewById(R.id.tv_firmware_version)).setText(firmware_version_str);
-//
+
+        state = State.NORMAL;
+        AlertDialog.Builder dialog_builder = new AlertDialog.Builder(FeatureManagerActivity.this);
+        dialog_builder.setTitle("MorSensor disconnected!");
+        dialog_builder.setMessage("Wait for it, or click \"Deregister\" button to leave");
+        dialog_builder.setPositiveButton("Deregister", new DialogInterface.OnClickListener () {
+            public void onClick (DialogInterface dialog, int id) {
+                finish();
+            }
+        });
+        dialog = dialog_builder.create();
+
+        show_ec_status(true, DAN.ec_endpoint());
+        ((TextView)findViewById(R.id.tv_d_name)).setText(DAN.get_d_name());
+
+        String morsensor_version_str = ((MorSensorApplication) getApplication()).morsensor_version;
+        ((TextView)findViewById(R.id.tv_morsensor_version)).setText(morsensor_version_str);
+
+        String firmware_version_str = ((MorSensorApplication) getApplication()).firmware_version;
+        ((TextView)findViewById(R.id.tv_firmware_version)).setText(firmware_version_str);
+
 //        setup_feature_switches();
-//
-//        final Button btn_deregister = (Button)findViewById(R.id.btn_deregister);
-//        btn_deregister.setOnClickListener(new View.OnClickListener () {
-//            @Override
-//            public void onClick (View v) {
-//                btn_deregister.setText("Disconnecting");
-//                DAN.deregister();
-//                DAN.shutdown();
-//                if (state == State.DISCONNECTING || state == State.RECONNECTING) {
-//                    morsensor_idamanager.disconnect();
-//                    MorSensorIDAapi.instance().shutdown();
-//                    Utils.remove_all_notification(FeatureManagerActivity.this);
-//                    finish();
-//                    return;
-//                } else {
-//                    for (byte sensor_id: (ArrayList<Byte>) MorSensorIDAapi.instance().get_info(Constants.INFO_SENSOR_LIST)) {
-//                        morsensor_idamanager.write(MorSensorCommand.SetSensorStopTransmission(sensor_id));
-//                        waiting_sensor.add(sensor_id);
-//                        set_indicator(sensor_id, indicator_light_wait);
-//                    }
-//                    state = State.DISCONNECTING;
-//                }
-//            }
-//        });
-//
-//        DAN.subscribe("Control_channel", dan_event_subscriber);
-//        morsensor_idamanager.subscribe(ida_event_subscriber);
+
+        final Button btn_deregister = (Button)findViewById(R.id.btn_deregister);
+        btn_deregister.setOnClickListener(new View.OnClickListener () {
+            @Override
+            public void onClick (View v) {
+                finish();
+            }
+        });
+
+        Intent intent = new Intent(this, MorSensorIDAapi.class);
+        startService(intent);
+        bindService(intent, this, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     public void onPause () {
         super.onPause();
-//        DAN.unsubcribe(dan_event_subscriber);
+        if (isFinishing()) {
+            DAN.deregister();
+            DAN.shutdown();
+            Utils.remove_all_notification(FeatureManagerActivity.this);
+            if (morsensor_ida_api != null) {
+                morsensor_ida_api.disconnect();
+                Intent intent = new Intent(this, MorSensorIDAapi.class);
+                stopService(intent);
+            }
+        }
     }
-//
+
 //    private void setup_feature_switches() {
 //        TableLayout tl_feature_switches = (TableLayout)findViewById(R.id.tl_feature_switches);
 //
@@ -190,24 +177,24 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
 //            tl_feature_switches.addView(tr);
 //        }
 //    }
-//
-//    public void show_ec_status (boolean status, String host) {
-//        ((TextView)findViewById(R.id.tv_ec_endpoint)).setText(host);
-//        TextView tv_ec_host_status = (TextView)findViewById(R.id.tv_ec_status);
-//        String status_str;
-//        int status_color;
-//        if (status) {
-//            status_str = "~";
-//            status_color = Color.rgb(0, 128, 0);
-//        } else {
-//            status_str = "x";
-//            status_color = Color.rgb(128, 0, 0);
-//        }
-//
-//        tv_ec_host_status.setText(status_str);
-//        tv_ec_host_status.setTextColor(status_color);
-//    }
-//
+
+    public void show_ec_status (boolean status, String host) {
+        ((TextView)findViewById(R.id.tv_ec_endpoint)).setText(host);
+        TextView tv_ec_host_status = (TextView)findViewById(R.id.tv_ec_status);
+        String status_str;
+        int status_color;
+        if (status) {
+            status_str = "~";
+            status_color = Color.rgb(0, 128, 0);
+        } else {
+            status_str = "x";
+            status_color = Color.rgb(128, 0, 0);
+        }
+
+        tv_ec_host_status.setText(status_str);
+        tv_ec_host_status.setTextColor(status_color);
+    }
+
 //    class DANEventSubscriber extends DAN.Subscriber {
 //        public void odf_handler (String feature, final DAN.ODFObject odf_object) {
 //            runOnUiThread(new Thread () {

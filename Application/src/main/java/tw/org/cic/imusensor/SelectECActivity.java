@@ -67,6 +67,7 @@ public class SelectECActivity extends Activity implements ServiceConnection {
 		for (String i: DAN.available_ec()) {
 			ec_endpoint_list.add(new ECListItem(i));
 		}
+        ec_endpoint_list.add(new ECListItem("http://140.113.215.10:9999"));
 
         // show available EC ENDPOINTS
         final ListView lv_available_ec_endpoints = (ListView)findViewById(R.id.lv_available_ec_endpoints);

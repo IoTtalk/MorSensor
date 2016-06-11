@@ -6,4 +6,6 @@ import org.json.JSONArray;
 
 public class MorSensorApplication extends Application {
     JSONArray df_list;
+    String morsensor_version;
+    String firmware_version;
 }
