@@ -3,8 +3,8 @@ package tw.org.cic.imusensor;
 
 import android.util.Log;
 
-public class MorSensorCommand {
-//    protected static final String TAG = "MorSensorCommand";
+public class MorSensorCommandTable {
+//    protected static final String TAG = "MorSensorCommandTable";
     protected static final String TAG = "MorSensor";
 
     public static final int MAX_COMMAND_LENGTH = 20;

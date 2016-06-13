@@ -15,7 +15,7 @@ Please fill out either the individual or corporate Contributor License Agreement
     (https://developers.google.com/open-source/cla/corporate).
 
 Follow either of the two links above to access the appropriate CLA and
-instructions for how to sign and return it. Once we receive it, we'll be able to
+instructions for how to sign and return it. Once we push it, we'll be able to
 accept your pull requests.
 
 ## Contributing A Patch

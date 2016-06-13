@@ -256,6 +256,7 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                 case "CONNECTION_SUCCEEDED":
                     morsensor_connected = true;
                     message = "CONNECTION_SUCCEEDED: "+ values[0];
+                    ((MorSensorApplication) getApplication()).d_id = (String) values[0];
                     Toast.makeText(SelectMorSensorActivity.this, message, Toast.LENGTH_LONG).show();
                     break;
                 case "MORSENSOR_VERSION":
@@ -273,6 +274,7 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                 case "DF_LIST":
                     logging("DF_LIST: %s", values[0]);
                     ((MorSensorApplication) getApplication()).df_list = (JSONArray)(values[0]);
+                    ((MorSensorApplication) getApplication()).df_list.put("Control");
                     Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
                     startActivity(intent);
                     finish();

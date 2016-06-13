@@ -37,6 +37,12 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         morsensor_ida_api = ((MorSensorIDAapi.LocalBinder) service).getService();
+        DAN.subscribe("Control", new DAN.Subscriber() {
+            @Override
+            public void odf_handler(String odf, DAN.ODFObject odf_object) {
+                morsensor_ida_api.write(odf, odf_object.data);
+            }
+        });
     }
 
     @Override
@@ -46,14 +52,14 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
     }
     /* -------------------------- */
 
-    class MorSensorInfoDisplayer extends MorSensorIDAapi.AbstactMorSensorInfoDisplayer {
+    static class MorSensorInfoDisplayer extends MorSensorIDAapi.AbstactMorSensorInfoDisplayer {
         @Override
         public void display(String key, Object... values) {
 
         }
     }
 
-        enum State {
+    enum State {
         NORMAL,
         DISCONNECTING,
         RECONNECTING,
@@ -65,9 +71,6 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
     final int indicator_light_off = Color.rgb(255, 0, 255);
     final int indicator_light_wait = Color.rgb(180, 180, 0);
     final int indicator_light_done = Color.rgb(0, 180, 0);
-
-//    final DAN.Subscriber dan_event_subscriber = new DANEventSubscriber();
-    final HashSet<Byte> waiting_sensor = new HashSet<Byte>();
     AlertDialog dialog;
     State state;
 
@@ -122,7 +125,9 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
             Utils.remove_all_notification(FeatureManagerActivity.this);
             if (morsensor_ida_api != null) {
                 morsensor_ida_api.disconnect();
+
                 Intent intent = new Intent(this, MorSensorIDAapi.class);
+                unbindService(this);
                 stopService(intent);
             }
         }
@@ -145,11 +150,11 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
 //                    logging("Feature button %02X clicked", sensor_id);
 //                    if (isChecked) {
 //                        // The toggle is now enabled
-//                        morsensor_idamanager.write(MorSensorCommand.SetSensorTransmissionModeContinuous(sensor_id));
-//                        morsensor_idamanager.write(MorSensorCommand.RetrieveSensorData(sensor_id));
+//                        morsensor_idamanager.write(MorSensorCommandTable.SetSensorTransmissionModeContinuous(sensor_id));
+//                        morsensor_idamanager.write(MorSensorCommandTable.RetrieveSensorData(sensor_id));
 //                    } else {
 //                        // The toggle is now disabled
-//                        morsensor_idamanager.write(MorSensorCommand.SetSensorStopTransmission(sensor_id));
+//                        morsensor_idamanager.write(MorSensorCommandTable.SetSensorStopTransmission(sensor_id));
 //                    }
 //                }
 //            });
@@ -233,7 +238,7 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
 //                case CONNECTED:
 //                    logging("(re)CONNECTED");
 //                    state = State.WAITING_FEATURE_LIST;
-//                    morsensor_idamanager.write(MorSensorCommand.GetSensorList());
+//                    morsensor_idamanager.write(MorSensorCommandTable.GetSensorList());
 //                    dialog.cancel();
 //                    break;
 //                case WRITE_FAILED:
@@ -245,7 +250,7 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
 //                            handle_sensor_data(data);
 //                            break;
 //                        case DISCONNECTING:
-//                            if (data[0] == MorSensorCommand.IN_STOP_TRANSMISSION) {
+//                            if (data[0] == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
 //                                handle_sensor_stop(data[1]);
 //                            }
 //                            break;
@@ -265,7 +270,7 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
 //
 //
 //    private void handle_sensor_data (byte[] data) {
-//        if (data[0] == MorSensorCommand.IN_SENSOR_DATA) {
+//        if (data[0] == MorSensorCommandTable.IN_SENSOR_DATA) {
 //            switch (Constants.fromByte(data[1])) {
 //                case 0xD0:
 //                    SensorDataHandlers.sensor_handler_D0(data);
@@ -327,12 +332,12 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
 //    }
 //
 //    private void handle_sensor_list (byte[] data) {
-//        if (data[0] == MorSensorCommand.IN_SENSOR_LIST) {
+//        if (data[0] == MorSensorCommandTable.IN_SENSOR_LIST) {
 //            ArrayList<Byte> sensor_list = new ArrayList<Byte>();
 //            for (int i = 0; i < data[1]; i++) {
-//                logging("Sensor %02X:", data[i + 2]);
+//                logging("IDFhandler %02X:", data[i + 2]);
 //                sensor_list.add(data[i + 2]);
-//                morsensor_idamanager.write(MorSensorCommand.SetSensorStopTransmission(data[i + 2]));
+//                morsensor_idamanager.write(MorSensorCommandTable.SetSensorStopTransmission(data[i + 2]));
 //            }
 //            ((MorSensorIDAapi) morsensor_idamanager).put_info(Constants.INFO_SENSOR_LIST, sensor_list);
 //
