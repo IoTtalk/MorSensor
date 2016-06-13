@@ -33,6 +33,35 @@ import java.util.concurrent.LinkedBlockingQueue;
 import DAN.DAN;
 
 public class MorSensorIDAapi extends Service implements ServiceConnection, IDAapi {
+    static abstract class IDFhandler {
+        public IDFhandler(int sensor_id) {
+            this.sensor_id = (byte) sensor_id;
+        }
+        public byte sensor_id;
+        abstract public void push(ByteArrayInputStream reader);
+    }
+
+    static abstract class IDF {
+        public IDF (String name) {
+            this.name = name;
+        }
+        public String name;
+        abstract public void push(byte[] bytes);
+    }
+
+    static abstract class Command {
+        public Command(String name, int... opcodes) {
+            this.name = name;
+            this.opcodes = new byte[opcodes.length];
+            for (int i = 0; i < opcodes.length; i++) {
+                this.opcodes[i] = (byte) opcodes[i];
+            }
+        }
+        public String name;
+        public byte[] opcodes;
+        abstract public void run (JSONArray args, ByteArrayInputStream reader);
+    }
+
     /* -------------------------------- */
     /* Code for MorSensorIDAapi Service */
     /* ================================ */
@@ -132,35 +161,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         }
     }
     /* ------------------------------- */
-
-    static abstract class Command {
-        public Command(String name, int... opcodes) {
-            this.name = name;
-            this.opcodes = new byte[opcodes.length];
-            for (int i = 0; i < opcodes.length; i++) {
-                this.opcodes[i] = (byte) opcodes[i];
-            }
-        }
-        public String name;
-        public byte[] opcodes;
-        abstract public void run (JSONArray args, ByteArrayInputStream reader);
-    }
-
-    static abstract class IDFhandler {
-        public IDFhandler(int sensor_id) {
-            this.sensor_id = (byte) sensor_id;
-        }
-        public byte sensor_id;
-        abstract public void push(ByteArrayInputStream reader);
-    }
-
-    static abstract class IDF {
-        public IDF (String name) {
-            this.name = name;
-        }
-        public String name;
-        abstract public void push(byte[] bytes);
-    }
 
     static String log_tag = MorSensorIDAapi.class.getSimpleName();
     BluetoothLeScanner bluetooth_le_scanner;
@@ -356,9 +356,9 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 get_characteristics();
                 display_info(Event.CONNECTION_SUCCEEDED.name(), target_id);
-                get_command_by_name("MORSENSOR_VERSION").run(null, null);
-                get_command_by_name("FIRMWARE_VERSION").run(null, null);
-                get_command_by_name("DF_LIST").run(null, null);
+                get_cmd_by_name("MORSENSOR_VERSION").run(null, null);
+                get_cmd_by_name("FIRMWARE_VERSION").run(null, null);
+                get_cmd_by_name("DF_LIST").run(null, null);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
 //                logging("==== ACTION_DATA_AVAILABLE ====");
@@ -519,13 +519,13 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     }
 
     final ArrayList<Command> cmd_list = new ArrayList<>();
-    private void add_commands(Command... cmds) {
+    private void add_cmds(Command... cmds) {
         for (Command cmd: cmds) {
             cmd_list.add(cmd);
         }
     }
 
-    Command get_command_by_name (String name) {
+    Command get_cmd_by_name(String name) {
         for (Command cmd: cmd_list) {
             if (name.equals(cmd.name)) {
                 return cmd;
@@ -561,7 +561,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     /* Commands */
     /* ======== */
     private void init_cmds () {
-        add_commands(
+        add_cmds(
             new Command("DF_STATUS") {
                 @Override
                 public void run(JSONArray args, ByteArrayInputStream reader) {
