@@ -37,25 +37,6 @@ public class Constants {
         return b & 0xFF;
     }
 
-    static final HashMap<String, Byte> df_name_to_sensor_id = new HashMap<String, Byte>() {{
-        put("Gyroscope",    toByte(0xD0));
-        put("Acceleration", toByte(0xD0));
-        put("Magnetometer", toByte(0xD0));
-        put("UV",           toByte(0xC0));
-        put("Temperature",  toByte(0x80));
-        put("Humidity",     toByte(0x80));
-    }};
-
-    static public ArrayList<String> get_df_list(byte sensor_id) {
-        ArrayList<String> ret = new ArrayList<>();
-        for (Map.Entry<String, Byte> df_name_sid: df_name_to_sensor_id.entrySet()) {
-            if (df_name_sid.getValue() == sensor_id) {
-                ret.add(df_name_sid.getKey());
-            }
-        }
-        return ret;
-    }
-
     private static void logging(String _) {
         Log.i(Constants.log_tag, "[Constants.java]" + _);
     }

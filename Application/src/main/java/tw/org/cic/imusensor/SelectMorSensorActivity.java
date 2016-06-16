@@ -261,20 +261,16 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                     break;
                 case "MORSENSOR_VERSION":
                     String morsensor_version = (String)(values[0]);
-                    ((MorSensorApplication) getApplication()).morsensor_version = morsensor_version;
                     logging("MORSENSOR_VERSION: %s", morsensor_version);
                     ((TextView) findViewById(R.id.tv_morsensor_version)).setText(morsensor_version);
                     break;
                 case "FIRMWARE_VERSION":
                     String firmware_version = (String)(values[0]);
-                    ((MorSensorApplication) getApplication()).firmware_version = firmware_version;
                     logging("FIRMWARE_VERSION: %s", firmware_version);
                     ((TextView) findViewById(R.id.tv_firmware_version)).setText(firmware_version);
                     break;
                 case "DF_LIST":
                     logging("DF_LIST: %s", values[0]);
-                    ((MorSensorApplication) getApplication()).df_list = (JSONArray)(values[0]);
-                    ((MorSensorApplication) getApplication()).df_list.put("Control");
                     Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
                     startActivity(intent);
                     finish();

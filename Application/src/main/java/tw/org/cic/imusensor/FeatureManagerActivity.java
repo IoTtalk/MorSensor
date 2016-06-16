@@ -37,7 +37,7 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         morsensor_ida_api = ((MorSensorIDAapi.LocalBinder) service).getService();
-        DAN.subscribe("Control", new DAN.Subscriber() {
+        DAN.subscribe("__Ctl_O__", new DAN.Subscriber() {
             @Override
             public void odf_handler(String odf, DAN.ODFObject odf_object) {
                 morsensor_ida_api.write(odf, odf_object.data);

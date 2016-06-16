@@ -47,6 +47,7 @@ public class SelectECActivity extends Activity implements ServiceConnection {
 	final ArrayList<ECListItem> ec_endpoint_list = new ArrayList<ECListItem>();
     ArrayAdapter<ECListItem> adapter;
 	final DAN.Subscriber event_subscriber = new EventSubscriber();
+	MorSensorApplication global_information;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -54,6 +55,7 @@ public class SelectECActivity extends Activity implements ServiceConnection {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_select_ec);
+        global_information = (MorSensorApplication)getApplication();
 
         if (DAN.session_status()) {
             logging("Already registered to EC, skip this activity");
@@ -77,14 +79,14 @@ public class SelectECActivity extends Activity implements ServiceConnection {
             public void onItemClick(AdapterView<?> parent,
                     View view, int position, long id) {
             	ECListItem ec_list_item = ec_endpoint_list.get(position);
-				String morsensor_d_id = DAN.get_clean_mac_addr(((MorSensorApplication) getApplication()).d_id);
+				String morsensor_d_id = DAN.get_clean_mac_addr(global_information.d_id);
             	String EC_ENDPOINT = ec_list_item.ec_endpoint;
 
             	JSONObject profile = new JSONObject();
     	        try {
     		        profile.put("d_name", "MorSensor"+ morsensor_d_id.substring(0, 2) + morsensor_d_id.substring(10));
     		        profile.put("dm_name", Constants.dm_name);
-    		        profile.put("df_list", ((MorSensorApplication) getApplication()).df_list);
+    		        profile.put("df_list", global_information.df_list);
     		        profile.put("u_name", Constants.u_name);
     		        profile.put("monitor", morsensor_d_id);
     	        	DAN.register(EC_ENDPOINT, morsensor_d_id, profile);
