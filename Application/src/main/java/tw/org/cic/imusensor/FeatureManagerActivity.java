@@ -37,6 +37,7 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         morsensor_ida_api = ((MorSensorIDAapi.LocalBinder) service).getService();
+        ((MorSensorIDAapi)morsensor_ida_api).morsensor_info_displayer = new MorSensorInfoDisplayer();
         DAN.subscribe("__Ctl_O__", new DAN.Subscriber() {
             @Override
             public void odf_handler(String odf, DAN.ODFObject odf_object) {
@@ -55,15 +56,15 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
     static class MorSensorInfoDisplayer extends MorSensorIDAapi.AbstactMorSensorInfoDisplayer {
         @Override
         public void display(String key, Object... values) {
-
+            switch (key) {
+                case "CONNECTION_FAILED":
+                    dialog.show();
+                    break;
+                case "MORSENSOR_OK":
+                    dialog.cancel();
+                    break;
+            }
         }
-    }
-
-    enum State {
-        NORMAL,
-        DISCONNECTING,
-        RECONNECTING,
-        WAITING_FEATURE_LIST,
     }
 
     final String indicator_prefix = "indicator_";
@@ -71,8 +72,7 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
     final int indicator_light_off = Color.rgb(255, 0, 255);
     final int indicator_light_wait = Color.rgb(180, 180, 0);
     final int indicator_light_done = Color.rgb(0, 180, 0);
-    AlertDialog dialog;
-    State state;
+    static AlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,7 +81,6 @@ public class FeatureManagerActivity extends Activity implements ServiceConnectio
         setContentView(R.layout.activity_feature_manager);
         logging("================== FeatureManagerActivity start ==================");
 
-        state = State.NORMAL;
         AlertDialog.Builder dialog_builder = new AlertDialog.Builder(FeatureManagerActivity.this);
         dialog_builder.setTitle("MorSensor disconnected!");
         dialog_builder.setMessage("Wait for it, or click \"Deregister\" button to leave");

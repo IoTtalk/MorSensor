@@ -269,8 +269,7 @@ public class SelectMorSensorActivity extends Activity implements ServiceConnecti
                     logging("FIRMWARE_VERSION: %s", firmware_version);
                     ((TextView) findViewById(R.id.tv_firmware_version)).setText(firmware_version);
                     break;
-                case "DF_LIST":
-                    logging("DF_LIST: %s", values[0]);
+                case "MORSENSOR_OK":
                     Intent intent = new Intent(SelectMorSensorActivity.this, SelectECActivity.class);
                     startActivity(intent);
                     finish();

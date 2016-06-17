@@ -40,7 +40,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         }
         public byte sensor_id;
         public String[] df_list;
-        abstract public void push(ByteArrayInputStream reader);
+        abstract public void push(ByteArrayInputStream ul_cmd_params);
     }
 
     static abstract class IDF {
@@ -71,7 +71,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         }
         public String name;
         public byte[] opcodes;
-        abstract public void run (JSONArray args, ByteArrayInputStream reader);
+        abstract public void run (JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params);
     }
 
     /* -------------------------------- */
@@ -96,6 +96,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     @Override
     public void onDestroy () {
         logging("onDestroy()");
+        global_information.df_list = null;
         this.getApplicationContext().unbindService(this);
         this.unregisterReceiver(gatt_update_receiver);
     }
@@ -263,10 +264,10 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         try {
             if (odf.equals("__Ctl_O__")) {
                 String cmd_name = data.getString(0);
-                JSONArray cmd_params = data.getJSONObject(1).getJSONArray("cmd_params");
+                JSONArray dl_cmd_params = data.getJSONObject(1).getJSONArray("cmd_params");
                 for (Command cmd: cmd_list) {
                     if (cmd_name.equals(cmd.name)) {
-                        cmd.run(cmd_params, null);
+                        cmd.run(dl_cmd_params, null);
                         return;
                     }
                 }
@@ -302,10 +303,10 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         display_info(Event.SEARCH_STOPPED.name());
     }
 
-    void send_cmd_to_iottalk(String cmd, String cmd_params) {
-        JSONArray args = new JSONArray();
-        args.put(cmd_params);
-        send_cmd_to_iottalk(cmd, args);
+    void send_cmd_to_iottalk(String cmd, String cmd_param) {
+        JSONArray cmd_params = new JSONArray();
+        cmd_params.put(cmd_param);
+        send_cmd_to_iottalk(cmd, cmd_params);
     }
 
     void send_cmd_to_iottalk(final String cmd, final JSONArray cmd_params) {
@@ -376,7 +377,6 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 get_cmd("GET_DF_LIST").run(new JSONArray(), null);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-//                logging("==== ACTION_DATA_AVAILABLE ====");
                 byte[] packet = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
                 message_queue.receive(packet);
             }
@@ -436,15 +436,15 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 }
             }
 
-            int i_opcode = icmd[0];
+            byte i_opcode = icmd[0];
             for (Command cmd: cmd_list) {
                 for (byte cmd_opcode: cmd.opcodes) {
                     if (cmd_opcode == i_opcode) {
                         if (source.equals(cmd.name)) {
-                            ByteArrayInputStream reader = new ByteArrayInputStream(icmd);
-                            cmd.run(null, reader);
+                            ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(icmd);
+                            cmd.run(null, ul_cmd_params);
                             try {
-                                reader.close();
+                                ul_cmd_params.close();
                             } catch (IOException e) {
                                 logging("MessageQueue.push(%02X): IOException", icmd[0]);
                             }
@@ -582,21 +582,21 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         add_idf_handlers(
             new IDFhandler(0xD0, "Gyroscope", "Acceleration", "Magnetometer") {
                 @Override
-                public void push(ByteArrayInputStream reader) {
+                public void push(ByteArrayInputStream ul_cmd_params) {
                     byte[] bytes = new byte[6];
-                    reader.read(bytes, 0, 6);
+                    ul_cmd_params.read(bytes, 0, 6);
                     IDF gyro_idf = get_idf("Gyroscope");
                     if (gyro_idf.selected) {
                         gyro_idf.push(bytes);
                     }
 
-                    reader.read(bytes, 0, 6);
+                    ul_cmd_params.read(bytes, 0, 6);
                     IDF acc_idf = get_idf("Acceleration");
                     if (acc_idf.selected) {
                         acc_idf.push(bytes);
                     }
 
-                    reader.read(bytes, 0, 6);
+                    ul_cmd_params.read(bytes, 0, 6);
                     IDF mag_idf = get_idf("Magnetometer");
                     if (mag_idf.selected) {
                         mag_idf.push(bytes);
@@ -605,9 +605,9 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             },
             new IDFhandler(0xC0, "UV") {
                 @Override
-                public void push(ByteArrayInputStream reader) {
+                public void push(ByteArrayInputStream ul_cmd_params) {
                     byte[] bytes = new byte[2];
-                    reader.read(bytes, 0, 2);
+                    ul_cmd_params.read(bytes, 0, 2);
                     IDF uv_idf = get_idf("UV");
                     if (uv_idf.selected) {
                         uv_idf.push(bytes);
@@ -616,15 +616,15 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             },
             new IDFhandler(0x80, "Temperature", "Humidity") {
                 @Override
-                public void push(ByteArrayInputStream reader) {
+                public void push(ByteArrayInputStream ul_cmd_params) {
                     byte[] bytes = new byte[2];
-                    reader.read(bytes, 0, 2);
+                    ul_cmd_params.read(bytes, 0, 2);
                     IDF temp_idf = get_idf("Temperature");
                     if (temp_idf.selected) {
                         temp_idf.push(bytes);
                     }
 
-                    reader.read(bytes, 0, 2);
+                    ul_cmd_params.read(bytes, 0, 2);
                     IDF hum_idf = get_idf("Humidity");
                     if (hum_idf.selected) {
                         hum_idf.push(bytes);
@@ -735,10 +735,10 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         add_cmds(
             new Command("SET_DF_STATUS", MorSensorCommandTable.IN_SENSOR_DATA, MorSensorCommandTable.IN_STOP_TRANSMISSION) {
                 @Override
-                public void run(JSONArray args, ByteArrayInputStream reader) {
-                    if (reader == null) {
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
                         try {
-                            String flags = args.getString(0);
+                            String flags = dl_cmd_params.getString(0);
                             for (int i = 0; i < flags.length(); i++) {
                                 String df_name = global_information.df_list.getString(i);
                                 IDF idf = get_idf(df_name);
@@ -781,8 +781,8 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                         }
                     } else {
                         try {
-                            byte opcode = (byte) reader.read();
-                            byte sensor_id = (byte) reader.read();
+                            byte opcode = (byte) ul_cmd_params.read();
+                            byte sensor_id = (byte) ul_cmd_params.read();
                             logging("SET_DF_STATUS_RSP: %02X %02X", opcode, sensor_id);
                             for (int i = 0; i < sensor_list.length; i++) {
                                 if (sensor_id == sensor_list[i]) {
@@ -817,12 +817,8 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             },
             new Command("RESUME", MorSensorCommandTable.IN_SENSOR_DATA) {
                 @Override
-                public void run(JSONArray args, ByteArrayInputStream reader) {
-                    if (reader == null) {
-                        if (!suspended) {
-                            send_cmd_to_iottalk("RESUME_RSP", "OK");
-                            return;
-                        }
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
                         suspended = false;
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_activate[i]) {
@@ -836,8 +832,8 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                             send_cmd_to_iottalk("RESUME_RSP", "OK");
                         }
                     } else {
-                        byte opcode = (byte) reader.read();
-                        byte sensor_id = (byte) reader.read();
+                        byte opcode = (byte) ul_cmd_params.read();
+                        byte sensor_id = (byte) ul_cmd_params.read();
                         logging("RESUME_RSP: %02X %02X", opcode, sensor_id);
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_id == sensor_list[i]) {
@@ -855,12 +851,8 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             },
             new Command("SUSPEND", MorSensorCommandTable.IN_STOP_TRANSMISSION) {
                 @Override
-                public void run(JSONArray args, ByteArrayInputStream reader) {
-                    if (reader == null) {
-                        if (suspended) {
-                            send_cmd_to_iottalk("SUSPEND_RSP", "OK");
-                            return;
-                        }
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
                         suspended = true;
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_activate[i]) {
@@ -874,16 +866,20 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                             send_cmd_to_iottalk("SUSPEND_RSP", "OK");
                         }
                     } else {
-                        byte opcode = (byte) reader.read();
-                        byte sensor_id = (byte) reader.read();
+                        byte opcode = (byte) ul_cmd_params.read();
+                        byte sensor_id = (byte) ul_cmd_params.read();
                         logging("SUSPEND_RSP: %02X %02X", opcode, sensor_id);
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_id == sensor_list[i]) {
-                                if (!sensor_activate[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
+                                logging("sensor_id, index: "+ sensor_id +", "+ i);
+                                if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
                                     sensor_responded[i] = true;
                                 }
                                 break;
                             }
+                        }
+                        for (int i = 0; i < sensor_activate.length; i++) {
+                            logging("a, r: "+ sensor_activate[i] +", "+ sensor_responded[i]);
                         }
                         if (all(sensor_responded)) {
                             send_cmd_to_iottalk("SUSPEND_RSP", "OK");
@@ -892,14 +888,14 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 }
             },
             new Command("MORSENSOR_VERSION", MorSensorCommandTable.IN_MORSENSOR_VERSION) {
-                public void run(JSONArray args, ByteArrayInputStream reader) {
-                    if (reader == null) {
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
                         send_cmd_to_morsensor("MORSENSOR_VERSION", MorSensorCommandTable.GetMorSensorVersion());
                     } else {
-                        byte opcode = (byte) reader.read();
-                        int major = reader.read();
-                        int minor = reader.read();
-                        int patch = reader.read();
+                        byte opcode = (byte) ul_cmd_params.read();
+                        int major = ul_cmd_params.read();
+                        int minor = ul_cmd_params.read();
+                        int patch = ul_cmd_params.read();
                         String morsensor_version = String.format("%d.%d.%d", major, minor, patch);
                         global_information.morsensor_version = morsensor_version;
                         display_info("MORSENSOR_VERSION", morsensor_version);
@@ -907,14 +903,14 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 }
             },
             new Command("FIRMWARE_VERSION", MorSensorCommandTable.IN_FIRMWARE_VERSION) {
-                public void run(JSONArray args, ByteArrayInputStream reader) {
-                    if (reader == null) {
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
                         send_cmd_to_morsensor("FIRMWARE_VERSION", MorSensorCommandTable.GetFirmwareVersion());
                     } else {
-                        byte opcode = (byte) reader.read();
-                        int major = reader.read();
-                        int minor = reader.read();
-                        int patch = reader.read();
+                        byte opcode = (byte) ul_cmd_params.read();
+                        int major = ul_cmd_params.read();
+                        int minor = ul_cmd_params.read();
+                        int patch = ul_cmd_params.read();
                         String firmware_version = String.format("%d.%d.%d", major, minor, patch);
                         global_information.firmware_version = firmware_version;
                         display_info("FIRMWARE_VERSION", firmware_version);
@@ -922,44 +918,50 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 }
             },
             new Command("GET_DF_LIST", MorSensorCommandTable.IN_SENSOR_LIST) {
-                public void run(JSONArray args, ByteArrayInputStream reader) {
-                    if (reader == null) {
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
                         send_cmd_to_morsensor("GET_DF_LIST", MorSensorCommandTable.GetSensorList());
                     } else {
-                        byte opcode = (byte) reader.read();
-                        int sensor_count = reader.read();
-                        global_information.df_list = new JSONArray();
+                        byte opcode = (byte) ul_cmd_params.read();
+                        int sensor_count = ul_cmd_params.read();
+                        JSONArray df_list = new JSONArray();
                         sensor_list = new byte[sensor_count];
-                        sensor_activate = new boolean[sensor_count];
-                        sensor_responded = new boolean[sensor_count];
                         for (int i = 0; i < sensor_count; i++) {
-                            byte sensor_id = (byte) reader.read();
+                            byte sensor_id = (byte) ul_cmd_params.read();
                             sensor_list[i] = sensor_id;
                             logging("Found sensor %02X", sensor_id);
                             for (String df_name: get_idf_handler(sensor_id).df_list) {
-                                global_information.df_list.put(df_name);
+                                df_list.put(df_name);
                             }
                             send_cmd_to_morsensor(MorSensorCommandTable.SetSensorStopTransmission(sensor_id));
                             send_cmd_to_morsensor(MorSensorCommandTable.SetSensorTransmissionModeContinuous(sensor_id));
                         }
-                        global_information.df_list.put("__Ctl_I__");
-                        global_information.df_list.put("__Ctl_O__");
-                        display_info("DF_LIST", global_information.df_list);
+                        df_list.put("__Ctl_I__");
+                        df_list.put("__Ctl_O__");
+                        logging(df_list.toString());
+                        if (global_information.df_list == null) {
+                            global_information.df_list = df_list;
+                            sensor_activate = new boolean[sensor_count];
+                            sensor_responded = new boolean[sensor_count];
+                        } else {
+                            get_cmd("RESUME").run(new JSONArray(), null);
+                        }
+                        display_info("MORSENSOR_OK");
                     }
                 }
             },
             new Command("", MorSensorCommandTable.IN_SENSOR_DATA) {
                 @Override
-                public void run(JSONArray args, ByteArrayInputStream reader) {
-                    if (reader == null) {
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
                     } else {
                         if (!DAN.session_status()) {
                             return;
                         }
-                        byte opcode = (byte) reader.read();
-                        byte sensor_id = (byte) reader.read();
+                        byte opcode = (byte) ul_cmd_params.read();
+                        byte sensor_id = (byte) ul_cmd_params.read();
                         logging("Sensor data from %02X", sensor_id);
-                        get_idf_handler(sensor_id).push(reader);
+                        get_idf_handler(sensor_id).push(ul_cmd_params);
                     }
                 }
             }
