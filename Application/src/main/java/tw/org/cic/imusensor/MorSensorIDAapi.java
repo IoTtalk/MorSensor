@@ -396,10 +396,10 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         };
 
         public void write(String source, byte[] packet) {
-            logging("MessageQueue.write(%02X)", packet[0]);
+            logging("MessageQueue.write('%s', %02X)", source, packet[0]);
             try {
-                ocmd_queue.put(packet);
                 source_queue.put(source);
+                ocmd_queue.put(packet);
                 if (ocmd_queue.size() == 1) {
                     logging("MessageQueue.write(%02X): got only one command, send it", packet[0]);
                     send_ocmd();
@@ -410,7 +410,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         }
 
         public void receive(byte[] icmd) {
-            logging("MessageQueue.push(%02X)", icmd[0]);
+            logging("MessageQueue.receive(%02X)", icmd[0]);
             byte[] ocmd = ocmd_queue.peek();
             String source = source_queue.peek();
             if (source == null) {
@@ -418,20 +418,20 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             }
             if (ocmd != null) {
                 if (opcode_match(ocmd, icmd)) {
-                    logging("MessageQueue.push(%02X): match, cancel old timer", icmd[0]);
+                    logging("MessageQueue.receive(%02X): match, cancel old timer", icmd[0]);
                     try {
                         /* cancel the timer */
                         timer.removeCallbacks(timeout_task);
-                        ocmd_queue.take();
                         source_queue.take();
+                        ocmd_queue.take();
 
                         /* if ocmd_queue is not empty, send next command */
                         if (!ocmd_queue.isEmpty()) {
-                            logging("MessageQueue.push(%02X): send next command", icmd[0]);
+                            logging("MessageQueue.receive(%02X): send next command", icmd[0]);
                             send_ocmd();
                         }
                     } catch (InterruptedException e) {
-                        logging("MessageQueue.push(): InterruptedException");
+                        logging("MessageQueue.receive(): InterruptedException");
                     }
                 }
             }
@@ -439,22 +439,20 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             byte i_opcode = icmd[0];
             for (Command cmd: cmd_list) {
                 for (byte cmd_opcode: cmd.opcodes) {
-                    if (cmd_opcode == i_opcode) {
-                        if (source.equals(cmd.name)) {
-                            ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(icmd);
-                            cmd.run(null, ul_cmd_params);
-                            try {
-                                ul_cmd_params.close();
-                            } catch (IOException e) {
-                                logging("MessageQueue.push(%02X): IOException", icmd[0]);
-                            }
-                            return;
+                    if (cmd_opcode == i_opcode && source.equals(cmd.name)) {
+                        ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(icmd);
+                        cmd.run(null, ul_cmd_params);
+                        try {
+                            ul_cmd_params.close();
+                        } catch (IOException e) {
+                            logging("MessageQueue.receive(%02X): IOException", icmd[0]);
                         }
+                        return;
                     }
                 }
             }
 
-            logging("MessageQueue.push(%02X): Unknown MorSensor command:", i_opcode);
+            logging("MessageQueue.receive(%02X): Unknown MorSensor command:", i_opcode);
             for (int i = 0; i < 5; i++) {
                 String s = "    ";
                 for (int j = 0; j < 4; j++) {
@@ -868,18 +866,13 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                     } else {
                         byte opcode = (byte) ul_cmd_params.read();
                         byte sensor_id = (byte) ul_cmd_params.read();
-                        logging("SUSPEND_RSP: %02X %02X", opcode, sensor_id);
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_id == sensor_list[i]) {
-                                logging("sensor_id, index: "+ sensor_id +", "+ i);
                                 if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
                                     sensor_responded[i] = true;
                                 }
                                 break;
                             }
-                        }
-                        for (int i = 0; i < sensor_activate.length; i++) {
-                            logging("a, r: "+ sensor_activate[i] +", "+ sensor_responded[i]);
                         }
                         if (all(sensor_responded)) {
                             send_cmd_to_iottalk("SUSPEND_RSP", "OK");
