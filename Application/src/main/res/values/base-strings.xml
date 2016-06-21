@@ -15,7 +15,7 @@
  limitations under the License.
 -->
 <resources>
-    <string name="app_name">MorSensor IMU</string>
+    <string name="app_name">MorSensor</string>
     <string name="intro_message">
         <![CDATA[
         

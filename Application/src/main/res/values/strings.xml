@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2013 The Android Open Source Project
+<?xml version="1.0" encoding="utf-8"?><!-- Copyright (C) 2013 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -14,6 +13,11 @@
      limitations under the License.
 -->
 <resources>
+    <string name="searching_morsensor">Searching MorSensor…</string>
+    <string name="connecting_to_morsensor">Connecting to MorSensor…</string>
+    <string name="searching_iottalk">Searching IoTtalk…</string>
+    <string name="connecting_to_iottalk">Connecting to IoTtalk…</string>
+
     <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
     <string name="searching">Searching…</string>
     <string name="connecting">Connecting…</string>
@@ -44,4 +48,5 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="title_activity_main">MainActivity</string>
 </resources>

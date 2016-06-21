@@ -17,6 +17,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Binder;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import CSMAPI.CSMAPI;
 import DAN.DAN;
 
 public class MorSensorIDAapi extends Service implements ServiceConnection, IDAapi {
@@ -111,6 +113,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     /* -------------------------------------------------- */
     /* Code for ServiceConnection (to BluetoothLeService) */
     /* ================================================== */
+    HandlerThread handler_thread = new HandlerThread("receiver");
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
         bluetooth_le_service = ((BluetoothLeService.LocalBinder) service).getService();
@@ -124,13 +127,16 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             is_initializing = false;
             display_info(Event.INITIALIZATION_SUCCEEDED.name());
 
+            handler_thread.start();
+
             //Register BluetoothLe Receiver
             final IntentFilter intentFilter = new IntentFilter();
             intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
             intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
             intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
             intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
-            this.registerReceiver(gatt_update_receiver, intentFilter);
+//            this.registerReceiver(gatt_update_receiver, intentFilter);
+            this.registerReceiver(gatt_update_receiver, intentFilter, null, new Handler(handler_thread.getLooper()));
             this.search();
         }
     }
@@ -177,7 +183,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
 
     static String log_tag = MorSensorIDAapi.class.getSimpleName();
     BluetoothLeScanner bluetooth_le_scanner;
-    final ScanCallback scan_call_back = new BLEScanCallback();
+    final ScanCallback scan_callback = new BLEScanCallback();
     boolean is_initializing;
     boolean is_searching;
     final Handler searching_auto_stop_timer = new Handler();
@@ -246,7 +252,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         }, Constants.BLUETOOTH_SCANNING_PERIOD);
 
         is_searching = true;
-        bluetooth_le_scanner.startScan(scan_call_back);
+        bluetooth_le_scanner.startScan(scan_callback);
         display_info(Event.SEARCH_STARTED.name());
     }
 
@@ -299,7 +305,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
         }
 
         is_searching = false;
-        bluetooth_le_scanner.stopScan(scan_call_back);
+        bluetooth_le_scanner.stopScan(scan_callback);
         display_info(Event.SEARCH_STOPPED.name());
     }
 
@@ -356,6 +362,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
     class GattUpdateReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            logging("Current Thread: %s", Thread.currentThread().getName());
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_CONNECTED ====");
@@ -364,7 +371,10 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 logging("==== ACTION_GATT_DISCONNECTED ====");
                 if (target_id != null) {
                     // accidentally disconnected
-                    display_info(Event.CONNECTION_FAILED.name(), target_id);
+//                    if (retry count >= N) {
+//                         retry a few times before alert
+                        display_info(Event.CONNECTION_FAILED.name(), target_id);
+//                    }
                     bluetooth_le_service.connect(target_id);
                 }
 
@@ -641,11 +651,14 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                     final float gyro_y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 32.8);
                     final float gyro_z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 32.8);
                     try {
-                        JSONArray data = new JSONArray();
+                        final JSONArray data = new JSONArray();
                         data.put(gyro_x);
                         data.put(gyro_y);
                         data.put(gyro_z);
-                        DAN.push("Gyroscope", data);
+//                        DAN.push("Gyroscope", data);
+                        CSMAPI.push("D29C596FDACF", "Gyroscope", new JSONObject(){{
+                            put("data", data);
+                        }});
                         logging("push(Gyroscope, %s)", data);
                     } catch (JSONException e) {
                         logging("push(Gyroscope): JSONException");
@@ -656,11 +669,13 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 @Override
                 public void push(byte[] bytes) {
                     try {
-                        JSONArray data = new JSONArray();
+                        final JSONArray data = new JSONArray();
                         data.put((float) (((short)bytes[0] * 256 + (short)bytes[1]) / 4096.0) * (float) 9.8);
                         data.put((float) (((short)bytes[2] * 256 + (short)bytes[3]) / 4096.0) * (float) 9.8);
                         data.put((float) (((short)bytes[4] * 256 + (short)bytes[5]) / 4096.0) * (float) 9.8);
-                        DAN.push("Acceleration", data);
+                        CSMAPI.push("D29C596FDACF", "Acceleration", new JSONObject(){{
+                            put("data", data);
+                        }});
                         logging("push(Acceleration, %s)", data);
                     } catch (JSONException e) {
                         logging("push(Acceleration): JSONException");
@@ -671,11 +686,14 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                 @Override
                 public void push(byte[] bytes) {
                     try {
-                        JSONArray data = new JSONArray();
+                        final JSONArray data = new JSONArray();
                         data.put((float) (((short)bytes[0] * 256 + (short)bytes[1]) / 3.41 / 100));
                         data.put((float) (((short)bytes[2] * 256 + (short)bytes[3]) / 3.41 / 100));
                         data.put((float) (((short)bytes[4] * 256 + (short)bytes[5]) / 3.41 /-100));
-                        DAN.push("Magnetometer", data);
+//                        DAN.push("Magnetometer", data);
+                        CSMAPI.push("D29C596FDACF", "Magnetometer", new JSONObject(){{
+                            put("data", data);
+                        }});
                         logging("push(Magnetometer, %s)", data);
                     } catch (JSONException e) {
                         logging("push(Magnetometer): JSONException");
@@ -685,25 +703,52 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             new IDF("UV") {
                 @Override
                 public void push(byte[] bytes) {
-                    final float uv_data = (float) (bytes[1] * 256 + (bytes[0]) / 100.0);
-                    DAN.push("UV", new float[]{uv_data});
-                    logging("push(UV, [%f])", uv_data);
+                    try {
+                        final float uv_data = (float) (bytes[1] * 256 + (bytes[0]) / 100.0);
+    //                    DAN.push("UV", new float[]{uv_data});
+                        CSMAPI.push("D29C596FDACF", "UV", new JSONObject(){{
+                                put("data", new JSONArray(){{
+                                    put(uv_data);
+                                }});
+                        }});
+                        logging("push(UV, [%f])", uv_data);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
             },
             new IDF("Temperature") {
                 @Override
                 public void push(byte[] bytes) {
-                    final float temperature = (float) ((bytes[0] * 256 + bytes[1]) * 175.72 / 65536.0 - 46.85);
-                    DAN.push("Temperature", new float[]{temperature});
-                    logging("push(Temperature, [%f])", temperature);
+                    try {
+                        final float temperature = (float) ((bytes[0] * 256 + bytes[1]) * 175.72 / 65536.0 - 46.85);
+    //                    DAN.push("Temperature", new float[]{temperature});
+                        CSMAPI.push("D29C596FDACF", "Temperature", new JSONObject(){{
+                            put("data", new JSONArray(){{
+                                put(temperature);
+                            }});
+                        }});
+                        logging("push(Temperature, [%f])", temperature);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
             },
             new IDF("Humidity") {
                 @Override
                 public void push(byte[] bytes) {
-                    final float humidity = (float) ((bytes[0] * 256 + bytes[1]) * 125.0 / 65536.0 - 6.0);
-                    DAN.push("Humidity", new float[]{humidity});
-                    logging("push(Humidity, [%f])", humidity);
+                    try {
+                        final float humidity = (float) ((bytes[0] * 256 + bytes[1]) * 125.0 / 65536.0 - 6.0);
+    //                    DAN.push("Humidity", new float[]{humidity});
+                        CSMAPI.push("D29C596FDACF", "Humidity", new JSONObject(){{
+                            put("data", new JSONArray(){{
+                                put(humidity);
+                            }});
+                        }});
+                        logging("push(Humidity, [%f])", humidity);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         );
