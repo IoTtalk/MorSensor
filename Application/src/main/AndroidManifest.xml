@@ -40,10 +40,10 @@
             android:screenOrientation="portrait" />
 
         <service
-            android:name=".BluetoothLeService"
+            android:name=".BLEIDA"
             android:enabled="true" />
         <service
-            android:name=".MorSensorIDAapi"
+            android:name=".BluetoothLeService"
             android:enabled="true" />
     </application>
 

@@ -1,10 +1,10 @@
 package tw.org.cic.imusensor;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -14,7 +14,7 @@ public class DAN extends Thread {
     interface DAN2DAI {
         void pull(String odf_name, JSONArray data);
     }
-    
+
     final int IOTTALK_BROADCAST_PORT = 17000;
     final int RETRY_COUNT = 3;
     final int RETRY_INTERVAL = 2000;
@@ -28,10 +28,10 @@ public class DAN extends Thread {
     String[] df_timestamp;
     String ctl_timestamp;
     boolean suspended;
-    
-    public boolean init(String endpoint, String d_id, JSONObject profile, DAN2DAI dai_2_dai_ref) {
+
+    public boolean init(String endpoint, String mac_addr, JSONObject profile, DAN2DAI dai_2_dai_ref) {
         logging("init()");
-        this.d_id = d_id;
+        this.d_id = mac_addr.replace(":", "");
         this.dai_2_dai_ref = dai_2_dai_ref;
         if (!registered) {
             if (endpoint == null) {
@@ -55,11 +55,14 @@ public class DAN extends Thread {
             }
             ctl_timestamp = "";
             suspended = true;
+
+            profile.put("d_name", profile.getString("dm_name") + d_id.substring(d_id.length() - 4));
         } catch (JSONException e) {
             logging("init(): JSONException");
             return false;
         }
-        
+
+
         for (int i = 0; i < RETRY_COUNT; i++) {
             try {
                 if (CSMapi.register(d_id, profile)) {
@@ -71,9 +74,11 @@ public class DAN extends Thread {
                     return true;
                 }
             } catch (CSMapi.CSMError e) {
-                logging("init(): REGISTER: CSMError");
+                logging("init(): REGISTER: CSMError: %s", e.getMessage());
             } catch (JSONException e) {
                 logging("init(): JSONException: %s", e.getMessage());
+            } catch (InterruptedIOException e) {
+                logging("init(): InterruptedIOException: %s", e.getMessage());
             }
             logging("init(): Register failed, wait %d milliseconds before retry", RETRY_INTERVAL);
             try {
@@ -84,7 +89,7 @@ public class DAN extends Thread {
         }
         return false;
     }
-    
+
     public boolean push(String idf_name, JSONArray data) {
         logging("push(%s)", idf_name);
         try {
@@ -99,24 +104,31 @@ public class DAN extends Thread {
             return CSMapi.push(d_id, idf_name, data);
         } catch (CSMapi.CSMError e) {
             logging("push(): CSMError: %s", e.getMessage());
-            return false;
         } catch (JSONException e) {
             logging("push(): JSONException: %s", e.getMessage());
-            return false;
+        } catch (InterruptedIOException e) {
+            logging("deregister(): DEREGISTER: InterruptedIOException: %s", e.getMessage());
         }
+        return false;
     }
-    
+
     public boolean deregister() {
         logging("deregister()");
+        if (!registered) {
+            return true;
+        }
+        // stop polling first
+        registered = false;
         for (int i = 0; i < RETRY_COUNT; i++) {
             try {
                 if (CSMapi.deregister(d_id)) {
                     logging("deregister(): Deregister succeed: %s", CSMapi.ENDPOINT);
-                    registered = false;
                     return true;
                 }
             } catch (CSMapi.CSMError e) {
-                logging("deregister(): DEREGISTER: CSMError");
+                logging("deregister(): DEREGISTER: CSMError: %s", e.getMessage());
+            } catch (InterruptedIOException e) {
+                logging("deregister(): DEREGISTER: InterruptedIOException: %s", e.getMessage());
             }
             logging("deregister(): Deregister failed, wait %d milliseconds before retry", RETRY_INTERVAL);
             try {
@@ -125,13 +137,14 @@ public class DAN extends Thread {
                 logging("deregister(): InterruptedException");
             }
         }
+        // sorry, I give up
         return false;
     }
-    
+
     public void run () {
         logging("Polling: starts");
         while (registered) {
-            try{
+            try {
                 JSONArray data = pull("__Ctl_O__", 0);
                 if (data != null) {
                     handle_control_message(data);
@@ -139,7 +152,7 @@ public class DAN extends Thread {
                 }
 
                 for (int i = 0; i < df_list.length; i++) {
-                    if (isInterrupted() || suspended) {
+                    if (!registered || suspended) {
                         break;
                     }
                     if (!df_is_odf[i] || !df_selected[i]) {
@@ -152,21 +165,24 @@ public class DAN extends Thread {
                     dai_2_dai_ref.pull(df_list[i], data);
                 }
             } catch (JSONException e) {
-                logging("Polling: JSONException");
+                logging("Polling: JSONException: %s", e.getMessage());
             } catch (CSMapi.CSMError e) {
-                logging("Polling: CSMError");
+                logging("Polling: CSMError: %s", e.getMessage());
+            } catch (InterruptedIOException e) {
+                logging("Polling: InterruptedIOException: %s", e.getMessage());
+                break;
             }
 
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
-                logging("Polling: sleep: InterruptedException");
+                logging("Polling: InterruptedException: %s", e.getMessage());
             }
         }
         logging("Polling: stops");
     }
-    
-    JSONArray pull (String odf_name, int index) throws JSONException, CSMapi.CSMError {
+
+    JSONArray pull (String odf_name, int index) throws JSONException, CSMapi.CSMError, InterruptedIOException {
         JSONArray dataset = CSMapi.pull(d_id, odf_name);
         if (dataset == null || dataset.length() == 0) {
             return null;
@@ -185,26 +201,26 @@ public class DAN extends Thread {
         }
         return dataset.getJSONArray(0).getJSONArray(1);
     }
-    
+
     void handle_control_message (JSONArray data) {
         try {
             switch (data.getString(0)) {
-            case "RESUME":
-                suspended = false;
-                break;
-            case "SUSPEND":
-                suspended = true;
-                break;
-            case "SET_DF_STATUS":
-                final String flags = data.getJSONObject(1).getJSONArray("cmd_params").getString(0);
-                for(int i = 0; i < flags.length(); i++) {
-                    if(flags.charAt(i) == '0') {
-                        df_selected[i] = false;
-                    } else {
-                        df_selected[i] = true;
+                case "RESUME":
+                    suspended = false;
+                    break;
+                case "SUSPEND":
+                    suspended = true;
+                    break;
+                case "SET_DF_STATUS":
+                    final String flags = data.getJSONObject(1).getJSONArray("cmd_params").getString(0);
+                    for(int i = 0; i < flags.length(); i++) {
+                        if(flags.charAt(i) == '0') {
+                            df_selected[i] = false;
+                        } else {
+                            df_selected[i] = true;
+                        }
                     }
-                }
-                break;
+                    break;
             }
         } catch (JSONException e) {
             logging("handle_control_message(): JSONException");
@@ -214,7 +230,7 @@ public class DAN extends Thread {
     // ***************************** //
     // * Internal Helper Functions * //
     // ***************************** //
-    
+
     String search () {
         try {
             DatagramSocket socket = new DatagramSocket(null);
@@ -236,7 +252,7 @@ public class DAN extends Thread {
             return null;
         }
     }
-    
+
     void logging (String format, Object... args) {
         logging(String.format(format, args));
     }

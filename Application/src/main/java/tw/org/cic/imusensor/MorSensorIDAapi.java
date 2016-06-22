@@ -370,11 +370,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_DISCONNECTED ====");
                 if (target_id != null) {
-                    // accidentally disconnected
-//                    if (retry count >= N) {
-//                         retry a few times before alert
-                        display_info(Event.CONNECTION_FAILED.name(), target_id);
-//                    }
+                    display_info(Event.CONNECTION_FAILED.name(), target_id);
                     bluetooth_le_service.connect(target_id);
                 }
 
