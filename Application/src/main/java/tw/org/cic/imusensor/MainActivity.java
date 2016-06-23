@@ -10,9 +10,17 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
+import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 public class MainActivity extends Activity implements ServiceConnection {
     class UIhandler extends Handler {
@@ -52,7 +60,7 @@ public class MainActivity extends Activity implements ServiceConnection {
                 case "CONNECTING":
                     ((TextView)findViewById(R.id.tv_morsensor_version)).setText(R.string.connecting);
                     ((TextView)findViewById(R.id.tv_firmware_version)).setText(R.string.connecting);
-                    ((TextView)findViewById(R.id.tv_df_list)).setText(R.string.connecting);
+                    ((LinearLayout)findViewById(R.id.ll_df_status)).removeAllViews();
                     break;
                 case "MORSENSOR_VERSION":
                     message = (String)(values[0]);
@@ -63,8 +71,25 @@ public class MainActivity extends Activity implements ServiceConnection {
                     ((TextView)findViewById(R.id.tv_firmware_version)).setText(message);
                     break;
                 case "DF_LIST":
-                    message = (String)(values[0]);
-                    ((TextView)findViewById(R.id.tv_df_list)).setText(message);
+                    df_list = (JSONArray)(values[0]);
+                    LinearLayout ll_df_status = (LinearLayout)findViewById(R.id.ll_df_status);
+                    ll_df_status.removeAllViews();
+                    LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                    for (int i = 0; i < df_list.length(); i++) {
+                        String df_name = "<JSONException>";
+                        try {
+                            df_name = df_list.getString(i);
+                        } catch (JSONException e) {
+                            logging("UI: JSONException");
+                            continue;
+                        }
+                        View inflated_view = inflater.inflate(R.layout.item_df_status, null);
+                        CheckBox cb_status = (CheckBox) inflated_view.findViewById(R.id.cb_status);
+                        TextView tv_df_name = (TextView) inflated_view.findViewById(R.id.tv_df_name);
+                        tv_df_name.setText(df_name);
+                        cb_status.setEnabled(false);
+                        ll_df_status.addView(inflated_view);
+                    }
                     break;
                 default:
                     logging("Unknown key: %s", key);
@@ -75,6 +100,7 @@ public class MainActivity extends Activity implements ServiceConnection {
     UIhandler ui_handler = new UIhandler();
     BLEIDA ble_ida;
     DAN dan;
+    JSONArray df_list;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +136,7 @@ public class MainActivity extends Activity implements ServiceConnection {
                     dan.deregister();
                 }
             }.start();
+            ble_ida.disconnect();
             MainActivity.this.unbindService(MainActivity.this);
         }
     }

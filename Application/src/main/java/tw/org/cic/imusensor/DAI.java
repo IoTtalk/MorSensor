@@ -85,20 +85,33 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
             this,
             ui_handler,
             "00002a37-0000-1000-8000-00805f9b34fb",
-            "00001525-1212-efde-1523-785feabcd123"
+            "00001525-1212-efde-1523-785feabcd123",
+            get_cmd("INIT_PROCEDURE")
         );
-        if (mac_addr.equals("")) {
-            return;
-        }
-
-        get_cmd("GET_MORSENSOR_VERSION").run(new JSONArray(), null);
-        get_cmd("GET_FIRMWARE_VERSION").run(new JSONArray(), null);
-        get_cmd("GET_DF_LIST").run(new JSONArray(), null);
     }
 
     @Override
     public void pull(String odf_name, JSONArray data) {
-        logging("%s: %s", odf_name, data);
+        try {
+            if (odf_name.equals("Control")) {
+                String cmd_name = data.getString(0);
+                JSONArray dl_cmd_params = data.getJSONObject(1).getJSONArray("cmd_params");
+                for (Command cmd: cmd_list) {
+                    if (cmd_name.equals(cmd.name)) {
+                        cmd.run(dl_cmd_params, null);
+                        return;
+                    }
+                }
+                logging("write(%s): Unknown cmd: %s", odf_name, cmd_name);
+                push_cmd_to_iottalk("UNKNOWN_CMD", cmd_name);
+                /* Reports the exception to EC */
+            } else {
+                logging("write(%s): Unknown ODF", odf_name);
+                /* Reports the exception to EC */
+            }
+        } catch (JSONException e) {
+            logging("write(%s): JSONException", odf_name);
+        }
     }
 
     @Override
@@ -139,6 +152,34 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
             logging(s);
         }
         /* Reports the exception to EC */
+    }
+
+    boolean all (boolean[] array) {
+        for (boolean b: array) {
+            if (!b) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void push_cmd_to_iottalk(String cmd, String cmd_param) {
+        JSONArray cmd_params = new JSONArray();
+        cmd_params.put(cmd_param);
+        push_cmd_to_iottalk(cmd, cmd_params);
+    }
+
+    void push_cmd_to_iottalk(final String cmd, final JSONArray cmd_params) {
+        try {
+            dan.push("Control", new JSONArray(){{
+                put(cmd);
+                put(new JSONObject(){{
+                    put("cmd_params", cmd_params);
+                }});
+            }});
+        } catch (JSONException e) {
+            logging("push_cmd_to_iottalk(): JSONException");
+        }
     }
 
     void add_idf_handlers(IDFhandler... idf_handlers) {
@@ -189,240 +230,222 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
 
     void init_cmds () {
         add_cmds(
-            new Command("GET_MORSENSOR_VERSION", MorSensorCommandTable.IN_MORSENSOR_VERSION) {
+            new Command("INIT_PROCEDURE", MorSensorCommandTable.IN_MORSENSOR_VERSION, MorSensorCommandTable.IN_FIRMWARE_VERSION, MorSensorCommandTable.IN_SENSOR_LIST) {
                 public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
                     if (ul_cmd_params == null) {
-                        ble_ida.write("GET_MORSENSOR_VERSION", MorSensorCommandTable.GetMorSensorVersion());
+                        ble_ida.write("INIT_PROCEDURE", MorSensorCommandTable.GetMorSensorVersion());
+                        ble_ida.write("INIT_PROCEDURE", MorSensorCommandTable.GetFirmwareVersion());
+                        ble_ida.write("INIT_PROCEDURE", MorSensorCommandTable.GetSensorList());
                     } else {
-                        byte opcode = (byte) ul_cmd_params.read();
-                        int major = ul_cmd_params.read();
-                        int minor = ul_cmd_params.read();
-                        int patch = ul_cmd_params.read();
-                        String morsensor_version = String.format("%d.%d.%d", major, minor, patch);
-                        ui_handler.send_info("MORSENSOR_VERSION", morsensor_version);
-                    }
-                }
-            },
-            new Command("GET_FIRMWARE_VERSION", MorSensorCommandTable.IN_FIRMWARE_VERSION) {
-                @Override
-                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
-                    if (ul_cmd_params == null) {
-                        ble_ida.write("GET_FIRMWARE_VERSION", MorSensorCommandTable.GetFirmwareVersion());
-                    } else {
-                        byte opcode = (byte) ul_cmd_params.read();
-                        int major = ul_cmd_params.read();
-                        int minor = ul_cmd_params.read();
-                        int patch = ul_cmd_params.read();
-                        String firmware_version = String.format("%d.%d.%d", major, minor, patch);
-                        ui_handler.send_info("FIRMWARE_VERSION", firmware_version);
-                    }
-                }
-            },
-            new Command("GET_DF_LIST", MorSensorCommandTable.IN_SENSOR_LIST) {
-                @Override
-                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
-                    if (ul_cmd_params == null) {
-                        ble_ida.write("GET_DF_LIST", MorSensorCommandTable.GetSensorList());
-                    } else {
-                        byte opcode = (byte) ul_cmd_params.read();
-                        int sensor_count = ul_cmd_params.read();
-                        df_list = new JSONArray();
-                        sensor_list = new byte[sensor_count];
-                        for (int i = 0; i < sensor_count; i++) {
-                            byte sensor_id = (byte) ul_cmd_params.read();
-                            sensor_list[i] = sensor_id;
-                            logging("Found sensor %02X", sensor_id);
-                            for (String df_name: get_idf_handler(sensor_id).df_list) {
-                                df_list.put(df_name);
-                            }
-                            ble_ida.write("", MorSensorCommandTable.SetSensorStopTransmission(sensor_id));
-                            ble_ida.write("", MorSensorCommandTable.SetSensorTransmissionModeContinuous(sensor_id));
-                        }
-                        ui_handler.send_info("DF_LIST", df_list.toString());
-                        df_list.put("__Ctl_I__");
-                        df_list.put("__Ctl_O__");
-                        logging(df_list.toString());
-                        sensor_activate = new boolean[sensor_count];
-                        sensor_responded = new boolean[sensor_count];
+                        switch ((byte) ul_cmd_params.read()) {
+                            case MorSensorCommandTable.IN_MORSENSOR_VERSION:
+                                int major = ul_cmd_params.read();
+                                int minor = ul_cmd_params.read();
+                                int patch = ul_cmd_params.read();
+                                String morsensor_version = String.format("%d.%d.%d", major, minor, patch);
+                                ui_handler.send_info("MORSENSOR_VERSION", morsensor_version);
+                                break;
+                            case MorSensorCommandTable.IN_FIRMWARE_VERSION:
+                                major = ul_cmd_params.read();
+                                minor = ul_cmd_params.read();
+                                patch = ul_cmd_params.read();
+                                String firmware_version = String.format("%d.%d.%d", major, minor, patch);
+                                ui_handler.send_info("FIRMWARE_VERSION", firmware_version);
+                                break;
+                            case MorSensorCommandTable.IN_SENSOR_LIST:
+                                int sensor_count = ul_cmd_params.read();
+                                df_list = new JSONArray();
+                                sensor_list = new byte[sensor_count];
+                                for (int i = 0; i < sensor_count; i++) {
+                                    byte sensor_id = (byte) ul_cmd_params.read();
+                                    sensor_list[i] = sensor_id;
+                                    logging("Found sensor %02X", sensor_id);
+                                    for (String df_name: get_idf_handler(sensor_id).df_list) {
+                                        df_list.put(df_name);
+                                    }
+                                    ble_ida.write("", MorSensorCommandTable.SetSensorStopTransmission(sensor_id));
+                                    ble_ida.write("", MorSensorCommandTable.SetSensorTransmissionModeContinuous(sensor_id));
+                                }
+                                ui_handler.send_info("DF_LIST", df_list);
+                                logging(df_list.toString());
+                                sensor_activate = new boolean[sensor_count];
+                                sensor_responded = new boolean[sensor_count];
 
-                        try {
-                            JSONObject profile = new JSONObject() {{
-                                put("df_list", df_list);
-                                put("dm_name", "MorSensor");
-                                put("is_sim", "False");
-                                put("u_name", "cychih");
-                            }};
-                            dan.init("http://140.113.215.10:9999", mac_addr, profile, DAI.this);
-                        } catch (JSONException e) {
-                            logging("DAI.run(): register: JSONException");
+                                try {
+                                    JSONObject profile = new JSONObject() {{
+                                        put("df_list", df_list);
+                                        put("dm_name", "MorSensor");
+                                        put("is_sim", "False");
+                                        put("u_name", "cychih");
+                                    }};
+                                    dan.init("http://140.113.215.10:9999", mac_addr, profile, DAI.this);
+                                } catch (JSONException e) {
+                                    logging("DAI.run(): register: JSONException");
+                                }
+                                break;
                         }
+                    }
+                }
+            },
+            new Command("SET_DF_STATUS", MorSensorCommandTable.IN_SENSOR_DATA, MorSensorCommandTable.IN_STOP_TRANSMISSION) {
+                @Override
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
+                        try {
+                            final String flags = dl_cmd_params.getString(0);
+                            for (int i = 0; i < flags.length(); i++) {
+                                String df_name = df_list.getString(i);
+                                IDF idf = get_idf(df_name);
+                                if (idf == null) {
+                                    continue;
+                                }
+                                if (flags.charAt(i) == '0') {
+                                    idf.selected = false;
+                                } else {
+                                    idf.selected = true;
+                                }
+                            }
+
+                            for (int i = 0; i < sensor_list.length; i++) {
+                                IDFhandler idf_handler = get_idf_handler(sensor_list[i]);
+                                boolean any_selected = false;
+                                for (String df_name : idf_handler.df_list) {
+                                    IDF idf = get_idf(df_name);
+                                    any_selected |= idf.selected;
+                                }
+                                if (any_selected != sensor_activate[i]) {
+                                    sensor_activate[i] = any_selected;
+                                    sensor_responded[i] = false;
+                                    if (!suspended) {
+                                        if (any_selected) {
+                                            ble_ida.write("SET_DF_STATUS", MorSensorCommandTable.RetrieveSensorData(idf_handler.sensor_id));
+                                        } else {
+                                            ble_ida.write("SET_DF_STATUS", MorSensorCommandTable.SetSensorStopTransmission(idf_handler.sensor_id));
+                                        }
+                                    }
+                                } else {
+                                    sensor_responded[i] = true;
+                                }
+                                logging("%s %b", sensor_list[i], sensor_responded[i]);
+                            }
+                            if (suspended || all(sensor_responded)) {
+                                push_cmd_to_iottalk("SET_DF_STATUS_RSP", flags);
+                            }
+                        } catch (JSONException e) {
+                            logging("SET_DF_STATUS: JSONException");
+                        }
+                    } else {
+                        try {
+                            byte opcode = (byte) ul_cmd_params.read();
+                            byte sensor_id = (byte) ul_cmd_params.read();
+                            logging("SET_DF_STATUS_RSP: %02X %02X", opcode, sensor_id);
+                            for (int i = 0; i < sensor_list.length; i++) {
+                                if (sensor_id == sensor_list[i]) {
+                                    if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+                                        sensor_responded[i] = true;
+                                    } else if (!sensor_activate[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
+                                        sensor_responded[i] = true;
+                                    }
+                                    break;
+                                }
+                            }
+                            if (all(sensor_responded)) {
+                                String flags = "";
+                                for (int i = 0; i < df_list.length(); i++) {
+                                    IDF idf = get_idf(df_list.getString(i));
+                                    if (idf == null || !idf.selected) {
+                                        flags += "0";
+                                    } else {
+                                        flags += "1";
+                                    }
+                                }
+                                push_cmd_to_iottalk("SET_DF_STATUS_RSP", flags);
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            },
+            new Command("RESUME", MorSensorCommandTable.IN_SENSOR_DATA) {
+                @Override
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
+                        suspended = false;
+                        for (int i = 0; i < sensor_list.length; i++) {
+                            if (sensor_activate[i]) {
+                                sensor_responded[i] = false;
+                                ble_ida.write("RESUME", MorSensorCommandTable.RetrieveSensorData(sensor_list[i]));
+                            } else {
+                                sensor_responded[i] = true;
+                            }
+                        }
+                        if (all(sensor_responded)) {
+                            push_cmd_to_iottalk("RESUME_RSP", "OK");
+                        }
+                    } else {
+                        byte opcode = (byte) ul_cmd_params.read();
+                        byte sensor_id = (byte) ul_cmd_params.read();
+                        logging("RESUME_RSP: %02X %02X", opcode, sensor_id);
+                        for (int i = 0; i < sensor_list.length; i++) {
+                            if (sensor_id == sensor_list[i]) {
+                                if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+                                    sensor_responded[i] = true;
+                                }
+                                break;
+                            }
+                        }
+                        if (all(sensor_responded)) {
+                            push_cmd_to_iottalk("RESUME_RSP", "OK");
+                        }
+                    }
+                }
+            },
+            new Command("SUSPEND", MorSensorCommandTable.IN_STOP_TRANSMISSION) {
+                @Override
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
+                        suspended = true;
+                        for (int i = 0; i < sensor_list.length; i++) {
+                            if (sensor_activate[i]) {
+                                sensor_responded[i] = false;
+                                ble_ida.write("SUSPEND", MorSensorCommandTable.SetSensorStopTransmission(sensor_list[i]));
+                            } else {
+                                sensor_responded[i] = true;
+                            }
+                        }
+                        if (all(sensor_responded)) {
+                            push_cmd_to_iottalk("SUSPEND_RSP", "OK");
+                        }
+                    } else {
+                        byte opcode = (byte) ul_cmd_params.read();
+                        byte sensor_id = (byte) ul_cmd_params.read();
+                        for (int i = 0; i < sensor_list.length; i++) {
+                            if (sensor_id == sensor_list[i]) {
+                                if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
+                                    sensor_responded[i] = true;
+                                }
+                                break;
+                            }
+                        }
+                        if (all(sensor_responded)) {
+                            push_cmd_to_iottalk("SUSPEND_RSP", "OK");
+                        }
+                    }
+                }
+            },
+            new Command("", MorSensorCommandTable.IN_SENSOR_DATA) {
+                @Override
+                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
+                    if (ul_cmd_params == null) {
+                    } else {
+                        byte opcode = (byte) ul_cmd_params.read();
+                        byte sensor_id = (byte) ul_cmd_params.read();
+                        logging("Sensor data from %02X", sensor_id);
+                        get_idf_handler(sensor_id).push(ul_cmd_params);
                     }
                 }
             }
-//            new Command("SET_DF_STATUS", MorSensorCommandTable.IN_SENSOR_DATA, MorSensorCommandTable.IN_STOP_TRANSMISSION) {
-//                @Override
-//                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
-//                    if (ul_cmd_params == null) {
-//                        try {
-//                            String flags = dl_cmd_params.getString(0);
-//                            for (int i = 0; i < flags.length(); i++) {
-//                                String df_name = global_information.df_list.getString(i);
-//                                IDF idf = get_idf(df_name);
-//                                if (idf == null) {
-//                                    continue;
-//                                }
-//                                if (flags.charAt(i) == '0') {
-//                                    idf.selected = false;
-//                                } else {
-//                                    idf.selected = true;
-//                                }
-//                            }
-//
-//                            for (int i = 0; i < sensor_list.length; i++) {
-//                                IDFhandler idf_handler = get_idf_handler(sensor_list[i]);
-//                                boolean any_selected = false;
-//                                for (String df_name : idf_handler.df_list) {
-//                                    IDF idf = get_idf(df_name);
-//                                    any_selected |= idf.selected;
-//                                }
-//                                if (any_selected != sensor_activate[i]) {
-//                                    sensor_activate[i] = any_selected;
-//                                    sensor_responded[i] = false;
-//                                    if (!suspended) {
-//                                        if (any_selected) {
-//                                            send_cmd_to_morsensor("SET_DF_STATUS", MorSensorCommandTable.RetrieveSensorData(idf_handler.sensor_id));
-//                                        } else {
-//                                            send_cmd_to_morsensor("SET_DF_STATUS", MorSensorCommandTable.SetSensorStopTransmission(idf_handler.sensor_id));
-//                                        }
-//                                    }
-//                                } else {
-//                                    sensor_responded[i] = true;
-//                                }
-//                            }
-//                            if (suspended || all(sensor_responded)) {
-//                                send_cmd_to_iottalk("SET_DF_STATUS_RSP", flags);
-//                            }
-//                        } catch (JSONException e) {
-//                            logging("SET_DF_STATUS: JSONException");
-//                        }
-//                    } else {
-//                        try {
-//                            byte opcode = (byte) ul_cmd_params.read();
-//                            byte sensor_id = (byte) ul_cmd_params.read();
-//                            logging("SET_DF_STATUS_RSP: %02X %02X", opcode, sensor_id);
-//                            for (int i = 0; i < sensor_list.length; i++) {
-//                                if (sensor_id == sensor_list[i]) {
-//                                    if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
-//                                        sensor_responded[i] = true;
-//                                    } else if (!sensor_activate[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
-//                                        sensor_responded[i] = true;
-//                                    }
-//                                    break;
-//                                }
-//                            }
-//                            if (all(sensor_responded)) {
-//                                String flags = "";
-//                                for (int i = 0; i < global_information.df_list.length(); i++) {
-//                                    IDF idf = get_idf(global_information.df_list.getString(i));
-//                                    if (idf == null) { // wait for DANapi
-//                                        continue;
-//                                    }
-//                                    if (idf.selected) {
-//                                        flags += "1";
-//                                    } else {
-//                                        flags += "0";
-//                                    }
-//                                }
-//                                send_cmd_to_iottalk("SET_DF_STATUS_RSP", flags);
-//                            }
-//                        } catch (JSONException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//            },
-//            new Command("RESUME", MorSensorCommandTable.IN_SENSOR_DATA) {
-//                @Override
-//                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
-//                    if (ul_cmd_params == null) {
-//                        suspended = false;
-//                        for (int i = 0; i < sensor_list.length; i++) {
-//                            if (sensor_activate[i]) {
-//                                sensor_responded[i] = false;
-//                                send_cmd_to_morsensor("RESUME", MorSensorCommandTable.RetrieveSensorData(sensor_list[i]));
-//                            } else {
-//                                sensor_responded[i] = true;
-//                            }
-//                        }
-//                        if (all(sensor_responded)) {
-//                            send_cmd_to_iottalk("RESUME_RSP", "OK");
-//                        }
-//                    } else {
-//                        byte opcode = (byte) ul_cmd_params.read();
-//                        byte sensor_id = (byte) ul_cmd_params.read();
-//                        logging("RESUME_RSP: %02X %02X", opcode, sensor_id);
-//                        for (int i = 0; i < sensor_list.length; i++) {
-//                            if (sensor_id == sensor_list[i]) {
-//                                if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
-//                                    sensor_responded[i] = true;
-//                                }
-//                                break;
-//                            }
-//                        }
-//                        if (all(sensor_responded)) {
-//                            send_cmd_to_iottalk("RESUME_RSP", "OK");
-//                        }
-//                    }
-//                }
-//            },
-//            new Command("SUSPEND", MorSensorCommandTable.IN_STOP_TRANSMISSION) {
-//                @Override
-//                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
-//                    if (ul_cmd_params == null) {
-//                        suspended = true;
-//                        for (int i = 0; i < sensor_list.length; i++) {
-//                            if (sensor_activate[i]) {
-//                                sensor_responded[i] = false;
-//                                send_cmd_to_morsensor("SUSPEND", MorSensorCommandTable.SetSensorStopTransmission(sensor_list[i]));
-//                            } else {
-//                                sensor_responded[i] = true;
-//                            }
-//                        }
-//                        if (all(sensor_responded)) {
-//                            send_cmd_to_iottalk("SUSPEND_RSP", "OK");
-//                        }
-//                    } else {
-//                        byte opcode = (byte) ul_cmd_params.read();
-//                        byte sensor_id = (byte) ul_cmd_params.read();
-//                        for (int i = 0; i < sensor_list.length; i++) {
-//                            if (sensor_id == sensor_list[i]) {
-//                                if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
-//                                    sensor_responded[i] = true;
-//                                }
-//                                break;
-//                            }
-//                        }
-//                        if (all(sensor_responded)) {
-//                            send_cmd_to_iottalk("SUSPEND_RSP", "OK");
-//                        }
-//                    }
-//                }
-//            },
-//            new Command("", MorSensorCommandTable.IN_SENSOR_DATA) {
-//                @Override
-//                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
-//                    if (ul_cmd_params == null) {
-//                    } else {
-//                        if (!DAN.DAN.session_status()) {
-//                            return;
-//                        }
-//                        byte opcode = (byte) ul_cmd_params.read();
-//                        byte sensor_id = (byte) ul_cmd_params.read();
-//                        logging("Sensor data from %02X", sensor_id);
-//                        get_idf_handler(sensor_id).push(ul_cmd_params);
-//                    }
-//                }
-//            }
         );
     }
 

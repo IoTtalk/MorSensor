@@ -21,9 +21,8 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.util.Log;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
+import org.json.JSONArray;
+
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class BLEIDA extends Service implements ServiceConnection {
@@ -44,6 +43,7 @@ public class BLEIDA extends Service implements ServiceConnection {
     BluetoothGattCharacteristic read_characteristic;
     BluetoothGattCharacteristic write_characteristic;
     MessageQueue message_queue;
+    DAI.Command reconnect_cmd;
 
     public class LocalBinder extends Binder {
         BLEIDA getService() {
@@ -74,13 +74,15 @@ public class BLEIDA extends Service implements ServiceConnection {
             IDA2DAI ida2dai_ref,
             MainActivity.UIhandler ui_handler,
             String read_characteristic_uuid,
-            String write_characteristic_uuid) {
+            String write_characteristic_uuid,
+            DAI.Command reconnect_cmd) {
         this.ida2dai_ref = ida2dai_ref;
         this.handler_thread.start();
         this.ui_handler = ui_handler;
         this.read_characteristic_uuid = read_characteristic_uuid;
         this.write_characteristic_uuid = write_characteristic_uuid;
         this.message_queue = new MessageQueue();
+        this.reconnect_cmd = reconnect_cmd;
 
         /* Check if Bluetooth is supported */
         final BluetoothManager bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -141,6 +143,13 @@ public class BLEIDA extends Service implements ServiceConnection {
 
     void write(String source, byte[] cmd) {
         message_queue.write(source, cmd);
+    }
+
+    boolean disconnect () {
+        device_addr = null;
+        bluetooth_le_service.disconnect();
+        wait_for_lock();
+        return true;
     }
 
     private void wait_for_lock () {
@@ -208,19 +217,22 @@ public class BLEIDA extends Service implements ServiceConnection {
 
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_DISCONNECTED ====");
-//                if (target_id != null) {
-//                    display_info(IDAapi.Event.CONNECTION_FAILED.name(), target_id);
-//                    bluetooth_le_service.connect(target_id);
-//                }
+                if (device_addr != null) {
+                    new Thread(){
+                        @Override
+                        public void run() {
+                            connect();
+                        }
+                    }.start();
+                } else {
+                    release_lock();
+                }
 
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 get_characteristics();
-                ui_handler.send_info(IDAapi.Event.CONNECTION_SUCCEEDED.name(), device_addr);
                 release_lock();
-//                get_cmd("MORSENSOR_VERSION").run(new JSONArray(), null);
-//                get_cmd("FIRMWARE_VERSION").run(new JSONArray(), null);
-//                get_cmd("GET_DF_LIST").run(new JSONArray(), null);
+                reconnect_cmd.run(new JSONArray(), null);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 byte[] packet = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
@@ -270,14 +282,14 @@ public class BLEIDA extends Service implements ServiceConnection {
     /* -------------------------------------------------- */
 
     class MessageQueue {
-        final LinkedBlockingQueue<byte[]> ocmd_queue = new LinkedBlockingQueue<>();
+        final LinkedBlockingQueue<byte[]> omsg_queue = new LinkedBlockingQueue<>();
         final LinkedBlockingQueue<String> source_queue = new LinkedBlockingQueue<>();
         final Handler timer = new Handler(handler_thread.getLooper());
         final Runnable timeout_task = new Runnable () {
             @Override
             public void run () {
                 logging("Timeout!");
-                send_ocmd();
+                send_omsg();
             }
         };
 
@@ -285,36 +297,36 @@ public class BLEIDA extends Service implements ServiceConnection {
             logging("MessageQueue.write('%s', %02X)", source, packet[0]);
             try {
                 source_queue.put(source);
-                ocmd_queue.put(packet);
-                if (ocmd_queue.size() == 1) {
+                omsg_queue.put(packet);
+                if (omsg_queue.size() == 1) {
                     logging("MessageQueue.write(%02X): got only one command, send it", packet[0]);
-                    send_ocmd();
+                    send_omsg();
                 }
             } catch (InterruptedException e) {
-                logging("MessageQueue.write(%02X): ocmd_queue full", packet[0]);
+                logging("MessageQueue.write(%02X): omsg_queue full", packet[0]);
             }
         }
 
-        public void receive(byte[] icmd) {
-            logging("MessageQueue.receive(%02X)", icmd[0]);
-            byte[] ocmd = ocmd_queue.peek();
+        public void receive(byte[] imsg) {
+            logging("MessageQueue.receive(%02X)", imsg[0]);
+            byte[] omsg = omsg_queue.peek();
             String source = source_queue.peek();
             if (source == null) {
                 source = "";
             }
-            if (ocmd != null) {
-                if (ida2dai_ref.msg_match(ocmd, icmd)) {
-                    logging("MessageQueue.receive(%02X): match, cancel old timer", icmd[0]);
+            if (omsg != null) {
+                if (ida2dai_ref.msg_match(omsg, imsg)) {
+                    logging("MessageQueue.receive(%02X): match, cancel old timer", imsg[0]);
                     try {
                         /* cancel the timer */
                         timer.removeCallbacks(timeout_task);
                         source_queue.take();
-                        ocmd_queue.take();
+                        omsg_queue.take();
 
-                        /* if ocmd_queue is not empty, send next command */
-                        if (!ocmd_queue.isEmpty()) {
-                            logging("MessageQueue.receive(%02X): send next command", icmd[0]);
-                            send_ocmd();
+                        /* if omsg_queue is not empty, send next command */
+                        if (!omsg_queue.isEmpty()) {
+                            logging("MessageQueue.receive(%02X): send next command", imsg[0]);
+                            send_omsg();
                         }
                     } catch (InterruptedException e) {
                         logging("MessageQueue.receive(): InterruptedException");
@@ -322,30 +334,20 @@ public class BLEIDA extends Service implements ServiceConnection {
                 }
             }
 
-            ida2dai_ref.receive(source, icmd);
+            ida2dai_ref.receive(source, imsg);
         }
 
-        private void send_ocmd() {
-            byte[] ocmd = ocmd_queue.peek();
-            if (ocmd == null) {
-                logging("MessageQueue.send_ocmd(): [bug] ocmd not exists");
+        private void send_omsg() {
+            byte[] omsg = omsg_queue.peek();
+            if (omsg == null) {
+                logging("MessageQueue.send_omsg(): [bug] omsg does not exist");
                 return;
             }
-            logging("MessageQueue.send_ocmd(): send ocmd %02X", ocmd[0]);
-            write_characteristic.setValue(ocmd);
+            logging("MessageQueue.send_omsg(): send omsg %02X", omsg[0]);
+            write_characteristic.setValue(omsg);
             bluetooth_le_service.writeCharacteristic(write_characteristic);
-            logging("MessageQueue.send_ocmd(): start timer");
+            logging("MessageQueue.send_omsg(): start timer");
             timer.postDelayed(timeout_task, Constants.COMMAND_TIMEOUT);
-        }
-
-        private boolean opcode_match (byte[] ocmd, byte[] icmd) {
-            if (ocmd[0] == icmd[0]) {
-                if (ocmd[0] == MorSensorCommandTable.IN_SENSOR_DATA) {
-                    return ocmd[1] == icmd[1];
-                }
-                return true;
-            }
-            return false;
         }
     }
 

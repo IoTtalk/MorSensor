@@ -411,7 +411,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                     send_ocmd();
                 }
             } catch (InterruptedException e) {
-                logging("MessageQueue.write(%02X): ocmd_queue full", packet[0]);
+                logging("MessageQueue.write(%02X): omsg_queue full", packet[0]);
             }
         }
 
@@ -431,7 +431,7 @@ public class MorSensorIDAapi extends Service implements ServiceConnection, IDAap
                         source_queue.take();
                         ocmd_queue.take();
 
-                        /* if ocmd_queue is not empty, send next command */
+                        /* if omsg_queue is not empty, send next command */
                         if (!ocmd_queue.isEmpty()) {
                             logging("MessageQueue.receive(%02X): send next command", icmd[0]);
                             send_ocmd();

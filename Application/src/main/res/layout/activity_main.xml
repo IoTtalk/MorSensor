@@ -93,13 +93,13 @@
             android:text="Feature List:">
         </TextView>
 
-        <TextView
-            android:id="@+id/tv_df_list"
-            android:paddingLeft="@dimen/activity_horizontal_margin"
+        <LinearLayout
+            android:id="@+id/ll_df_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge">
-        </TextView>
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:orientation="vertical">
+        </LinearLayout>
 
     </LinearLayout>
 
