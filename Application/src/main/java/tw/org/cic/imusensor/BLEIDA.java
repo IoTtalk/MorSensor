@@ -218,12 +218,8 @@ public class BLEIDA extends Service implements ServiceConnection {
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_DISCONNECTED ====");
                 if (device_addr != null) {
-                    new Thread(){
-                        @Override
-                        public void run() {
-                            connect();
-                        }
-                    }.start();
+                    ui_handler.send_info("CONNECTING");
+                    bluetooth_le_service.connect(device_addr);
                 } else {
                     release_lock();
                 }
