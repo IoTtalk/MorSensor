@@ -329,6 +329,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                                 logging("%s %b", sensor_list[i], sensor_responded[i]);
                             }
                             if (suspended || all(sensor_responded)) {
+                                ui_handler.send_info("SET_DF_STATUS", flags);
                                 push_cmd_to_iottalk("SET_DF_STATUS_RSP", flags);
                             }
                         } catch (JSONException e) {
@@ -359,6 +360,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                                         flags += "1";
                                     }
                                 }
+                                ui_handler.send_info("SET_DF_STATUS", flags);
                                 push_cmd_to_iottalk("SET_DF_STATUS_RSP", flags);
                             }
                         } catch (JSONException e) {

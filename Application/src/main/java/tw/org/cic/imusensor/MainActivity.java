@@ -85,10 +85,31 @@ public class MainActivity extends Activity implements ServiceConnection {
                         }
                         View inflated_view = inflater.inflate(R.layout.item_df_status, null);
                         CheckBox cb_status = (CheckBox) inflated_view.findViewById(R.id.cb_status);
+                        cb_status.setTag(df_name);
                         TextView tv_df_name = (TextView) inflated_view.findViewById(R.id.tv_df_name);
                         tv_df_name.setText(df_name);
                         cb_status.setEnabled(false);
                         ll_df_status.addView(inflated_view);
+                    }
+                    break;
+                case "SET_DF_STATUS":
+                    String flags = (String)(values[0]);
+                    logging(flags);
+                    for (int i = 0; i < df_list.length(); i++) {
+                        String df_name = "<JSONException>";
+                        try {
+                            df_name = df_list.getString(i);
+                        } catch (JSONException e) {
+                            logging("UI: JSONException");
+                            continue;
+                        }
+                        ll_df_status = (LinearLayout)findViewById(R.id.ll_df_status);
+                        CheckBox cb_status = (CheckBox) ll_df_status.findViewWithTag(df_name);
+                        if (flags.charAt(i) == '0') {
+                            cb_status.setChecked(false);
+                        } else {
+                            cb_status.setChecked(true);
+                        }
                     }
                     break;
                 default:
