@@ -50,8 +50,24 @@ public class MainActivity extends Activity implements ServiceConnection {
                     findViewById(R.id.df_list_prompt).setVisibility(View.VISIBLE);
                     break;
                 case "CONNECTING":
-                    ((TextView)findViewById(R.id.tv_morsensor_df_list)).setText(R.string.connecting);
+                    ((TextView)findViewById(R.id.tv_morsensor_version)).setText(R.string.connecting);
+                    ((TextView)findViewById(R.id.tv_firmware_version)).setText(R.string.connecting);
+                    ((TextView)findViewById(R.id.tv_df_list)).setText(R.string.connecting);
                     break;
+                case "MORSENSOR_VERSION":
+                    message = (String)(values[0]);
+                    ((TextView)findViewById(R.id.tv_morsensor_version)).setText(message);
+                    break;
+                case "FIRMWARE_VERSION":
+                    message = (String)(values[0]);
+                    ((TextView)findViewById(R.id.tv_firmware_version)).setText(message);
+                    break;
+                case "DF_LIST":
+                    message = (String)(values[0]);
+                    ((TextView)findViewById(R.id.tv_df_list)).setText(message);
+                    break;
+                default:
+                    logging("Unknown key: %s", key);
             }
         }
     }

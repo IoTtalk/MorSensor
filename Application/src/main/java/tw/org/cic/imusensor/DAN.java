@@ -19,7 +19,7 @@ public class DAN extends Thread {
     final int RETRY_COUNT = 3;
     final int RETRY_INTERVAL = 2000;
     public final String log_tag = "MorSensor";
-    DAN2DAI dai_2_dai_ref;
+    DAN2DAI dai2dai_ref;
     String d_id;
     boolean registered;
     String[] df_list;
@@ -29,10 +29,10 @@ public class DAN extends Thread {
     String ctl_timestamp;
     boolean suspended;
 
-    public boolean init(String endpoint, String mac_addr, JSONObject profile, DAN2DAI dai_2_dai_ref) {
+    public boolean init(String endpoint, String mac_addr, JSONObject profile, DAN2DAI dai2dai_ref) {
         logging("init()");
         this.d_id = mac_addr.replace(":", "");
-        this.dai_2_dai_ref = dai_2_dai_ref;
+        this.dai2dai_ref = dai2dai_ref;
         if (!registered) {
             if (endpoint == null) {
                 CSMapi.ENDPOINT = search();
@@ -148,7 +148,7 @@ public class DAN extends Thread {
                 JSONArray data = pull("__Ctl_O__", 0);
                 if (data != null) {
                     handle_control_message(data);
-                    dai_2_dai_ref.pull("Control", data);
+                    dai2dai_ref.pull("Control", data);
                 }
 
                 for (int i = 0; i < df_list.length; i++) {
@@ -162,7 +162,7 @@ public class DAN extends Thread {
                     if (data == null) {
                         continue;
                     }
-                    dai_2_dai_ref.pull(df_list[i], data);
+                    dai2dai_ref.pull(df_list[i], data);
                 }
             } catch (JSONException e) {
                 logging("Polling: JSONException: %s", e.getMessage());

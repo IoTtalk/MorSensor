@@ -21,7 +21,17 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+
 public class BLEIDA extends Service implements ServiceConnection {
+    public interface IDA2DAI {
+        boolean msg_match (byte[] msg1, byte[] msg2);
+        void receive (String source, byte[] msg);
+    }
+    IDA2DAI ida2dai_ref;
     MainActivity.UIhandler ui_handler;
     String device_addr;
     final Object global_lock = new Object();
@@ -33,6 +43,7 @@ public class BLEIDA extends Service implements ServiceConnection {
     String write_characteristic_uuid;
     BluetoothGattCharacteristic read_characteristic;
     BluetoothGattCharacteristic write_characteristic;
+    MessageQueue message_queue;
 
     public class LocalBinder extends Binder {
         BLEIDA getService() {
@@ -53,15 +64,23 @@ public class BLEIDA extends Service implements ServiceConnection {
     @Override
     public void onDestroy () {
         logging("onDestroy()");
+        this.handler_thread.quit();
         bluetooth_le_service.disconnect();
         this.getApplicationContext().unbindService(this);
         this.unregisterReceiver(gatt_update_receiver);
     }
 
-    public String init (MainActivity.UIhandler ui_handler, String read_characteristic_uuid, String write_characteristic_uuid) {
+    public String init (
+            IDA2DAI ida2dai_ref,
+            MainActivity.UIhandler ui_handler,
+            String read_characteristic_uuid,
+            String write_characteristic_uuid) {
+        this.ida2dai_ref = ida2dai_ref;
+        this.handler_thread.start();
         this.ui_handler = ui_handler;
         this.read_characteristic_uuid = read_characteristic_uuid;
         this.write_characteristic_uuid = write_characteristic_uuid;
+        this.message_queue = new MessageQueue();
 
         /* Check if Bluetooth is supported */
         final BluetoothManager bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -120,6 +139,10 @@ public class BLEIDA extends Service implements ServiceConnection {
         return true;
     }
 
+    void write(String source, byte[] cmd) {
+        message_queue.write(source, cmd);
+    }
+
     private void wait_for_lock () {
         logging("[Global lock] locked");
         try {
@@ -154,7 +177,6 @@ public class BLEIDA extends Service implements ServiceConnection {
         } else {
             logging("Bluetooth service initialized");
             ui_handler.send_info("INITIALIZATION_SUCCEEDED");
-            handler_thread.start();
 
             //Register BluetoothLe Receiver
             final IntentFilter intentFilter = new IntentFilter();
@@ -179,7 +201,7 @@ public class BLEIDA extends Service implements ServiceConnection {
     class GattUpdateReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            logging("Current Thread: %s", Thread.currentThread().getName());
+//            logging("Current Thread: %s", Thread.currentThread().getName());
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_CONNECTED ====");
@@ -201,8 +223,8 @@ public class BLEIDA extends Service implements ServiceConnection {
 //                get_cmd("GET_DF_LIST").run(new JSONArray(), null);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-//                byte[] packet = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
-//                message_queue.receive(packet);
+                byte[] packet = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                message_queue.receive(packet);
             }
         }
     }
@@ -236,7 +258,96 @@ public class BLEIDA extends Service implements ServiceConnection {
             }
         }
     }
+
+    byte[] hex_to_bytes(String hex_string) {
+        int len = hex_string.length();
+        byte[] ret = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            ret[i / 2] = (byte) ((Character.digit(hex_string.charAt(i), 16) << 4) | Character.digit(hex_string.charAt(i + 1), 16));
+        }
+        return ret;
+    }
     /* -------------------------------------------------- */
+
+    class MessageQueue {
+        final LinkedBlockingQueue<byte[]> ocmd_queue = new LinkedBlockingQueue<>();
+        final LinkedBlockingQueue<String> source_queue = new LinkedBlockingQueue<>();
+        final Handler timer = new Handler(handler_thread.getLooper());
+        final Runnable timeout_task = new Runnable () {
+            @Override
+            public void run () {
+                logging("Timeout!");
+                send_ocmd();
+            }
+        };
+
+        public void write(String source, byte[] packet) {
+            logging("MessageQueue.write('%s', %02X)", source, packet[0]);
+            try {
+                source_queue.put(source);
+                ocmd_queue.put(packet);
+                if (ocmd_queue.size() == 1) {
+                    logging("MessageQueue.write(%02X): got only one command, send it", packet[0]);
+                    send_ocmd();
+                }
+            } catch (InterruptedException e) {
+                logging("MessageQueue.write(%02X): ocmd_queue full", packet[0]);
+            }
+        }
+
+        public void receive(byte[] icmd) {
+            logging("MessageQueue.receive(%02X)", icmd[0]);
+            byte[] ocmd = ocmd_queue.peek();
+            String source = source_queue.peek();
+            if (source == null) {
+                source = "";
+            }
+            if (ocmd != null) {
+                if (ida2dai_ref.msg_match(ocmd, icmd)) {
+                    logging("MessageQueue.receive(%02X): match, cancel old timer", icmd[0]);
+                    try {
+                        /* cancel the timer */
+                        timer.removeCallbacks(timeout_task);
+                        source_queue.take();
+                        ocmd_queue.take();
+
+                        /* if ocmd_queue is not empty, send next command */
+                        if (!ocmd_queue.isEmpty()) {
+                            logging("MessageQueue.receive(%02X): send next command", icmd[0]);
+                            send_ocmd();
+                        }
+                    } catch (InterruptedException e) {
+                        logging("MessageQueue.receive(): InterruptedException");
+                    }
+                }
+            }
+
+            ida2dai_ref.receive(source, icmd);
+        }
+
+        private void send_ocmd() {
+            byte[] ocmd = ocmd_queue.peek();
+            if (ocmd == null) {
+                logging("MessageQueue.send_ocmd(): [bug] ocmd not exists");
+                return;
+            }
+            logging("MessageQueue.send_ocmd(): send ocmd %02X", ocmd[0]);
+            write_characteristic.setValue(ocmd);
+            bluetooth_le_service.writeCharacteristic(write_characteristic);
+            logging("MessageQueue.send_ocmd(): start timer");
+            timer.postDelayed(timeout_task, Constants.COMMAND_TIMEOUT);
+        }
+
+        private boolean opcode_match (byte[] ocmd, byte[] icmd) {
+            if (ocmd[0] == icmd[0]) {
+                if (ocmd[0] == MorSensorCommandTable.IN_SENSOR_DATA) {
+                    return ocmd[1] == icmd[1];
+                }
+                return true;
+            }
+            return false;
+        }
+    }
 
     static private void logging (String format, Object... args) {
         Log.i("MorSensor", String.format("[BLEIDA] "+ format, args));
