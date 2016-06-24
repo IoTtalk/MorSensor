@@ -29,7 +29,7 @@ public class DAN extends Thread {
     String ctl_timestamp;
     boolean suspended;
 
-    public boolean init(String endpoint, String mac_addr, JSONObject profile, DAN2DAI dai2dai_ref) {
+    public String init(String endpoint, String mac_addr, JSONObject profile, DAN2DAI dai2dai_ref) {
         logging("init()");
         this.d_id = mac_addr.replace(":", "");
         this.dai2dai_ref = dai2dai_ref;
@@ -59,7 +59,7 @@ public class DAN extends Thread {
             profile.put("d_name", profile.getString("dm_name") + d_id.substring(d_id.length() - 4));
         } catch (JSONException e) {
             logging("init(): JSONException");
-            return false;
+            return "";
         }
 
 
@@ -71,7 +71,7 @@ public class DAN extends Thread {
                         registered = true;
                         this.start();
                     }
-                    return true;
+                    return CSMapi.ENDPOINT;
                 }
             } catch (CSMapi.CSMError e) {
                 logging("init(): REGISTER: CSMError: %s", e.getMessage());
@@ -87,7 +87,7 @@ public class DAN extends Thread {
                 logging("init(): InterruptedException");
             }
         }
-        return false;
+        return "";
     }
 
     public boolean push(String idf_name, JSONArray data) {

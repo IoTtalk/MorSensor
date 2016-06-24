@@ -123,6 +123,10 @@ public class BLEIDA extends Service implements ServiceConnection {
                 super.onScanResult(callbackType, result);
                 BluetoothDevice device = result.getDevice();
                 device_addr = device.getAddress();
+                String device_name = device.getName();
+                if (device_name == null || !device_name.equals("MorSensor")) {
+                    return;
+                }
                 ui_handler.send_info("IDA_DISCOVERED", device_addr);
                 logging("Found device: %s", device_addr);
                 release_lock();
@@ -138,7 +142,7 @@ public class BLEIDA extends Service implements ServiceConnection {
         bluetooth_le_service.connect(device_addr);
         logging("connecting...");
         wait_for_lock();
-        return true;
+        return device_addr != null;
     }
 
     void write(String source, byte[] cmd) {
@@ -227,6 +231,10 @@ public class BLEIDA extends Service implements ServiceConnection {
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 logging("==== ACTION_GATT_SERVICES_DISCOVERED ====");
                 get_characteristics();
+                if (read_characteristic == null || write_characteristic == null) {
+                    bluetooth_le_service.disconnect();
+                    device_addr = null;
+                }
                 release_lock();
                 reconnect_cmd.run(new JSONArray(), null);
 

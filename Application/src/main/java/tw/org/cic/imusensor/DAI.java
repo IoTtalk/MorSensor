@@ -228,6 +228,195 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
         return null;
     }
 
+    void init_idf_handlers() {
+        add_idf_handlers(
+            new IDFhandler(0xD0, "Gyroscope", "Acceleration", "Magnetometer") {
+                @Override
+                public void push(ByteArrayInputStream ul_cmd_params) {
+                    byte[] bytes = new byte[6];
+                    ul_cmd_params.read(bytes, 0, 6);
+                    IDF gyro_idf = get_idf("Gyroscope");
+                    if (gyro_idf.selected) {
+                        gyro_idf.push(bytes);
+                    }
+
+                    ul_cmd_params.read(bytes, 0, 6);
+                    IDF acc_idf = get_idf("Acceleration");
+                    if (acc_idf.selected) {
+                        acc_idf.push(bytes);
+                    }
+
+                    ul_cmd_params.read(bytes, 0, 6);
+                    IDF mag_idf = get_idf("Magnetometer");
+                    if (mag_idf.selected) {
+                        mag_idf.push(bytes);
+                    }
+                }
+            },
+            new IDFhandler(0xC0, "UV") {
+                @Override
+                public void push(ByteArrayInputStream ul_cmd_params) {
+                    byte[] bytes = new byte[2];
+                    ul_cmd_params.read(bytes, 0, 2);
+                    IDF uv_idf = get_idf("UV");
+                    if (uv_idf.selected) {
+                        uv_idf.push(bytes);
+                    }
+                }
+            },
+            new IDFhandler(0x80, "Temperature", "Humidity") {
+                @Override
+                public void push(ByteArrayInputStream ul_cmd_params) {
+                    byte[] bytes = new byte[2];
+                    ul_cmd_params.read(bytes, 0, 2);
+                    IDF temp_idf = get_idf("Temperature");
+                    if (temp_idf.selected) {
+                        temp_idf.push(bytes);
+                    }
+
+                    ul_cmd_params.read(bytes, 0, 2);
+                    IDF hum_idf = get_idf("Humidity");
+                    if (hum_idf.selected) {
+                        hum_idf.push(bytes);
+                    }
+                }
+            },
+            new IDFhandler(0x52, "Color-I") {
+                @Override
+                public void push(ByteArrayInputStream ul_cmd_params) {
+                    byte[] bytes = new byte[8];
+                    ul_cmd_params.read(bytes, 0, 8);
+                    IDF color_idf = get_idf("Color-I");
+                    if (color_idf.selected) {
+                        color_idf.push(bytes);
+                    }
+                }
+            }
+        );
+    }
+
+    void init_idfs () {
+        add_idfs(
+            new IDF("Gyroscope") {
+                @Override
+                public void push(byte[] bytes) {
+                    final float gyro_x = (float) (((short)bytes[0] * 256 + (short)bytes[1]) / 32.8);
+                    final float gyro_y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 32.8);
+                    final float gyro_z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 32.8);
+                    try {
+                        final JSONArray data = new JSONArray();
+                        data.put(gyro_x);
+                        data.put(gyro_y);
+                        data.put(gyro_z);
+                        dan.push("Gyroscope", data);
+                        logging("push(Gyroscope, %s)", data);
+                    } catch (JSONException e) {
+                        logging("push(Gyroscope): JSONException");
+                    }
+                }
+            },
+            new IDF("Acceleration") {
+                @Override
+                public void push(byte[] bytes) {
+                    try {
+                        final JSONArray data = new JSONArray();
+                        data.put((float) (((short)bytes[0] * 256 + (short)bytes[1]) / 4096.0) * (float) 9.8);
+                        data.put((float) (((short)bytes[2] * 256 + (short)bytes[3]) / 4096.0) * (float) 9.8);
+                        data.put((float) (((short)bytes[4] * 256 + (short)bytes[5]) / 4096.0) * (float) 9.8);
+                        dan.push("Acceleration", data);
+                        logging("push(Acceleration, %s)", data);
+                    } catch (JSONException e) {
+                        logging("push(Acceleration): JSONException");
+                    }
+                }
+            },
+            new IDF("Magnetometer") {
+                @Override
+                public void push(byte[] bytes) {
+                    try {
+                        final JSONArray data = new JSONArray();
+                        data.put((float) (((short)bytes[0] * 256 + (short)bytes[1]) / 3.41 / 100));
+                        data.put((float) (((short)bytes[2] * 256 + (short)bytes[3]) / 3.41 / 100));
+                        data.put((float) (((short)bytes[4] * 256 + (short)bytes[5]) / 3.41 /-100));
+                        dan.push("Magnetometer", data);
+                        logging("push(Magnetometer, %s)", data);
+                    } catch (JSONException e) {
+                        logging("push(Magnetometer): JSONException");
+                    }
+                }
+            },
+            new IDF("UV") {
+                @Override
+                public void push(byte[] bytes) {
+                    try {
+                        final float uv_data = (float) (bytes[1] * 256 + (bytes[0]) / 100.0);
+                        dan.push("UV", new JSONArray(){{
+                            put(uv_data);
+                        }});
+                        logging("push(UV, [%f])", uv_data);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            },
+            new IDF("Temperature") {
+                @Override
+                public void push(byte[] bytes) {
+                    try {
+                        final float temperature = (float) ((bytes[0] * 256 + bytes[1]) * 175.72 / 65536.0 - 46.85);
+                        dan.push("Temperature", new JSONArray(){{
+                            put(temperature);
+                        }});
+                        logging("push(Temperature, [%f])", temperature);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            },
+            new IDF("Humidity") {
+                @Override
+                public void push(byte[] bytes) {
+                    try {
+                        final float humidity = (float) ((bytes[0] * 256 + bytes[1]) * 125.0 / 65536.0 - 6.0);
+                        dan.push("Humidity", new JSONArray(){{
+                            put(humidity);
+                        }});
+                        logging("push(Humidity, [%f])", humidity);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            },
+            new IDF("Color-I") {
+                int last_r, last_g, last_b;
+                @Override
+                public void push(byte[] bytes) {
+                    final JSONArray data = new JSONArray();
+                    int r = bytes[1] & 0xFF;
+                    int g = bytes[3] & 0xFF;
+                    int b = bytes[5] & 0xFF;
+
+                    int diff_r = Math.abs(last_r - r);
+                    int diff_g = Math.abs(last_g - g);
+                    int diff_b = Math.abs(last_b - b);
+
+                    if (diff_r > 1 || diff_g > 1 || diff_b > 1) {
+                        last_r = r;
+                        last_g = g;
+                        last_b = b;
+                        data.put(r);
+                        data.put(g);
+                        data.put(b);
+                        dan.push("Color-I", data);
+                        logging("push(Color-I, %s)", data);
+                    } else {
+                        logging("Color diff too small (%d, %d, %d) -> (%d, %d, %d)", r, g, b, last_r, last_g, last_b);
+                    }
+                }
+            }
+        );
+    }
+
     void init_cmds () {
         add_cmds(
             new Command("INIT_PROCEDURE", MorSensorCommandTable.IN_MORSENSOR_VERSION, MorSensorCommandTable.IN_FIRMWARE_VERSION, MorSensorCommandTable.IN_SENSOR_LIST) {
@@ -275,10 +464,11 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                                     JSONObject profile = new JSONObject() {{
                                         put("df_list", df_list);
                                         put("dm_name", "MorSensor");
-                                        put("is_sim", "False");
-                                        put("u_name", "cychih");
+                                        put("is_sim", false);
+                                        put("u_name", "yb");
                                     }};
-                                    dan.init("http://140.113.215.10:9999", mac_addr, profile, DAI.this);
+                                    String endpoint = dan.init("http://140.113.215.10:9999", mac_addr, profile, DAI.this);
+                                    ui_handler.send_info("REGISTRATION_SUCCEED", endpoint);
                                 } catch (JSONException e) {
                                     logging("DAI.run(): register: JSONException");
                                 }
@@ -318,8 +508,14 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                                     sensor_responded[i] = false;
                                     if (!suspended) {
                                         if (any_selected) {
+                                            if (sensor_list[i] == 0x52) {
+                                                ble_ida.write("", MorSensorCommandTable.ModifyLEDState((byte) 1));
+                                            }
                                             ble_ida.write("SET_DF_STATUS", MorSensorCommandTable.RetrieveSensorData(idf_handler.sensor_id));
                                         } else {
+                                            if (sensor_list[i] == 0x52) {
+                                                ble_ida.write("", MorSensorCommandTable.ModifyLEDState((byte) 0));
+                                            }
                                             ble_ida.write("SET_DF_STATUS", MorSensorCommandTable.SetSensorStopTransmission(idf_handler.sensor_id));
                                         }
                                     }
@@ -377,6 +573,9 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_activate[i]) {
                                 sensor_responded[i] = false;
+                                if (sensor_list[i] == 0x52) {
+                                    ble_ida.write("", MorSensorCommandTable.ModifyLEDState((byte) 1));
+                                }
                                 ble_ida.write("RESUME", MorSensorCommandTable.RetrieveSensorData(sensor_list[i]));
                             } else {
                                 sensor_responded[i] = true;
@@ -411,6 +610,9 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_activate[i]) {
                                 sensor_responded[i] = false;
+                                if (sensor_list[i] == 0x52) {
+                                    ble_ida.write("", MorSensorCommandTable.ModifyLEDState((byte) 0));
+                                }
                                 ble_ida.write("SUSPEND", MorSensorCommandTable.SetSensorStopTransmission(sensor_list[i]));
                             } else {
                                 sensor_responded[i] = true;
@@ -448,159 +650,6 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                     }
                 }
             }
-        );
-    }
-
-    void init_idf_handlers() {
-        add_idf_handlers(
-                new IDFhandler(0xD0, "Gyroscope", "Acceleration", "Magnetometer") {
-                    @Override
-                    public void push(ByteArrayInputStream ul_cmd_params) {
-                        byte[] bytes = new byte[6];
-                        ul_cmd_params.read(bytes, 0, 6);
-                        IDF gyro_idf = get_idf("Gyroscope");
-                        if (gyro_idf.selected) {
-                            gyro_idf.push(bytes);
-                        }
-
-                        ul_cmd_params.read(bytes, 0, 6);
-                        IDF acc_idf = get_idf("Acceleration");
-                        if (acc_idf.selected) {
-                            acc_idf.push(bytes);
-                        }
-
-                        ul_cmd_params.read(bytes, 0, 6);
-                        IDF mag_idf = get_idf("Magnetometer");
-                        if (mag_idf.selected) {
-                            mag_idf.push(bytes);
-                        }
-                    }
-                },
-                new IDFhandler(0xC0, "UV") {
-                    @Override
-                    public void push(ByteArrayInputStream ul_cmd_params) {
-                        byte[] bytes = new byte[2];
-                        ul_cmd_params.read(bytes, 0, 2);
-                        IDF uv_idf = get_idf("UV");
-                        if (uv_idf.selected) {
-                            uv_idf.push(bytes);
-                        }
-                    }
-                },
-                new IDFhandler(0x80, "Temperature", "Humidity") {
-                    @Override
-                    public void push(ByteArrayInputStream ul_cmd_params) {
-                        byte[] bytes = new byte[2];
-                        ul_cmd_params.read(bytes, 0, 2);
-                        IDF temp_idf = get_idf("Temperature");
-                        if (temp_idf.selected) {
-                            temp_idf.push(bytes);
-                        }
-
-                        ul_cmd_params.read(bytes, 0, 2);
-                        IDF hum_idf = get_idf("Humidity");
-                        if (hum_idf.selected) {
-                            hum_idf.push(bytes);
-                        }
-                    }
-                }
-        );
-    }
-
-    void init_idfs () {
-        add_idfs(
-                new IDF("Gyroscope") {
-                    @Override
-                    public void push(byte[] bytes) {
-                        final float gyro_x = (float) (((short)bytes[0] * 256 + (short)bytes[1]) / 32.8);
-                        final float gyro_y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 32.8);
-                        final float gyro_z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 32.8);
-                        try {
-                            final JSONArray data = new JSONArray();
-                            data.put(gyro_x);
-                            data.put(gyro_y);
-                            data.put(gyro_z);
-                            dan.push("Gyroscope", data);
-                            logging("push(Gyroscope, %s)", data);
-                        } catch (JSONException e) {
-                            logging("push(Gyroscope): JSONException");
-                        }
-                    }
-                },
-                new IDF("Acceleration") {
-                    @Override
-                    public void push(byte[] bytes) {
-                        try {
-                            final JSONArray data = new JSONArray();
-                            data.put((float) (((short)bytes[0] * 256 + (short)bytes[1]) / 4096.0) * (float) 9.8);
-                            data.put((float) (((short)bytes[2] * 256 + (short)bytes[3]) / 4096.0) * (float) 9.8);
-                            data.put((float) (((short)bytes[4] * 256 + (short)bytes[5]) / 4096.0) * (float) 9.8);
-                            dan.push("Acceleration", data);
-                            logging("push(Acceleration, %s)", data);
-                        } catch (JSONException e) {
-                            logging("push(Acceleration): JSONException");
-                        }
-                    }
-                },
-                new IDF("Magnetometer") {
-                    @Override
-                    public void push(byte[] bytes) {
-                        try {
-                            final JSONArray data = new JSONArray();
-                            data.put((float) (((short)bytes[0] * 256 + (short)bytes[1]) / 3.41 / 100));
-                            data.put((float) (((short)bytes[2] * 256 + (short)bytes[3]) / 3.41 / 100));
-                            data.put((float) (((short)bytes[4] * 256 + (short)bytes[5]) / 3.41 /-100));
-                            dan.push("Magnetometer", data);
-                            logging("push(Magnetometer, %s)", data);
-                        } catch (JSONException e) {
-                            logging("push(Magnetometer): JSONException");
-                        }
-                    }
-                },
-                new IDF("UV") {
-                    @Override
-                    public void push(byte[] bytes) {
-                        try {
-                            final float uv_data = (float) (bytes[1] * 256 + (bytes[0]) / 100.0);
-                            dan.push("UV", new JSONArray(){{
-                                put(uv_data);
-                            }});
-                            logging("push(UV, [%f])", uv_data);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                },
-                new IDF("Temperature") {
-                    @Override
-                    public void push(byte[] bytes) {
-                        try {
-                            final float temperature = (float) ((bytes[0] * 256 + bytes[1]) * 175.72 / 65536.0 - 46.85);
-                            //                    DAN.push("Temperature", new float[]{temperature});
-                            dan.push("Temperature", new JSONArray(){{
-                                put(temperature);
-                            }});
-                            logging("push(Temperature, [%f])", temperature);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                },
-                new IDF("Humidity") {
-                    @Override
-                    public void push(byte[] bytes) {
-                        try {
-                            final float humidity = (float) ((bytes[0] * 256 + bytes[1]) * 125.0 / 65536.0 - 6.0);
-                            //                    DAN.push("Humidity", new float[]{humidity});
-                            dan.push("Humidity", new JSONArray(){{
-                                put(humidity);
-                            }});
-                            logging("push(Humidity, [%f])", humidity);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
         );
     }
 

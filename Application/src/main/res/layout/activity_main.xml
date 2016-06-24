@@ -103,4 +103,11 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/tv_endpoint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge">
+    </TextView>
+
 </LinearLayout>

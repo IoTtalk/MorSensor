@@ -127,6 +127,14 @@ public class MorSensorCommandTable {
         return command;
     }
 
+    public static byte[] ModifyLEDState (byte state) {
+        byte[] command = new byte[20];
+        command[0] = OUT_MODIFY_LED_STATE;
+        command[1] = 0x03;
+        command[2] = state;
+        return command;
+    }
+
     static private void logging (String format, Object... args) {
         logging(String.format(format, args));
     }

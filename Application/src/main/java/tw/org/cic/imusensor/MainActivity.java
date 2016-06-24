@@ -92,6 +92,10 @@ public class MainActivity extends Activity implements ServiceConnection {
                         ll_df_status.addView(inflated_view);
                     }
                     break;
+                case "REGISTRATION_SUCCEED":
+                    String endpoint = (String)(values[0]);
+                    ((TextView)findViewById(R.id.tv_endpoint)).setText(endpoint);
+                    break;
                 case "SET_DF_STATUS":
                     String flags = (String)(values[0]);
                     logging(flags);
@@ -158,7 +162,7 @@ public class MainActivity extends Activity implements ServiceConnection {
                 }
             }.start();
             ble_ida.disconnect();
-            MainActivity.this.unbindService(MainActivity.this);
+            this.unbindService(this);
         }
     }
 
