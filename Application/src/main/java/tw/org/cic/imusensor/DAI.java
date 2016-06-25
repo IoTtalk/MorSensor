@@ -22,6 +22,8 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
     final ArrayList<IDF> idf_list = new ArrayList<>();
     JSONArray df_list;
     String mac_addr;
+    long last_timestamp;
+    final long threshold = 50;
     byte[] sensor_list;
     boolean[] sensor_activate;
     boolean[] sensor_responded;
@@ -128,17 +130,31 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
     @Override
     public void receive(String source, byte[] msg) {
         byte i_opcode = msg[0];
-        for (Command cmd: cmd_list) {
-            for (byte cmd_opcode: cmd.opcodes) {
-                if (cmd_opcode == i_opcode && source.equals(cmd.name)) {
-                    ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(msg);
-                    cmd.run(null, ul_cmd_params);
-                    try {
-                        ul_cmd_params.close();
-                    } catch (IOException e) {
-                        logging("MessageQueue.receive(%02X): IOException", msg[0]);
+        if (i_opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+            long timestamp = System.currentTimeMillis();
+            if (timestamp - last_timestamp < threshold) {
+                logging("MorSensor data rate too high, drop packet");
+            } else {
+                ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(msg);
+                last_timestamp = timestamp;
+                byte opcode = (byte) ul_cmd_params.read();
+                byte sensor_id = (byte) ul_cmd_params.read();
+                logging("Sensor data from %02X", sensor_id);
+                get_idf_handler(sensor_id).push(ul_cmd_params);
+            }
+        } else {
+            for (Command cmd : cmd_list) {
+                for (byte cmd_opcode : cmd.opcodes) {
+                    if (cmd_opcode == i_opcode && source.equals(cmd.name)) {
+                        ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(msg);
+                        cmd.run(null, ul_cmd_params);
+                        try {
+                            ul_cmd_params.close();
+                        } catch (IOException e) {
+                            logging("MessageQueue.receive(%02X): IOException", msg[0]);
+                        }
+                        return;
                     }
-                    return;
                 }
             }
         }
@@ -298,50 +314,104 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
     void init_idfs () {
         add_idfs(
             new IDF("Gyroscope") {
+                float last_x;
+                float last_y;
+                float last_z;
+                float threshold = 10;
                 @Override
                 public void push(byte[] bytes) {
-                    final float gyro_x = (float) (((short)bytes[0] * 256 + (short)bytes[1]) / 32.8);
-                    final float gyro_y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 32.8);
-                    final float gyro_z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 32.8);
-                    try {
-                        final JSONArray data = new JSONArray();
-                        data.put(gyro_x);
-                        data.put(gyro_y);
-                        data.put(gyro_z);
-                        dan.push("Gyroscope", data);
-                        logging("push(Gyroscope, %s)", data);
-                    } catch (JSONException e) {
-                        logging("push(Gyroscope): JSONException");
+                    final float x = (float) (((short)bytes[0] * 256 + (short)bytes[1]) / 32.8);
+                    final float y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 32.8);
+                    final float z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 32.8);
+
+                    float diff_x = Math.abs(last_x - x);
+                    float diff_y = Math.abs(last_y - y);
+                    float diff_z = Math.abs(last_z - z);
+
+                    if (diff_x > threshold || diff_y > threshold || diff_z > threshold) {
+                        last_x = x;
+                        last_y = y;
+                        last_z = z;
+                        try {
+                            final JSONArray data = new JSONArray();
+                            data.put(x);
+                            data.put(y);
+                            data.put(z);
+                            dan.push("Gyroscope", data);
+                            logging("push(Gyroscope, %s)", data);
+                        } catch (JSONException e) {
+                            logging("push(Gyroscope): JSONException");
+                        }
+                    } else {
+                        logging("Gyro diff too small (%f, %f, %f) -> (%f, %f, %f)", last_x, last_y, last_z, x, y, z);
                     }
                 }
             },
             new IDF("Acceleration") {
+                float last_x;
+                float last_y;
+                float last_z;
+                float threshold = 1;
                 @Override
                 public void push(byte[] bytes) {
-                    try {
-                        final JSONArray data = new JSONArray();
-                        data.put((float) (((short)bytes[0] * 256 + (short)bytes[1]) / 4096.0) * (float) 9.8);
-                        data.put((float) (((short)bytes[2] * 256 + (short)bytes[3]) / 4096.0) * (float) 9.8);
-                        data.put((float) (((short)bytes[4] * 256 + (short)bytes[5]) / 4096.0) * (float) 9.8);
-                        dan.push("Acceleration", data);
-                        logging("push(Acceleration, %s)", data);
-                    } catch (JSONException e) {
-                        logging("push(Acceleration): JSONException");
+                    final float x = (float) (((short)bytes[0] * 256 + (short)bytes[1]) / 4096.0) * (float) 9.8;
+                    final float y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 4096.0) * (float) 9.8;
+                    final float z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 4096.0) * (float) 9.8;
+
+                    float diff_x = Math.abs(last_x - x);
+                    float diff_y = Math.abs(last_y - y);
+                    float diff_z = Math.abs(last_z - z);
+
+                    if (diff_x > threshold || diff_y > threshold || diff_z > threshold) {
+                        last_x = x;
+                        last_y = y;
+                        last_z = z;
+                        try {
+                            final JSONArray data = new JSONArray();
+                            data.put(x);
+                            data.put(y);
+                            data.put(z);
+                            dan.push("Acceleration", data);
+                            logging("push(Acceleration, %s)", data);
+                        } catch (JSONException e) {
+                            logging("push(Acceleration): JSONException");
+                        }
+                    } else {
+                        logging("Acc diff too small (%f, %f, %f) -> (%f, %f, %f)", last_x, last_y, last_z, x, y, z);
                     }
                 }
             },
             new IDF("Magnetometer") {
+                float last_x;
+                float last_y;
+                float last_z;
+                float threshold = 10;
                 @Override
                 public void push(byte[] bytes) {
-                    try {
-                        final JSONArray data = new JSONArray();
-                        data.put((float) (((short)bytes[0] * 256 + (short)bytes[1]) / 3.41 / 100));
-                        data.put((float) (((short)bytes[2] * 256 + (short)bytes[3]) / 3.41 / 100));
-                        data.put((float) (((short)bytes[4] * 256 + (short)bytes[5]) / 3.41 /-100));
-                        dan.push("Magnetometer", data);
-                        logging("push(Magnetometer, %s)", data);
-                    } catch (JSONException e) {
-                        logging("push(Magnetometer): JSONException");
+                    final float x = (float) (((short)bytes[0] * 256 + (short)bytes[1]) / 3.41 / 100);
+                    final float y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 3.41 / 100);
+                    final float z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 3.41 /-100);
+
+                    float diff_x = Math.abs(last_x - x);
+                    float diff_y = Math.abs(last_y - y);
+                    float diff_z = Math.abs(last_z - z);
+
+                    if (diff_x > threshold || diff_y > threshold || diff_z > threshold) {
+                        last_x = x;
+                        last_y = y;
+                        last_z = z;
+                        try {
+                            final JSONArray data = new JSONArray();
+                            data.put(x);
+                            data.put(y);
+                            data.put(z);
+                            dan.push("Magnetometer", data);
+                            logging("push(Magnetometer, %s)", data);
+                        } catch (JSONException e) {
+                            logging("push(Magnetometer): JSONException");
+                        }
+                    } else {
+                        logging("Mag diff too small (%f, %f, %f) -> (%f, %f, %f)", last_x, last_y, last_z, x, y, z);
                     }
                 }
             },
@@ -389,6 +459,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
             },
             new IDF("Color-I") {
                 int last_r, last_g, last_b;
+                int threshold = 1;
                 @Override
                 public void push(byte[] bytes) {
                     final JSONArray data = new JSONArray();
@@ -400,7 +471,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                     int diff_g = Math.abs(last_g - g);
                     int diff_b = Math.abs(last_b - b);
 
-                    if (diff_r > 1 || diff_g > 1 || diff_b > 1) {
+                    if (diff_r > threshold || diff_g > threshold || diff_b > threshold) {
                         last_r = r;
                         last_g = g;
                         last_b = b;
@@ -410,7 +481,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                         dan.push("Color-I", data);
                         logging("push(Color-I, %s)", data);
                     } else {
-                        logging("Color diff too small (%d, %d, %d) -> (%d, %d, %d)", r, g, b, last_r, last_g, last_b);
+                        logging("Color diff too small (%d, %d, %d) -> (%d, %d, %d)", last_r, last_g, last_b, r, g, b);
                     }
                 }
             }
@@ -467,7 +538,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                                         put("is_sim", false);
                                         put("u_name", "yb");
                                     }};
-                                    String endpoint = dan.init("http://140.113.215.10:9999", mac_addr, profile, DAI.this);
+                                    String endpoint = dan.init(null, mac_addr, profile, DAI.this);
                                     ui_handler.send_info("REGISTRATION_SUCCEED", endpoint);
                                 } catch (JSONException e) {
                                     logging("DAI.run(): register: JSONException");
@@ -635,18 +706,6 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                         if (all(sensor_responded)) {
                             push_cmd_to_iottalk("SUSPEND_RSP", "OK");
                         }
-                    }
-                }
-            },
-            new Command("", MorSensorCommandTable.IN_SENSOR_DATA) {
-                @Override
-                public void run(JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params) {
-                    if (ul_cmd_params == null) {
-                    } else {
-                        byte opcode = (byte) ul_cmd_params.read();
-                        byte sensor_id = (byte) ul_cmd_params.read();
-                        logging("Sensor data from %02X", sensor_id);
-                        get_idf_handler(sensor_id).push(ul_cmd_params);
                     }
                 }
             }
