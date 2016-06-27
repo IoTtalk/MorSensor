@@ -20,7 +20,8 @@ public class DAN extends Thread {
     final int RETRY_INTERVAL = 2000;
     public final String log_tag = "MorSensor";
     DAN2DAI dai2dai_ref;
-    String d_id;
+    String mac_addr;
+    JSONObject profile;
     boolean registered;
     String[] df_list;
     boolean[] df_selected;
@@ -29,10 +30,11 @@ public class DAN extends Thread {
     String ctl_timestamp;
     boolean suspended;
 
-    public String init(String endpoint, String mac_addr, JSONObject profile, DAN2DAI dai2dai_ref) {
+    public String init(DAN2DAI dai2dai_ref, String endpoint, String mac_addr, JSONObject profile) {
         logging("init()");
-        this.d_id = mac_addr.replace(":", "");
         this.dai2dai_ref = dai2dai_ref;
+        this.mac_addr = mac_addr.replace(":", "");
+        this.profile = profile;
         if (!registered) {
             if (endpoint == null) {
                 CSMapi.ENDPOINT = search();
@@ -41,6 +43,13 @@ public class DAN extends Thread {
             }
         }
 
+        if (register(CSMapi.ENDPOINT)) {
+            return CSMapi.ENDPOINT;
+        }
+        return "";
+    }
+
+    public boolean register (String endpoint) {
         try {
             JSONArray json_df_list = profile.getJSONArray("df_list");
             df_list = new String[json_df_list.length()];
@@ -56,22 +65,22 @@ public class DAN extends Thread {
             ctl_timestamp = "";
             suspended = true;
 
-            profile.put("d_name", profile.getString("dm_name") + d_id.substring(d_id.length() - 4));
+            profile.put("d_name", profile.getString("dm_name") + this.mac_addr.substring(this.mac_addr.length() - 4));
         } catch (JSONException e) {
             logging("init(): JSONException");
-            return "";
+            return false;
         }
 
 
         for (int i = 0; i < RETRY_COUNT; i++) {
             try {
-                if (CSMapi.register(d_id, profile)) {
+                if (CSMapi.register(this.mac_addr, profile)) {
                     logging("init(): Register succeed: %s", CSMapi.ENDPOINT);
                     if (!registered) {
                         registered = true;
                         this.start();
                     }
-                    return CSMapi.ENDPOINT;
+                    return true;
                 }
             } catch (CSMapi.CSMError e) {
                 logging("init(): REGISTER: CSMError: %s", e.getMessage());
@@ -87,7 +96,7 @@ public class DAN extends Thread {
                 logging("init(): InterruptedException");
             }
         }
-        return "";
+        return false;
     }
 
     public boolean push(String idf_name, JSONArray data) {
@@ -101,7 +110,7 @@ public class DAN extends Thread {
                     df_is_odf[i] = false;
                 }
             }
-            return CSMapi.push(d_id, idf_name, data);
+            return CSMapi.push(mac_addr, idf_name, data);
         } catch (CSMapi.CSMError e) {
             logging("push(): CSMError: %s", e.getMessage());
         } catch (JSONException e) {
@@ -121,7 +130,7 @@ public class DAN extends Thread {
         registered = false;
         for (int i = 0; i < RETRY_COUNT; i++) {
             try {
-                if (CSMapi.deregister(d_id)) {
+                if (CSMapi.deregister(mac_addr)) {
                     logging("deregister(): Deregister succeed: %s", CSMapi.ENDPOINT);
                     return true;
                 }
@@ -183,7 +192,7 @@ public class DAN extends Thread {
     }
 
     JSONArray pull (String odf_name, int index) throws JSONException, CSMapi.CSMError, InterruptedIOException {
-        JSONArray dataset = CSMapi.pull(d_id, odf_name);
+        JSONArray dataset = CSMapi.pull(mac_addr, odf_name);
         if (dataset == null || dataset.length() == 0) {
             return null;
         }

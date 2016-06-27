@@ -28,6 +28,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
     boolean[] sensor_activate;
     boolean[] sensor_responded;
     boolean suspended = true;
+    String endpoint = "";
 
     static abstract class IDFhandler {
         public IDFhandler(int sensor_id, String... df_list) {
@@ -538,10 +539,14 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                                         put("is_sim", false);
                                         put("u_name", "yb");
                                     }};
-                                    String endpoint = dan.init(null, mac_addr, profile, DAI.this);
+                                    if (endpoint.equals("")) {
+                                        endpoint = dan.init(DAI.this, null, mac_addr, profile);
+                                    } else {
+                                        dan.register(endpoint);
+                                    }
                                     ui_handler.send_info("REGISTRATION_SUCCEED", endpoint);
                                 } catch (JSONException e) {
-                                    logging("DAI.run(): register: JSONException");
+                                    logging("DAI.run(): init: JSONException");
                                 }
                                 break;
                         }
