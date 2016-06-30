@@ -34,22 +34,25 @@ public class DAN extends Thread {
         logging("init()");
         this.dai2dai_ref = dai2dai_ref;
         this.mac_addr = mac_addr.replace(":", "");
-        this.profile = profile;
-        if (!registered) {
-            if (endpoint == null) {
-                CSMapi.ENDPOINT = search();
-            } else {
-                CSMapi.ENDPOINT = endpoint;
-            }
+        if (endpoint == null) {
+            endpoint = search();
         }
 
-        if (register(CSMapi.ENDPOINT)) {
+        if (register(endpoint, profile)) {
             return CSMapi.ENDPOINT;
         }
         return "";
     }
 
-    public boolean register (String endpoint) {
+    public boolean register (String endpoint, JSONObject profile) {
+        if (endpoint != null) {
+            CSMapi.ENDPOINT = endpoint;
+        }
+        if (CSMapi.ENDPOINT == null) {
+            return false;
+        }
+
+        this.profile = profile;
         try {
             JSONArray json_df_list = profile.getJSONArray("df_list");
             df_list = new String[json_df_list.length()];
@@ -108,7 +111,13 @@ public class DAN extends Thread {
             for (int i = 0; i < df_list.length; i++) {
                 if (idf_name.equals(df_list[i])) {
                     df_is_odf[i] = false;
+                    if (!df_selected[i]) {
+                        return false;
+                    }
                 }
+            }
+            if (suspended) {
+                return false;
             }
             return CSMapi.push(mac_addr, idf_name, data);
         } catch (CSMapi.CSMError e) {
@@ -156,8 +165,11 @@ public class DAN extends Thread {
             try {
                 JSONArray data = pull("__Ctl_O__", 0);
                 if (data != null) {
-                    handle_control_message(data);
-                    dai2dai_ref.pull("Control", data);
+                    if (handle_control_message(data)) {
+                        dai2dai_ref.pull("Control", data);
+                    } else {
+                        logging("The command message is problematic, abort");
+                    }
                 }
 
                 for (int i = 0; i < df_list.length; i++) {
@@ -211,7 +223,8 @@ public class DAN extends Thread {
         return dataset.getJSONArray(0).getJSONArray(1);
     }
 
-    void handle_control_message (JSONArray data) {
+    boolean handle_control_message (JSONArray data) {
+        logging(data.toString());
         try {
             switch (data.getString(0)) {
                 case "RESUME":
@@ -222,8 +235,12 @@ public class DAN extends Thread {
                     break;
                 case "SET_DF_STATUS":
                     final String flags = data.getJSONObject(1).getJSONArray("cmd_params").getString(0);
-                    for(int i = 0; i < flags.length(); i++) {
-                        if(flags.charAt(i) == '0') {
+                    if (flags.length() != df_list.length) {
+                        logging("SET_DF_STATUS flag length & df_list mismatch, abort");
+                        return false;
+                    }
+                    for (int i = 0; i < flags.length(); i++) {
+                        if (flags.charAt(i) == '0') {
                             df_selected[i] = false;
                         } else {
                             df_selected[i] = true;
@@ -231,9 +248,11 @@ public class DAN extends Thread {
                     }
                     break;
             }
+            return true;
         } catch (JSONException e) {
             logging("handle_control_message(): JSONException");
         }
+        return false;
     }
 
     // ***************************** //

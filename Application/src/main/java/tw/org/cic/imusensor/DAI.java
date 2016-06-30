@@ -542,7 +542,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                                     if (endpoint.equals("")) {
                                         endpoint = dan.init(DAI.this, null, mac_addr, profile);
                                     } else {
-                                        dan.register(endpoint);
+                                        dan.register(endpoint, profile);
                                     }
                                     ui_handler.send_info("REGISTRATION_SUCCEED", endpoint);
                                 } catch (JSONException e) {

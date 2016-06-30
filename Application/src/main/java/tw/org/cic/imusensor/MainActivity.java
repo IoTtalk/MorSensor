@@ -71,6 +71,7 @@ public class MainActivity extends Activity implements ServiceConnection {
                     ((TextView)findViewById(R.id.tv_firmware_version)).setText(message);
                     break;
                 case "DF_LIST":
+                    logging("DF_LIST: %s -> %s", df_list, (JSONArray)(values[0]));
                     df_list = (JSONArray)(values[0]);
                     LinearLayout ll_df_status = (LinearLayout)findViewById(R.id.ll_df_status);
                     ll_df_status.removeAllViews();
@@ -99,6 +100,10 @@ public class MainActivity extends Activity implements ServiceConnection {
                 case "SET_DF_STATUS":
                     String flags = (String)(values[0]);
                     logging(flags);
+                    if (flags.length() != df_list.length()) {
+                        logging("SET_DF_STATUS flag length & df_list mismatch, abort");
+                        return;
+                    }
                     for (int i = 0; i < df_list.length(); i++) {
                         String df_name = "<JSONException>";
                         try {

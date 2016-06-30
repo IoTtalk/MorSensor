@@ -38,29 +38,6 @@ public class Utils {
 
         return wifiInf.getMacAddress();
     }
-    
-    static public void show_ec_status_on_notification (Context context, String host, boolean status) {
-        String text = status ? host : "Connecting";
-        NotificationManager notification_manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification.Builder notification_builder = new Notification.Builder(context)
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setContentTitle(Constants.dm_name)
-                .setContentText(text);
-
-        PendingIntent pending_intent = PendingIntent.getActivity(
-        		context, 0,
-                new Intent(context, SelectMorSensorActivity.class),
-                PendingIntent.FLAG_UPDATE_CURRENT
-        );
-
-        notification_builder.setContentIntent(pending_intent);
-        notification_manager.notify(NOTIFICATION_ID, notification_builder.build());
-    }
-    
-    static public void remove_all_notification (Context context) {
-    	NotificationManager notification_manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-    	notification_manager.cancelAll();
-    }
 
     static public String get_wifi_ssid (Context context) {
         final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);

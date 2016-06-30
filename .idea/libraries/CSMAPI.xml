@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="CSMAPI">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/Application/libs/CSMAPI.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
