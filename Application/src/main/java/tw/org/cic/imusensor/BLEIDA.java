@@ -221,6 +221,7 @@ public class BLEIDA extends Service implements ServiceConnection {
 
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_DISCONNECTED ====");
+                message_queue.clear();
                 if (device_addr != null) {
                     ui_handler.send_info("CONNECTING");
                     bluetooth_le_service.connect(device_addr);
@@ -293,7 +294,7 @@ public class BLEIDA extends Service implements ServiceConnection {
             @Override
             public void run () {
                 logging("Timeout!");
-                send_omsg();
+                send_msg();
             }
         };
 
@@ -304,11 +305,18 @@ public class BLEIDA extends Service implements ServiceConnection {
                 omsg_queue.put(packet);
                 if (omsg_queue.size() == 1) {
                     logging("MessageQueue.write(%02X): got only one command, send it", packet[0]);
-                    send_omsg();
+                    send_msg();
                 }
             } catch (InterruptedException e) {
                 logging("MessageQueue.write(%02X): omsg_queue full", packet[0]);
             }
+        }
+
+        public void clear () {
+            logging("MessageQueue.clear()");
+            timer.removeCallbacks(timeout_task);
+            source_queue.clear();
+            omsg_queue.clear();
         }
 
         public void receive(byte[] imsg) {
@@ -330,7 +338,7 @@ public class BLEIDA extends Service implements ServiceConnection {
                         /* if omsg_queue is not empty, send next command */
                         if (!omsg_queue.isEmpty()) {
                             logging("MessageQueue.receive(%02X): send next command", imsg[0]);
-                            send_omsg();
+                            send_msg();
                         }
                     } catch (InterruptedException e) {
                         logging("MessageQueue.receive(): InterruptedException");
@@ -341,16 +349,16 @@ public class BLEIDA extends Service implements ServiceConnection {
             ida2dai_ref.receive(source, imsg);
         }
 
-        private void send_omsg() {
+        private void send_msg() {
             byte[] omsg = omsg_queue.peek();
             if (omsg == null) {
-                logging("MessageQueue.send_omsg(): [bug] omsg does not exist");
+                logging("MessageQueue.send_msg(): [bug] omsg does not exist");
                 return;
             }
-            logging("MessageQueue.send_omsg(): send omsg %02X", omsg[0]);
+            logging("MessageQueue.send_msg(): send omsg %02X", omsg[0]);
             write_characteristic.setValue(omsg);
             bluetooth_le_service.writeCharacteristic(write_characteristic);
-            logging("MessageQueue.send_omsg(): start timer");
+            logging("MessageQueue.send_msg(): start timer");
             timer.postDelayed(timeout_task, Constants.COMMAND_TIMEOUT);
         }
     }
