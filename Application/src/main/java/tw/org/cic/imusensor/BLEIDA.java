@@ -44,6 +44,7 @@ public class BLEIDA extends Service implements ServiceConnection {
     BluetoothGattCharacteristic write_characteristic;
     MessageQueue message_queue;
     DAI.Command reconnect_cmd;
+    boolean connected;
 
     public class LocalBinder extends Binder {
         BLEIDA getService() {
@@ -138,6 +139,7 @@ public class BLEIDA extends Service implements ServiceConnection {
     }
 
     private boolean connect () {
+        logging("connect()");
         ui_handler.send_info("CONNECTING");
         bluetooth_le_service.connect(device_addr);
         logging("connecting...");
@@ -150,6 +152,10 @@ public class BLEIDA extends Service implements ServiceConnection {
     }
 
     boolean disconnect () {
+        if (!connected) {
+            return true;
+        }
+        logging("disconnect()");
         device_addr = null;
         bluetooth_le_service.disconnect();
         wait_for_lock();
@@ -221,6 +227,7 @@ public class BLEIDA extends Service implements ServiceConnection {
 
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_DISCONNECTED ====");
+                connected = false;
                 message_queue.clear();
                 if (device_addr != null) {
                     ui_handler.send_info("CONNECTING");
@@ -238,6 +245,7 @@ public class BLEIDA extends Service implements ServiceConnection {
                 }
                 release_lock();
                 reconnect_cmd.run(new JSONArray(), null);
+                connected = true;
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 byte[] packet = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));

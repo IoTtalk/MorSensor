@@ -61,6 +61,7 @@ public class MainActivity extends Activity implements ServiceConnection {
                 case "CONNECTING":
                     ((TextView)findViewById(R.id.tv_morsensor_version)).setText(R.string.connecting);
                     ((TextView)findViewById(R.id.tv_firmware_version)).setText(R.string.connecting);
+                    ((TextView) findViewById(R.id.tv_suspended)).setText("Suspended");
                     ((LinearLayout)findViewById(R.id.ll_df_status)).removeAllViews();
                     break;
                 case "MORSENSOR_VERSION":
@@ -121,6 +122,12 @@ public class MainActivity extends Activity implements ServiceConnection {
                             cb_status.setChecked(true);
                         }
                     }
+                    break;
+                case "SUSPENDED":
+                    ((TextView) findViewById(R.id.tv_suspended)).setText("Suspended");
+                    break;
+                case "RESUMED":
+                    ((TextView) findViewById(R.id.tv_suspended)).setText("Resumed");
                     break;
                 default:
                     logging("Unknown key: %s", key);

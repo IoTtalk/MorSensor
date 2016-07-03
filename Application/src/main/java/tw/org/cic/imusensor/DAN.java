@@ -54,31 +54,30 @@ public class DAN extends Thread {
 
         this.profile = profile;
         try {
-            JSONArray json_df_list = profile.getJSONArray("df_list");
-            df_list = new String[json_df_list.length()];
-            df_selected = new boolean[df_list.length];
-            df_is_odf = new boolean[df_list.length];
-            df_timestamp = new String[df_list.length];
-            for (int i = 0; i < df_list.length; i++) {
-                df_list[i] = json_df_list.getString(i);
-                df_selected[i] = false;
-                df_is_odf[i] = true;
-                df_timestamp[i] = "";
-            }
-            ctl_timestamp = "";
-            suspended = true;
-
             profile.put("d_name", profile.getString("dm_name") + this.mac_addr.substring(this.mac_addr.length() - 4));
         } catch (JSONException e) {
             logging("init(): JSONException");
             return false;
         }
 
-
         for (int i = 0; i < RETRY_COUNT; i++) {
             try {
                 if (CSMapi.register(this.mac_addr, profile)) {
                     logging("init(): Register succeed: %s", CSMapi.ENDPOINT);
+                    JSONArray json_df_list = profile.getJSONArray("df_list");
+                    df_list = new String[json_df_list.length()];
+                    df_selected = new boolean[df_list.length];
+                    df_is_odf = new boolean[df_list.length];
+                    df_timestamp = new String[df_list.length];
+                    for (int j = 0; j < df_list.length; j++) {
+                        df_list[j] = json_df_list.getString(j);
+                        df_selected[j] = false;
+                        df_is_odf[j] = true;
+                        df_timestamp[j] = "";
+                    }
+                    ctl_timestamp = "";
+                    suspended = true;
+
                     if (!registered) {
                         registered = true;
                         this.start();
@@ -116,7 +115,7 @@ public class DAN extends Thread {
                     }
                 }
             }
-            if (suspended) {
+            if (suspended && !idf_name.equals("__Ctl_I__")) {
                 return false;
             }
             return CSMapi.push(mac_addr, idf_name, data);
