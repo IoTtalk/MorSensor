@@ -13,10 +13,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.animation.LinearInterpolator;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -138,7 +137,9 @@ public class MainActivity extends Activity implements ServiceConnection {
     UIhandler ui_handler = new UIhandler();
     BLEIDA ble_ida;
     DAN dan;
+    DAI dai;
     JSONArray df_list;
+    String endpoint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,8 +148,37 @@ public class MainActivity extends Activity implements ServiceConnection {
         setContentView(R.layout.activity_main);
         logging("========================= onCreate() =========================");
 
-        Intent intent = new Intent(this, BLEIDA.class);
-        bindService(intent, this, Context.BIND_AUTO_CREATE);
+        findViewById(R.id.btn_auto_search).setOnClickListener(new View.OnClickListener () {
+            @Override
+            public void onClick (View v) {
+                endpoint = null;
+                ((TextView)findViewById(R.id.tv_endpoint)).setText("Searching...");
+                ((LinearLayout) findViewById(R.id.ll_endpoint_panel)).removeAllViews();
+                findViewById(R.id.morsensor_addr_prompt).setVisibility(View.VISIBLE);
+                Intent intent = new Intent(MainActivity.this, BLEIDA.class);
+                bindService(intent, MainActivity.this, Context.BIND_AUTO_CREATE);
+            }
+        });
+
+        findViewById(R.id.btn_set_endpoint).setOnClickListener(new View.OnClickListener () {
+            @Override
+            public void onClick (View v) {
+                endpoint = ((EditText) findViewById(R.id.et_endpoint)).getText().toString();
+                if (!endpoint.startsWith("http://")) {
+                    endpoint = "http://" + endpoint;
+                }
+
+                if (endpoint.length() - endpoint.replace(":", "").length() == 1) {
+                    endpoint += ":9999";
+                }
+                ((TextView)findViewById(R.id.tv_endpoint)).setText(endpoint);
+
+                ((LinearLayout) findViewById(R.id.ll_endpoint_panel)).removeAllViews();
+                findViewById(R.id.morsensor_addr_prompt).setVisibility(View.VISIBLE);
+                Intent intent = new Intent(MainActivity.this, BLEIDA.class);
+                bindService(intent, MainActivity.this, Context.BIND_AUTO_CREATE);
+            }
+        });
     }
 
     @Override
@@ -156,7 +186,8 @@ public class MainActivity extends Activity implements ServiceConnection {
         logging("onServiceConnected()");
         ble_ida = ((BLEIDA.LocalBinder) service).getService();
         dan = new DAN();
-        new DAI(ble_ida, dan, ui_handler).start();
+        dai = new DAI(endpoint, ble_ida, dan, ui_handler);
+        dai.start();
     }
 
     @Override
@@ -169,14 +200,16 @@ public class MainActivity extends Activity implements ServiceConnection {
     public void onPause () {
         super.onPause();
         if (isFinishing()) {
-            new Thread () {
-                @Override
-                public void run() {
-                    dan.deregister();
-                }
-            }.start();
-            ble_ida.disconnect();
-            this.unbindService(this);
+            if (ble_ida != null) {
+                this.unbindService(this);
+            }
+            if (dai != null) {
+                (new Thread() {
+                    public void run() {
+                        dai.deregister();
+                    }
+                }).start();
+            }
         }
     }
 

@@ -77,6 +77,8 @@ public class BLEIDA extends Service implements ServiceConnection {
             String read_characteristic_uuid,
             String write_characteristic_uuid,
             DAI.Command reconnect_cmd) {
+        startService(new Intent(this, BLEIDA.class));
+
         this.ida2dai_ref = ida2dai_ref;
         this.handler_thread.start();
         this.ui_handler = ui_handler;
@@ -159,6 +161,7 @@ public class BLEIDA extends Service implements ServiceConnection {
         device_addr = null;
         bluetooth_le_service.disconnect();
         wait_for_lock();
+        stopSelf();
         return true;
     }
 
@@ -231,6 +234,7 @@ public class BLEIDA extends Service implements ServiceConnection {
                 message_queue.clear();
                 if (device_addr != null) {
                     ui_handler.send_info("CONNECTING");
+                    bluetooth_le_service.disconnect();
                     bluetooth_le_service.connect(device_addr);
                 } else {
                     release_lock();

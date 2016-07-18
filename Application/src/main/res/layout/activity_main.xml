@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -7,36 +8,51 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:orientation="vertical"
     tools:context="tw.org.cic.imusensor.MainActivity">
 
     <LinearLayout
-        android:id="@+id/morsensor_addr_prompt"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
-        <TextView
-            android:layout_width="wrap_content"
+
+        <LinearLayout
+            android:id="@+id/ll_endpoint_panel"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="MorSensor:">
-        </TextView>
+            android:orientation="vertical">
+            <EditText
+                android:id="@+id/et_endpoint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="127.0.0.1:9999"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/btn_set_endpoint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Set Endpoint">
+                </Button>
+                <Button
+                    android:id="@+id/btn_auto_search"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Auto Search">
+                </Button>
+
+            </LinearLayout>
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/tv_morsensor_addr"
-            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:id="@+id/tv_endpoint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge">
         </TextView>
-    </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/df_list_prompt"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone">
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -45,20 +61,21 @@
             android:background="@android:color/darker_gray" />
 
         <LinearLayout
+            android:id="@+id/morsensor_addr_prompt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
+            android:orientation="vertical"
+            android:visibility="gone">
             <TextView
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="MorSensor Version:">
+                android:text="MorSensor:">
             </TextView>
 
             <TextView
-                android:id="@+id/tv_morsensor_version"
+                android:id="@+id/tv_morsensor_addr"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge">
@@ -66,76 +83,97 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/df_list_prompt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:visibility="gone">
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:background="@android:color/darker_gray" />
 
-            <TextView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Firmware Version:">
-            </TextView>
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="MorSensor Version:">
+                </TextView>
+
+                <TextView
+                    android:id="@+id/tv_morsensor_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceLarge">
+                </TextView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="Firmware Version:">
+                </TextView>
+
+                <TextView
+                    android:id="@+id/tv_firmware_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceLarge">
+                </TextView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="Status:">
+                </TextView>
+
+                <TextView
+                    android:id="@+id/tv_suspended"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="Suspended">
+                </TextView>
+            </LinearLayout>
 
             <TextView
-                android:id="@+id/tv_firmware_version"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceLarge">
-            </TextView>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Status:">
+                android:text="Feature List:">
             </TextView>
 
-            <TextView
-                android:id="@+id/tv_suspended"
+            <LinearLayout
+                android:id="@+id/ll_df_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Suspended">
-            </TextView>
+                android:orientation="vertical">
+            </LinearLayout>
         </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Feature List:">
-        </TextView>
-
-        <LinearLayout
-            android:id="@+id/ll_df_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:orientation="vertical">
-        </LinearLayout>
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
-        android:background="@android:color/darker_gray" />
-
-    <TextView
-        android:id="@+id/tv_endpoint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge">
-    </TextView>
 
 </LinearLayout>
+</ScrollView>

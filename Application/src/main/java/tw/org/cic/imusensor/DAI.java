@@ -28,7 +28,8 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
     boolean[] sensor_activate;
     boolean[] sensor_responded;
     boolean suspended;
-    String endpoint = "";
+    boolean registered;
+    String endpoint;
 
     static abstract class IDFhandler {
         public IDFhandler(int sensor_id, String... df_list) {
@@ -71,7 +72,8 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
         abstract public void run (JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params);
     }
 
-    public DAI (BLEIDA ble_ida, DAN dan, MainActivity.UIhandler ui_handler) {
+    public DAI (String endpoint, BLEIDA ble_ida, DAN dan, MainActivity.UIhandler ui_handler) {
+        this.endpoint = endpoint;
         this.ble_ida = ble_ida;
         this.dan = dan;
         this.ui_handler = ui_handler;
@@ -170,6 +172,15 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
             logging(s);
         }
         /* Reports the exception to EC */
+    }
+
+    public void deregister () {
+        if (dan != null) {
+            dan.deregister();
+        }
+        if (ble_ida != null) {
+            ble_ida.disconnect();
+        }
     }
 
     boolean all (boolean[] array) {
@@ -526,6 +537,9 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                                     for (String df_name: get_idf_handler(sensor_id).df_list) {
                                         df_list.put(df_name);
                                     }
+                                    if (sensor_id == 0x52) {
+                                        ble_ida.write("", MorSensorCommandTable.ModifyLEDState((byte) 0));
+                                    }
                                     ble_ida.write("", MorSensorCommandTable.SetSensorStopTransmission(sensor_id));
                                     ble_ida.write("", MorSensorCommandTable.SetSensorTransmissionModeContinuous(sensor_id));
                                 }
@@ -541,10 +555,11 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
                                         put("is_sim", false);
                                         put("u_name", "yb");
                                     }};
-                                    if (endpoint.equals("")) {
-                                        endpoint = dan.init(DAI.this, null, mac_addr, profile);
+                                    if (!registered) {
+                                        endpoint = dan.init(DAI.this, endpoint, mac_addr, profile);
                                     } else {
                                         dan.register(endpoint, profile);
+                                        registered = true;
                                     }
                                     ui_handler.send_info("REGISTRATION_SUCCEED", endpoint);
                                 } catch (JSONException e) {
