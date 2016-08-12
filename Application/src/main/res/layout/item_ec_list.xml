@@ -1,0 +1,24 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="5dp" >
+
+    <TextView
+        android:id="@+id/tv_ec_endpoint"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+		android:layout_weight="1"
+        android:textSize="20sp"/>
+    
+    <TextView
+        android:id="@+id/tv_connecting"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:paddingRight="3dp"
+		android:textStyle="bold"
+		android:textColor="#7F0000"
+        android:textSize="20sp"/>
+
+</LinearLayout>

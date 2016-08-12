@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="5dp" >
+
+    <LinearLayout
+        android:id="@+id/ll_morsensor_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:orientation="vertical">
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow>
+                <TextView
+                    android:layout_width="0sp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="MorSensor Ver.:"/>
+
+                <TextView
+                    android:id="@+id/tv_morsensor_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:layout_gravity="right"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="@string/ellipses"/>
+            </TableRow>
+
+            <TableRow>
+                <TextView
+                    android:layout_width="0sp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="Firmware Ver.:"/>
+
+                <TextView
+                    android:id="@+id/tv_firmware_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:layout_gravity="right"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="@string/ellipses"/>
+            </TableRow>
+
+        </TableLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:background="@android:color/darker_gray" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/lv_available_morsensors"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/tv_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textColor="#888888"
+        android:padding="10dp"
+        android:text="@string/searching"/>
+    
+</LinearLayout>

@@ -3,8 +3,8 @@ package tw.org.cic.imusensor;
 
 import android.util.Log;
 
-public class MorSensorCommand {
-//    protected static final String TAG = "MorSensorCommand";
+public class MorSensorCommandTable {
+//    protected static final String TAG = "MorSensorCommandTable";
     protected static final String TAG = "MorSensor";
 
     public static final int MAX_COMMAND_LENGTH = 20;
@@ -80,7 +80,7 @@ public class MorSensorCommand {
     }
 
     public static byte[] SetSensorTransmissionModeOnce(byte SensorID){
-        logging("o 0x21 0x__ 0x00: Set transmission mode once");
+        logging("o 0x21 0x%02X 0x01: Set transmission mode once", SensorID);
         byte[] command = new byte[20];
         command[0] = OUT_SET_TRANSMISSION_MODE;
         command[1] = SensorID;
@@ -89,15 +89,7 @@ public class MorSensorCommand {
     }
 
     public static byte[] SetSensorTransmissionModeContinuous(byte SensorID){
-        logging("o 0x14 0x__: Get transmission mode");
-        byte[] command = new byte[20];
-        command[0] = OUT_TRANSMISSION_MODE;
-        command[1] = SensorID;
-        return command;
-    }
-
-    public static byte[] GetSensorTransmissionMode(byte SensorID){
-        logging("o 0x21 0x__ 0x01: Set transmission mode continuous");
+        logging("o 0x21 0x%02X 0x01: Set transmission mode continuous", SensorID);
         byte[] command = new byte[20];
         command[0] = OUT_SET_TRANSMISSION_MODE;
         command[1] = SensorID;
@@ -105,8 +97,16 @@ public class MorSensorCommand {
         return command;
     }
 
+    public static byte[] GetSensorTransmissionMode(byte SensorID){
+        logging("o 0x21 0x%02X: Get sensor transmissionMode", SensorID);
+        byte[] command = new byte[20];
+        command[0] = OUT_TRANSMISSION_MODE;
+        command[1] = SensorID;
+        return command;
+    }
+
     public static byte[] RetrieveSensorData (byte SensorID){
-        logging("o 0xF3: Retrieve sensor data");
+        logging("o 0xF3 %02X: Retrieve sensor data", SensorID);
         byte[] command = new byte[20];
         command[0] = OUT_SENSOR_DATA;
         command[1] = SensorID;
@@ -114,7 +114,7 @@ public class MorSensorCommand {
     }
 
     public static byte[] SetSensorStopTransmission(byte SensorID){
-        logging("o 0x22: Stop transmission");
+        logging("o 0x22 0x%02X: Stop transmission", SensorID);
         byte[] command = new byte[20];
         command[0] = OUT_STOP_TRANSMISSION;
         command[1] = SensorID;
@@ -127,7 +127,19 @@ public class MorSensorCommand {
         return command;
     }
 
-    private static void logging (String _) {
+    public static byte[] ModifyLEDState (byte state) {
+        byte[] command = new byte[20];
+        command[0] = OUT_MODIFY_LED_STATE;
+        command[1] = 0x03;
+        command[2] = state;
+        return command;
+    }
+
+    static private void logging (String format, Object... args) {
+        logging(String.format(format, args));
+    }
+
+    static void logging (String _) {
         Log.i(TAG, "[MorsensorCommand]"+ _);
     }
 }
