@@ -36,12 +36,6 @@
                     android:layout_height="wrap_content"
                     android:text="Set Endpoint">
                 </Button>
-                <Button
-                    android:id="@+id/btn_auto_search"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Auto Search">
-                </Button>
 
             </LinearLayout>
         </LinearLayout>

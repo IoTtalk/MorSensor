@@ -147,19 +147,6 @@ public class MainActivity extends Activity implements ServiceConnection {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
         logging("========================= onCreate() =========================");
-
-        findViewById(R.id.btn_auto_search).setOnClickListener(new View.OnClickListener () {
-            @Override
-            public void onClick (View v) {
-                endpoint = null;
-                ((TextView)findViewById(R.id.tv_endpoint)).setText("Searching...");
-                ((LinearLayout) findViewById(R.id.ll_endpoint_panel)).removeAllViews();
-                findViewById(R.id.morsensor_addr_prompt).setVisibility(View.VISIBLE);
-                Intent intent = new Intent(MainActivity.this, BLEIDA.class);
-                bindService(intent, MainActivity.this, Context.BIND_AUTO_CREATE);
-            }
-        });
-
         findViewById(R.id.btn_set_endpoint).setOnClickListener(new View.OnClickListener () {
             @Override
             public void onClick (View v) {
