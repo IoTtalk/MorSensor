@@ -19,12 +19,8 @@ public class CSMapi {
 	static public String ENDPOINT = "http://openmtc.darkgerm.com:9999";
 
 	public static class CSMError extends Exception {
-		String msg;
 		public CSMError (String message) {
 	        super(message);
-		}
-		public CSMError (String message, Throwable cause) {
-			super(message, cause);
 		}
 	}
 
