@@ -34,7 +34,7 @@ public class CSMapi {
 			logging("register(): Response from %s", url);
 			JSONObject tmp = new JSONObject();
 			tmp.put("profile", profile);
-			http.response res = http.post(url, tmp);
+			response res = request("POST", url, tmp.toString());
 			if (res.status_code != 200) {
 				logging("register(): Response from %s", url);
 				logging("register(): Response Code: %d", res.status_code);
@@ -52,7 +52,7 @@ public class CSMapi {
 		try {
 			String url = ENDPOINT +"/"+ d_id;
 			logging("[deregister] "+ url);
-			http.response res = http.delete(url);
+			response res = request("DELETE", url, null);
 			if (res.status_code != 200) {
 				logging("deregister(): Response from %s", url);
 				logging("deregister(): Response Code: %d", res.status_code);
@@ -72,7 +72,7 @@ public class CSMapi {
     	    JSONObject obj = new JSONObject();
     	    obj.put("data", data);
 			String url = ENDPOINT +"/"+ d_id + "/" + df_name;
-			http.response res = http.put(url, obj);
+			response res = request("PUT", url, obj.toString());
 			if (res.status_code != 200) {
 				logging("push(): Response from %s", url);
 				logging("push(): Response Code: %d", res.status_code);
@@ -90,7 +90,7 @@ public class CSMapi {
 	    try {
 			//logging(mac_addr +" pulling from "+ ENDPOINT);
 			String url = ENDPOINT +"/"+ d_id + "/" + df_name;
-	        http.response res = http.get(url);
+	        response res = request("GET", url, null);
 			if (res.status_code != 200) {
 				logging("pull(): Response from %s", url);
 				logging("pull(): Response Code: %d", res.status_code);
@@ -110,7 +110,7 @@ public class CSMapi {
 	    try {
 			//logging(mac_addr +" pulling from "+ ENDPOINT);
 			String url = ENDPOINT +"/tree";
-	        http.response res = http.get(url);
+	        response res = request("GET", url, null);
 			if (res.status_code != 200) {
 				logging("tree(): Response from %s", url);
 				logging("tree(): Response Code: %d", res.status_code);
@@ -125,82 +125,60 @@ public class CSMapi {
 		return null;
     }
 
-	static private class http {
-    	static public class response {
-        	public String body;
-        	public int status_code;
-        	public response (String body, int status_code) {
-                this.body = body;
-                this.status_code = status_code;
-            }
-        }
+	static public class response {
+		public String body;
+		public int status_code;
+		public response (String body, int status_code) {
+			this.body = body;
+			this.status_code = status_code;
+		}
+	}
 
-    	static public response get (String url_str) throws InterruptedIOException {
-    		return request("GET", url_str, null);
-        }
+	static private response request (String method, String url_str, String request_body) throws InterruptedIOException {
+		try {
+			URL url = new URL(url_str);
+			HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+			connection.setRequestMethod(method);
 
-    	static public response post (String url_str, JSONObject post_body) throws InterruptedIOException {
-    		return request("POST", url_str, post_body.toString());
-    	}
+			if (method.equals("POST") || method.equals("PUT")) {
+				connection.setDoOutput(true);	// needed, even if method had been set to POST
+				connection.setRequestProperty("Content-Type", "application/json");
 
-    	static public response delete (String url_str) throws InterruptedIOException {
-    		return request("DELETE", url_str, null);
-    	}
+				OutputStream os = connection.getOutputStream();
+				os.write(request_body.getBytes());
+			}
 
-    	static public response put (String url_str, JSONObject put_body) throws InterruptedIOException {
-    		return put(url_str, put_body.toString());
-    	}
+			int status_code = connection.getResponseCode();
+			InputStream in;
 
-    	static public response put (String url_str, String post_body) throws InterruptedIOException {
-    		return request("PUT", url_str, post_body);
-    	}
+			if(status_code >= HttpURLConnection.HTTP_BAD_REQUEST) {
+				in = new BufferedInputStream(connection.getErrorStream());
+			} else {
+				in = new BufferedInputStream(connection.getInputStream());
+			}
 
-    	static private response request (String method, String url_str, String request_body) throws InterruptedIOException {
-    		try {
-    			URL url = new URL(url_str);
-    			HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-    			connection.setRequestMethod(method);
-
-    			if (method.equals("POST") || method.equals("PUT")) {
-	    			connection.setDoOutput(true);	// needed, even if method had been set to POST
-	    			connection.setRequestProperty("Content-Type", "application/json");
-
-	    			OutputStream os = connection.getOutputStream();
-				    os.write(request_body.getBytes());
-    			}
-
-                int status_code = connection.getResponseCode();
-            	InputStream in;
-
-                if(status_code >= HttpURLConnection.HTTP_BAD_REQUEST) {
-                    in = new BufferedInputStream(connection.getErrorStream());
-                } else {
-                    in = new BufferedInputStream(connection.getInputStream());
-                }
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                String body = "";
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    body += line + "\n";
-                }
-                connection.disconnect();
-                reader.close();
-                return new response(body, status_code);
-    		} catch (MalformedURLException e) {
-				e.printStackTrace();
-				logging("MalformedURLException");
-				return new response("MalformedURLException", 400);
-			} catch (InterruptedIOException e) {
-                e.printStackTrace();
-                throw e;
-    		} catch (IOException e) {
-    			e.printStackTrace();
-    			logging("IOException");
-            	return new response("IOException", 400);
-    		}
-    	}
-    }
+			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+			String body = "";
+			String line;
+			while ((line = reader.readLine()) != null) {
+				body += line + "\n";
+			}
+			connection.disconnect();
+			reader.close();
+			return new response(body, status_code);
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+			logging("MalformedURLException");
+			return new response("MalformedURLException", 400);
+		} catch (InterruptedIOException e) {
+			e.printStackTrace();
+			throw e;
+		} catch (IOException e) {
+			e.printStackTrace();
+			logging("IOException");
+			return new response("IOException", 400);
+		}
+	}
 
 	static void logging (String format, Object... args) {
 		logging(String.format(format, args));
