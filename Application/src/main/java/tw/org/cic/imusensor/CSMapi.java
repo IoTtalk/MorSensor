@@ -30,7 +30,7 @@ public class CSMapi {
 			logging("register(): Response from %s", url);
 			JSONObject tmp = new JSONObject();
 			tmp.put("profile", profile);
-			response res = request("POST", url, tmp.toString());
+			Response res = request("POST", url, tmp.toString());
 			if (res.status_code != 200) {
 				logging("register(): Response from %s", url);
 				logging("register(): Response Code: %d", res.status_code);
@@ -48,7 +48,7 @@ public class CSMapi {
 		try {
 			String url = ENDPOINT +"/"+ d_id;
 			logging("[deregister] "+ url);
-			response res = request("DELETE", url, null);
+			Response res = request("DELETE", url, null);
 			if (res.status_code != 200) {
 				logging("deregister(): Response from %s", url);
 				logging("deregister(): Response Code: %d", res.status_code);
@@ -68,7 +68,7 @@ public class CSMapi {
     	    JSONObject obj = new JSONObject();
     	    obj.put("data", data);
 			String url = ENDPOINT +"/"+ d_id + "/" + df_name;
-			response res = request("PUT", url, obj.toString());
+			Response res = request("PUT", url, obj.toString());
 			if (res.status_code != 200) {
 				logging("push(): Response from %s", url);
 				logging("push(): Response Code: %d", res.status_code);
@@ -86,7 +86,7 @@ public class CSMapi {
 	    try {
 			//logging(mac_addr +" pulling from "+ ENDPOINT);
 			String url = ENDPOINT +"/"+ d_id + "/" + df_name;
-	        response res = request("GET", url, null);
+	        Response res = request("GET", url, null);
 			if (res.status_code != 200) {
 				logging("pull(): Response from %s", url);
 				logging("pull(): Response Code: %d", res.status_code);
@@ -106,7 +106,7 @@ public class CSMapi {
 	    try {
 			//logging(mac_addr +" pulling from "+ ENDPOINT);
 			String url = ENDPOINT +"/tree";
-	        response res = request("GET", url, null);
+	        Response res = request("GET", url, null);
 			if (res.status_code != 200) {
 				logging("tree(): Response from %s", url);
 				logging("tree(): Response Code: %d", res.status_code);
@@ -121,16 +121,16 @@ public class CSMapi {
 		return null;
     }
 
-	static public class response {
+	static public class Response {
 		public String body;
 		public int status_code;
-		public response (String body, int status_code) {
+		public Response(String body, int status_code) {
 			this.body = body;
 			this.status_code = status_code;
 		}
 	}
 
-	static private response request (String method, String url_str, String request_body) throws InterruptedIOException {
+	static private Response request (String method, String url_str, String request_body) throws InterruptedIOException {
 		try {
 			URL url = new URL(url_str);
 			HttpURLConnection connection = (HttpURLConnection)url.openConnection();
@@ -161,18 +161,18 @@ public class CSMapi {
 			}
 			connection.disconnect();
 			reader.close();
-			return new response(body, status_code);
+			return new Response(body, status_code);
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 			logging("MalformedURLException");
-			return new response("MalformedURLException", 400);
+			return new Response("MalformedURLException", 400);
 		} catch (InterruptedIOException e) {
 			e.printStackTrace();
 			throw e;
 		} catch (IOException e) {
 			e.printStackTrace();
 			logging("IOException");
-			return new response("IOException", 400);
+			return new Response("IOException", 400);
 		}
 	}
 
