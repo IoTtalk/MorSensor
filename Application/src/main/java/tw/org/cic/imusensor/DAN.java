@@ -19,7 +19,7 @@ public class DAN extends Thread {
     final int RETRY_COUNT = 3;
     final int RETRY_INTERVAL = 2000;
     public final String log_tag = "MorSensor";
-    DAN2DAI dai2dai_ref;
+    DAN2DAI dan2dai_ref;
     String mac_addr;
     JSONObject profile;
     boolean registered;
@@ -30,9 +30,9 @@ public class DAN extends Thread {
     String ctl_timestamp;
     boolean suspended;
 
-    public String init(DAN2DAI dai2dai_ref, String endpoint, String mac_addr, JSONObject profile) {
+    public String init(DAN2DAI dan2dai_ref, String endpoint, String mac_addr, JSONObject profile) {
         logging("init()");
-        this.dai2dai_ref = dai2dai_ref;
+        this.dan2dai_ref = dan2dai_ref;
         this.mac_addr = mac_addr.replace(":", "");
         if (endpoint == null) {
             endpoint = search();
@@ -165,7 +165,7 @@ public class DAN extends Thread {
                 JSONArray data = pull("__Ctl_O__", 0);
                 if (data != null) {
                     if (handle_control_message(data)) {
-                        dai2dai_ref.pull("Control", data);
+                        dan2dai_ref.pull("Control", data);
                     } else {
                         logging("The command message is problematic, abort");
                     }
@@ -182,7 +182,7 @@ public class DAN extends Thread {
                     if (data == null) {
                         continue;
                     }
-                    dai2dai_ref.pull(df_list[i], data);
+                    dan2dai_ref.pull(df_list[i], data);
                 }
             } catch (JSONException e) {
                 logging("Polling: JSONException: %s", e.getMessage());
