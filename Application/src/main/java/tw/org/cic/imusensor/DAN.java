@@ -163,12 +163,10 @@ public class DAN extends Thread {
         while (registered) {
             try {
                 JSONArray data = pull("__Ctl_O__", 0);
-                if (data != null) {
-                    if (handle_control_message(data)) {
-                        dan2dai_ref.pull("Control", data);
-                    } else {
-                        logging("The command message is problematic, abort");
-                    }
+                if (check_command_message(data)) {
+                    dan2dai_ref.pull("Control", data);
+                } else {
+                    logging("The command message is problematic, abort");
                 }
 
                 for (int i = 0; i < df_list.length; i++) {
@@ -222,7 +220,10 @@ public class DAN extends Thread {
         return dataset.getJSONArray(0).getJSONArray(1);
     }
 
-    boolean handle_control_message (JSONArray data) {
+    boolean check_command_message(JSONArray data) {
+        if (data == null) {
+            return false;
+        }
         logging(data.toString());
         try {
             switch (data.getString(0)) {
@@ -249,7 +250,7 @@ public class DAN extends Thread {
             }
             return true;
         } catch (JSONException e) {
-            logging("handle_control_message(): JSONException");
+            logging("check_command_message(): JSONException");
         }
         return false;
     }
