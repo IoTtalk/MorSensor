@@ -162,7 +162,7 @@ public class DAN extends Thread {
         logging("Polling: starts");
         while (registered) {
             try {
-                JSONArray data = pull("__Ctl_O__", 0);
+                JSONArray data = pull(-1);
                 if (check_command_message(data)) {
                     dan2dai_ref.pull("Control", data);
                 } else {
@@ -176,7 +176,7 @@ public class DAN extends Thread {
                     if (!df_is_odf[i] || !df_selected[i]) {
                         continue;
                     }
-                    data = pull(df_list[i], i);
+                    data = pull(i);
                     if (data == null) {
                         continue;
                     }
@@ -200,13 +200,19 @@ public class DAN extends Thread {
         logging("Polling: stops");
     }
 
-    JSONArray pull (String odf_name, int index) throws JSONException, CSMapi.CSMError, InterruptedIOException {
+    JSONArray pull (int index) throws JSONException, CSMapi.CSMError, InterruptedIOException {
+        String odf_name;
+        if (index == -1) {
+            odf_name = "__Ctl_O__";
+        } else {
+            odf_name = df_list[index];
+        }
         JSONArray dataset = CSMapi.pull(mac_addr, odf_name);
         if (dataset == null || dataset.length() == 0) {
             return null;
         }
         String timestamp = dataset.getJSONArray(0).getString(0);
-        if (odf_name.equals("__Ctl_O__")) {
+        if (index == -1) {
             if (ctl_timestamp.equals(timestamp)) {
                 return null;
             }
@@ -264,19 +270,18 @@ public class DAN extends Thread {
             DatagramSocket socket = new DatagramSocket(null);
             socket.setReuseAddress(true);
             socket.bind(new InetSocketAddress("0.0.0.0", IOTTALK_BROADCAST_PORT));
-            byte[] lmessage = new byte[20];
-            DatagramPacket packet = new DatagramPacket(lmessage, lmessage.length);
+            byte[] payload = new byte[20];
+            DatagramPacket packet = new DatagramPacket(payload, payload.length);
             while (true) {
                 socket.receive(packet);
-                String broadcast_message = new String(lmessage, 0, packet.getLength());
-                if (broadcast_message.equals("easyconnect")) {
+                String broadcast_msg = new String(payload, 0, packet.getLength());
+                if (broadcast_msg.equals("easyconnect")) {
                     InetAddress ec_addr = packet.getAddress();
                     socket.close();
                     return "http://"+ ec_addr.getHostAddress() +":9999";
                 }
             }
         } catch (IOException e) {
-            logging("init(): IOException");
             return null;
         }
     }
