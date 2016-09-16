@@ -135,7 +135,7 @@ public class MainActivity extends Activity implements ServiceConnection {
     }
 
     UIhandler ui_handler = new UIhandler();
-    BLEIDA ble_ida;
+    BLE_IDA ble_ida;
     DAN dan;
     DAI dai;
     JSONArray df_list;
@@ -162,7 +162,7 @@ public class MainActivity extends Activity implements ServiceConnection {
 
                 ((LinearLayout) findViewById(R.id.ll_endpoint_panel)).removeAllViews();
                 findViewById(R.id.morsensor_addr_prompt).setVisibility(View.VISIBLE);
-                Intent intent = new Intent(MainActivity.this, BLEIDA.class);
+                Intent intent = new Intent(MainActivity.this, BLE_IDA.class);
                 bindService(intent, MainActivity.this, Context.BIND_AUTO_CREATE);
             }
         });
@@ -171,7 +171,7 @@ public class MainActivity extends Activity implements ServiceConnection {
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         logging("onServiceConnected()");
-        ble_ida = ((BLEIDA.LocalBinder) service).getService();
+        ble_ida = ((BLE_IDA.LocalBinder) service).getService();
         dan = new DAN();
         dai = new DAI(endpoint, ble_ida, dan, ui_handler);
         dai.start();

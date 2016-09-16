@@ -30,7 +30,7 @@
         </activity>
 
         <service
-            android:name=".BLEIDA"
+            android:name=".BLE_IDA"
             android:enabled="true" />
         <service
             android:name=".BluetoothLeService"

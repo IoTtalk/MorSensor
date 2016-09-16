@@ -1,8 +1,5 @@
 package tw.org.cic.imusensor;
 
-import android.content.Context;
-import android.content.Intent;
-import android.os.Handler;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -13,8 +10,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
-    BLEIDA ble_ida;
+public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
+    BLE_IDA ble_ida;
     DAN dan;
     MainActivity.UIhandler ui_handler;
     final ArrayList<Command> cmd_list = new ArrayList<>();
@@ -72,7 +69,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLEIDA.IDA2DAI {
         abstract public void run (JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params);
     }
 
-    public DAI (String endpoint, BLEIDA ble_ida, DAN dan, MainActivity.UIhandler ui_handler) {
+    public DAI (String endpoint, BLE_IDA ble_ida, DAN dan, MainActivity.UIhandler ui_handler) {
         this.endpoint = endpoint;
         this.ble_ida = ble_ida;
         this.dan = dan;

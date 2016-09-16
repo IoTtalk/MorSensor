@@ -25,7 +25,7 @@ import org.json.JSONArray;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class BLEIDA extends Service implements ServiceConnection {
+public class BLE_IDA extends Service implements ServiceConnection {
     public interface IDA2DAI {
         boolean msg_match (byte[] msg1, byte[] msg2);
         void receive (String source, byte[] msg);
@@ -47,8 +47,8 @@ public class BLEIDA extends Service implements ServiceConnection {
     boolean connected;
 
     public class LocalBinder extends Binder {
-        BLEIDA getService() {
-            return BLEIDA.this;
+        BLE_IDA getService() {
+            return BLE_IDA.this;
         }
     }
 
@@ -77,7 +77,7 @@ public class BLEIDA extends Service implements ServiceConnection {
             String read_characteristic_uuid,
             String write_characteristic_uuid,
             DAI.Command reconnect_cmd) {
-        startService(new Intent(this, BLEIDA.class));
+        startService(new Intent(this, BLE_IDA.class));
 
         this.ida2dai_ref = ida2dai_ref;
         this.handler_thread.start();
@@ -376,6 +376,6 @@ public class BLEIDA extends Service implements ServiceConnection {
     }
 
     static private void logging (String format, Object... args) {
-        Log.i("MorSensor", String.format("[BLEIDA] "+ format, args));
+        Log.i("MorSensor", String.format("[BLE_IDA] "+ format, args));
     }
 }
