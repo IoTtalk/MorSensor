@@ -202,7 +202,6 @@ public class BLE_IDA extends Service implements ServiceConnection {
 
             //Register BluetoothLe Receiver
             final IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
             intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
             intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
             intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
@@ -225,10 +224,7 @@ public class BLE_IDA extends Service implements ServiceConnection {
         public void onReceive(Context context, Intent intent) {
 //            logging("Current Thread: %s", Thread.currentThread().getName());
             final String action = intent.getAction();
-            if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
-                logging("==== ACTION_GATT_CONNECTED ====");
-
-            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
+            if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 logging("==== ACTION_GATT_DISCONNECTED ====");
                 connected = false;
                 message_queue.clear();
