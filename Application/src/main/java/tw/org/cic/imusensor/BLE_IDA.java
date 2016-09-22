@@ -248,8 +248,8 @@ public class BLE_IDA extends Service implements ServiceConnection {
                 connected = true;
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-                byte[] packet = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
-                message_queue.receive(packet);
+                byte[] message = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                message_queue.receive(message);
             }
         }
     }
@@ -306,17 +306,17 @@ public class BLE_IDA extends Service implements ServiceConnection {
             }
         };
 
-        public void write(String source, byte[] packet) {
-            logging("MessageQueue.write('%s', %02X)", source, packet[0]);
+        public void write(String source, byte[] message) {
+            logging("MessageQueue.write('%s', %02X)", source, message[0]);
             try {
                 source_queue.put(source);
-                omsg_queue.put(packet);
+                omsg_queue.put(message);
                 if (omsg_queue.size() == 1) {
-                    logging("MessageQueue.write(%02X): got only one command, send it", packet[0]);
+                    logging("MessageQueue.write(%02X): got only one command, send it", message[0]);
                     send_msg();
                 }
             } catch (InterruptedException e) {
-                logging("MessageQueue.write(%02X): omsg_queue full", packet[0]);
+                logging("MessageQueue.write(%02X): omsg_queue full", message[0]);
             }
         }
 
