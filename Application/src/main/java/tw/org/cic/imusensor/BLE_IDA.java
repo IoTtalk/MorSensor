@@ -249,7 +249,7 @@ public class BLE_IDA extends Service implements ServiceConnection {
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 byte[] message = hex_to_bytes(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
-                message_queue.receive(message);
+                message_queue.receive_msg(message);
             }
         }
     }
@@ -295,8 +295,8 @@ public class BLE_IDA extends Service implements ServiceConnection {
     /* -------------------------------------------------- */
 
     class MessageQueue {
-        final LinkedBlockingQueue<byte[]> omsg_queue = new LinkedBlockingQueue<>();
-        final LinkedBlockingQueue<String> source_queue = new LinkedBlockingQueue<>();
+        final LinkedBlockingQueue<byte[]> msg_queue = new LinkedBlockingQueue<>();
+        final LinkedBlockingQueue<String> src_queue = new LinkedBlockingQueue<>();
         final Handler timer = new Handler(handler_thread.getLooper());
         final Runnable timeout_task = new Runnable () {
             @Override
@@ -306,59 +306,59 @@ public class BLE_IDA extends Service implements ServiceConnection {
             }
         };
 
-        public void write(String source, byte[] message) {
-            logging("MessageQueue.write('%s', %02X)", source, message[0]);
+        public void write(String src, byte[] msg) {
+            logging("MessageQueue.write('%s', %02X)", src, msg[0]);
             try {
-                source_queue.put(source);
-                omsg_queue.put(message);
-                if (omsg_queue.size() == 1) {
-                    logging("MessageQueue.write(%02X): got only one command, send it", message[0]);
+                src_queue.put(src);
+                msg_queue.put(msg);
+                if (msg_queue.size() == 1) {
+                    logging("MessageQueue.write(%02X): got only one command, send it", msg[0]);
                     send_msg();
                 }
             } catch (InterruptedException e) {
-                logging("MessageQueue.write(%02X): omsg_queue full", message[0]);
+                logging("MessageQueue.write(%02X): msg_queue full", msg[0]);
             }
         }
 
         public void clear () {
             logging("MessageQueue.clear()");
             timer.removeCallbacks(timeout_task);
-            source_queue.clear();
-            omsg_queue.clear();
+            src_queue.clear();
+            msg_queue.clear();
         }
 
-        public void receive(byte[] imsg) {
-            logging("MessageQueue.receive(%02X)", imsg[0]);
-            byte[] omsg = omsg_queue.peek();
-            String source = source_queue.peek();
-            if (source == null) {
-                source = "";
+        public void receive_msg(byte[] imsg) {
+            logging("MessageQueue.receive_msg(%02X)", imsg[0]);
+            byte[] omsg = msg_queue.peek();
+            String src = src_queue.peek();
+            if (src == null) {
+                src = "";
             }
             if (omsg != null) {
                 if (ida2dai_ref.msg_match(omsg, imsg)) {
-                    logging("MessageQueue.receive(%02X): match, cancel old timer", imsg[0]);
+                    logging("MessageQueue.receive_msg(%02X): match, cancel old timer", imsg[0]);
                     try {
                         /* cancel the timer */
                         timer.removeCallbacks(timeout_task);
-                        source_queue.take();
-                        omsg_queue.take();
+                        src_queue.take();
+                        msg_queue.take();
 
-                        /* if omsg_queue is not empty, send next command */
-                        if (!omsg_queue.isEmpty()) {
-                            logging("MessageQueue.receive(%02X): send next command", imsg[0]);
+                        /* if msg_queue is not empty, send next command */
+                        if (!msg_queue.isEmpty()) {
+                            logging("MessageQueue.receive_msg(%02X): send next command", imsg[0]);
                             send_msg();
                         }
                     } catch (InterruptedException e) {
-                        logging("MessageQueue.receive(): InterruptedException");
+                        logging("MessageQueue.receive_msg(): InterruptedException");
                     }
                 }
             }
 
-            ida2dai_ref.receive(source, imsg);
+            ida2dai_ref.receive(src, imsg);
         }
 
         private void send_msg() {
-            byte[] omsg = omsg_queue.peek();
+            byte[] omsg = msg_queue.peek();
             if (omsg == null) {
                 logging("MessageQueue.send_msg(): [bug] omsg does not exist");
                 return;
