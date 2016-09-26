@@ -35,7 +35,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
         }
         public byte sensor_id;
         public String[] df_list;
-        abstract public void push(ByteArrayInputStream ul_cmd_params);
+        abstract public void push(ByteArrayInputStream msg);
     }
 
     static abstract class IDF {
@@ -44,7 +44,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
         }
         public String name;
         public boolean selected;
-        abstract public void push(byte[] bytes);
+        abstract public void push(byte[] msg);
     }
 
     static abstract class ODF {
@@ -98,11 +98,10 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             if (odf_name.equals("Control")) {
                 String cmd_name = data.getString(0);
                 JSONArray dl_cmd_params = data.getJSONObject(1).getJSONArray("cmd_params");
-                for (Command cmd: cmd_list) {
-                    if (cmd_name.equals(cmd.name)) {
-                        cmd.run(dl_cmd_params, null);
-                        return;
-                    }
+                Command cmd = get_cmd(cmd_name);
+                if (cmd != null) {
+                    cmd.run(dl_cmd_params, null);
+                    return;
                 }
                 logging("write(%s): Unknown cmd: %s", odf_name, cmd_name);
                 push_cmd_to_iottalk("UNKNOWN_CMD", cmd_name);
@@ -258,21 +257,21 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
         add_idf_handlers(
             new IDFhandler(0xD0, "Gyroscope", "Acceleration", "Magnetometer") {
                 @Override
-                public void push(ByteArrayInputStream ul_cmd_params) {
+                public void push(ByteArrayInputStream msg) {
                     byte[] bytes = new byte[6];
-                    ul_cmd_params.read(bytes, 0, 6);
+                    msg.read(bytes, 0, 6);
                     IDF gyro_idf = get_idf("Gyroscope");
                     if (gyro_idf.selected) {
                         gyro_idf.push(bytes);
                     }
 
-                    ul_cmd_params.read(bytes, 0, 6);
+                    msg.read(bytes, 0, 6);
                     IDF acc_idf = get_idf("Acceleration");
                     if (acc_idf.selected) {
                         acc_idf.push(bytes);
                     }
 
-                    ul_cmd_params.read(bytes, 0, 6);
+                    msg.read(bytes, 0, 6);
                     IDF mag_idf = get_idf("Magnetometer");
                     if (mag_idf.selected) {
                         mag_idf.push(bytes);
@@ -281,9 +280,9 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             },
             new IDFhandler(0xC0, "UV") {
                 @Override
-                public void push(ByteArrayInputStream ul_cmd_params) {
+                public void push(ByteArrayInputStream msg) {
                     byte[] bytes = new byte[2];
-                    ul_cmd_params.read(bytes, 0, 2);
+                    msg.read(bytes, 0, 2);
                     IDF uv_idf = get_idf("UV");
                     if (uv_idf.selected) {
                         uv_idf.push(bytes);
@@ -292,15 +291,15 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             },
             new IDFhandler(0x80, "Temperature", "Humidity") {
                 @Override
-                public void push(ByteArrayInputStream ul_cmd_params) {
+                public void push(ByteArrayInputStream msg) {
                     byte[] bytes = new byte[2];
-                    ul_cmd_params.read(bytes, 0, 2);
+                    msg.read(bytes, 0, 2);
                     IDF temp_idf = get_idf("Temperature");
                     if (temp_idf.selected) {
                         temp_idf.push(bytes);
                     }
 
-                    ul_cmd_params.read(bytes, 0, 2);
+                    msg.read(bytes, 0, 2);
                     IDF hum_idf = get_idf("Humidity");
                     if (hum_idf.selected) {
                         hum_idf.push(bytes);
@@ -309,9 +308,9 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             },
             new IDFhandler(0x52, "Color-I") {
                 @Override
-                public void push(ByteArrayInputStream ul_cmd_params) {
+                public void push(ByteArrayInputStream msg) {
                     byte[] bytes = new byte[8];
-                    ul_cmd_params.read(bytes, 0, 8);
+                    msg.read(bytes, 0, 8);
                     IDF color_idf = get_idf("Color-I");
                     if (color_idf.selected) {
                         color_idf.push(bytes);
@@ -329,10 +328,10 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                 float last_z;
                 float threshold = 10;
                 @Override
-                public void push(byte[] bytes) {
-                    final float x = (float) (((short)bytes[0] * 256 + (short)bytes[1]) / 32.8);
-                    final float y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 32.8);
-                    final float z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 32.8);
+                public void push(byte[] msg) {
+                    final float x = (float) (((short) msg[0] * 256 + (short) msg[1]) / 32.8);
+                    final float y = (float) (((short) msg[2] * 256 + (short) msg[3]) / 32.8);
+                    final float z = (float) (((short) msg[4] * 256 + (short) msg[5]) / 32.8);
 
                     float diff_x = Math.abs(last_x - x);
                     float diff_y = Math.abs(last_y - y);
@@ -363,10 +362,10 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                 float last_z;
                 float threshold = 1;
                 @Override
-                public void push(byte[] bytes) {
-                    final float x = (float) (((short)bytes[0] * 256 + (short)bytes[1]) / 4096.0) * (float) 9.8;
-                    final float y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 4096.0) * (float) 9.8;
-                    final float z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 4096.0) * (float) 9.8;
+                public void push(byte[] msg) {
+                    final float x = (float) (((short) msg[0] * 256 + (short) msg[1]) / 4096.0) * (float) 9.8;
+                    final float y = (float) (((short) msg[2] * 256 + (short) msg[3]) / 4096.0) * (float) 9.8;
+                    final float z = (float) (((short) msg[4] * 256 + (short) msg[5]) / 4096.0) * (float) 9.8;
 
                     float diff_x = Math.abs(last_x - x);
                     float diff_y = Math.abs(last_y - y);
@@ -397,10 +396,10 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                 float last_z;
                 float threshold = 10;
                 @Override
-                public void push(byte[] bytes) {
-                    final float x = (float) (((short)bytes[0] * 256 + (short)bytes[1]) / 3.41 / 100);
-                    final float y = (float) (((short)bytes[2] * 256 + (short)bytes[3]) / 3.41 / 100);
-                    final float z = (float) (((short)bytes[4] * 256 + (short)bytes[5]) / 3.41 /-100);
+                public void push(byte[] msg) {
+                    final float x = (float) (((short) msg[0] * 256 + (short) msg[1]) / 3.41 / 100);
+                    final float y = (float) (((short) msg[2] * 256 + (short) msg[3]) / 3.41 / 100);
+                    final float z = (float) (((short) msg[4] * 256 + (short) msg[5]) / 3.41 /-100);
 
                     float diff_x = Math.abs(last_x - x);
                     float diff_y = Math.abs(last_y - y);
@@ -427,9 +426,9 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             },
             new IDF("UV") {
                 @Override
-                public void push(byte[] bytes) {
+                public void push(byte[] msg) {
                     try {
-                        final float uv_data = (float) (bytes[1] * 256 + (bytes[0]) / 100.0);
+                        final float uv_data = (float) (msg[1] * 256 + (msg[0]) / 100.0);
                         dan.push("UV", new JSONArray(){{
                             put(uv_data);
                         }});
@@ -441,9 +440,9 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             },
             new IDF("Temperature") {
                 @Override
-                public void push(byte[] bytes) {
+                public void push(byte[] msg) {
                     try {
-                        final float temperature = (float) ((bytes[0] * 256 + bytes[1]) * 175.72 / 65536.0 - 46.85);
+                        final float temperature = (float) ((msg[0] * 256 + msg[1]) * 175.72 / 65536.0 - 46.85);
                         dan.push("Temperature", new JSONArray(){{
                             put(temperature);
                         }});
@@ -455,9 +454,9 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             },
             new IDF("Humidity") {
                 @Override
-                public void push(byte[] bytes) {
+                public void push(byte[] msg) {
                     try {
-                        final float humidity = (float) ((bytes[0] * 256 + bytes[1]) * 125.0 / 65536.0 - 6.0);
+                        final float humidity = (float) ((msg[0] * 256 + msg[1]) * 125.0 / 65536.0 - 6.0);
                         dan.push("Humidity", new JSONArray(){{
                             put(humidity);
                         }});
@@ -471,11 +470,11 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                 int last_r, last_g, last_b;
                 int threshold = 1;
                 @Override
-                public void push(byte[] bytes) {
+                public void push(byte[] msg) {
                     final JSONArray data = new JSONArray();
-                    int r = bytes[1] & 0xFF;
-                    int g = bytes[3] & 0xFF;
-                    int b = bytes[5] & 0xFF;
+                    int r = msg[1] & 0xFF;
+                    int g = msg[3] & 0xFF;
+                    int b = msg[5] & 0xFF;
 
                     int diff_r = Math.abs(last_r - r);
                     int diff_g = Math.abs(last_g - g);
