@@ -127,31 +127,31 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
     }
 
     @Override
-    public void receive(String source, byte[] msg) {
+    public void receive(String src, byte[] msg) {
         byte i_opcode = msg[0];
-        logging("DAI.receive_msg(%s, %02X)", source, i_opcode);
-        if (source.equals("") && i_opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+        logging("DAI.receive_msg(%s, %02X)", src, i_opcode);
+        if (src.equals("") && i_opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
             long timestamp = System.currentTimeMillis();
             if (timestamp - last_timestamp < threshold) {
-                logging("DAI.receive_msg(%s, %02X): MorSensor data rate too high, drop packet", source, i_opcode);
+                logging("DAI.receive_msg(%s, %02X): MorSensor data rate too high, drop packet", src, i_opcode);
             } else {
                 ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(msg);
                 last_timestamp = timestamp;
                 byte opcode = (byte) ul_cmd_params.read();
                 byte sensor_id = (byte) ul_cmd_params.read();
-                logging("DAI.receive_msg(%s, %02X): Sensor data from %02X", source, i_opcode, sensor_id);
+                logging("DAI.receive_msg(%s, %02X): Sensor data from %02X", src, i_opcode, sensor_id);
                 get_idf_handler(sensor_id).push(ul_cmd_params);
             }
         } else {
             for (Command cmd : cmd_list) {
                 for (byte cmd_opcode : cmd.opcodes) {
-                    if (cmd_opcode == i_opcode && source.equals(cmd.name)) {
+                    if (cmd_opcode == i_opcode && src.equals(cmd.name)) {
                         ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(msg);
                         cmd.run(null, ul_cmd_params);
                         try {
                             ul_cmd_params.close();
                         } catch (IOException e) {
-                            logging("DAI.receive_msg(%s, %02X): IOException", source, i_opcode);
+                            logging("DAI.receive_msg(%s, %02X): IOException", src, i_opcode);
                         }
                         return;
                     }
@@ -159,7 +159,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             }
         }
 
-        logging("DAI.receive_msg(%s, %02X): Unknown MorSensor command:", source, i_opcode);
+        logging("DAI.receive_msg(%s, %02X): Unknown MorSensor command:", src, i_opcode);
         for (int i = 0; i < 5; i++) {
             String s = "    ";
             for (int j = 0; j < 4; j++) {
