@@ -7,7 +7,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 
 public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
@@ -27,6 +30,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
     boolean suspended;
     boolean registered;
     String endpoint;
+    PrintStream logfile_writer;
 
     static abstract class IDFhandler {
         public IDFhandler(int sensor_id, String... df_list) {
@@ -69,11 +73,12 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
         abstract public void run (JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params);
     }
 
-    public DAI (String endpoint, BLE_IDA ble_ida, DAN dan, MainActivity.UIhandler ui_handler) {
+    public DAI (String endpoint, BLE_IDA ble_ida, DAN dan, MainActivity.UIhandler ui_handler, PrintStream logfile_writer) {
         this.endpoint = endpoint;
         this.ble_ida = ble_ida;
         this.dan = dan;
         this.ui_handler = ui_handler;
+        this.logfile_writer = logfile_writer;
     }
 
     @Override
@@ -205,6 +210,11 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
         } catch (JSONException e) {
             logging("push_cmd_to_iottalk(): JSONException");
         }
+    }
+
+    void write_log (String df_name, JSONArray data) {
+        logging("write_log("+ df_name +", "+ data +")");
+        logfile_writer.println(df_name + " " + data);
     }
 
     void add_idf_handlers(IDFhandler... idf_handlers) {
@@ -346,6 +356,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                             data.put(x);
                             data.put(y);
                             data.put(z);
+                            write_log("Gyroscope", data);
                             dan.push("Gyroscope", data);
                             logging("push(Gyroscope, %s)", data);
                         } catch (JSONException e) {
@@ -380,6 +391,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                             data.put(x);
                             data.put(y);
                             data.put(z);
+                            write_log("Acceleration", data);
                             dan.push("Acceleration", data);
                             logging("push(Acceleration, %s)", data);
                         } catch (JSONException e) {
@@ -414,6 +426,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                             data.put(x);
                             data.put(y);
                             data.put(z);
+                            write_log("Magnetometer", data);
                             dan.push("Magnetometer", data);
                             logging("push(Magnetometer, %s)", data);
                         } catch (JSONException e) {
@@ -429,9 +442,10 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                 public void push(byte[] msg) {
                     try {
                         final float uv_data = (float) (msg[1] * 256 + (msg[0]) / 100.0);
-                        dan.push("UV", new JSONArray(){{
-                            put(uv_data);
-                        }});
+                        final JSONArray data = new JSONArray();
+                        data.put(uv_data);
+                        write_log("UV", data);
+                        dan.push("UV", data);
                         logging("push(UV, [%f])", uv_data);
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -439,14 +453,24 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                 }
             },
             new IDF("Temperature") {
+                float last_temp;
+                float threshold = 0.1f;
                 @Override
                 public void push(byte[] msg) {
                     try {
                         final float temperature = (float) ((msg[0] * 256 + msg[1]) * 175.72 / 65536.0 - 46.85);
-                        dan.push("Temperature", new JSONArray(){{
-                            put(temperature);
-                        }});
-                        logging("push(Temperature, [%f])", temperature);
+                        float diff_temp = Math.abs(last_temp - temperature);
+
+                        if (diff_temp > threshold) {
+                            last_temp = temperature;
+                            final JSONArray data = new JSONArray();
+                            data.put(temperature);
+                            write_log("Temperature", data);
+                            dan.push("Temperature", data);
+                            logging("push(Temperature, [%f])", temperature);
+                        } else {
+                            logging("Temp diff too small (%f) -> (%f)", last_temp, temperature);
+                        }
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -457,9 +481,10 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                 public void push(byte[] msg) {
                     try {
                         final float humidity = (float) ((msg[0] * 256 + msg[1]) * 125.0 / 65536.0 - 6.0);
-                        dan.push("Humidity", new JSONArray(){{
-                            put(humidity);
-                        }});
+                        final JSONArray data = new JSONArray();
+                        data.put(humidity);
+                        write_log("Humidity", data);
+                        dan.push("Humidity", data);
                         logging("push(Humidity, [%f])", humidity);
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -487,6 +512,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                         data.put(r);
                         data.put(g);
                         data.put(b);
+                        write_log("Color-I", data);
                         dan.push("Color-I", data);
                         logging("push(Color-I, %s)", data);
                     } else {
@@ -530,8 +556,12 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                                     byte sensor_id = (byte) ul_cmd_params.read();
                                     sensor_list[i] = sensor_id;
                                     logging("Found sensor %02X", sensor_id);
-                                    for (String df_name: get_idf_handler(sensor_id).df_list) {
-                                        df_list.put(df_name);
+                                    if (get_idf_handler(sensor_id) != null) {
+                                        for (String df_name : get_idf_handler(sensor_id).df_list) {
+                                            df_list.put(df_name);
+                                        }
+                                    } else {
+                                        logging("Unknown sensor_id: %02X", sensor_id);
                                     }
                                     if (sensor_id == 0x52) {
                                         ble_ida.write("", MorSensorCommandTable.ModifyLEDState((byte) 0));

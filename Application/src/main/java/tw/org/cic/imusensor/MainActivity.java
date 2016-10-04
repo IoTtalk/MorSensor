@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.app.Activity;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -21,6 +22,12 @@ import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
 
 public class MainActivity extends Activity implements ServiceConnection {
     class UIhandler extends Handler {
@@ -140,6 +147,7 @@ public class MainActivity extends Activity implements ServiceConnection {
     DAI dai;
     JSONArray df_list;
     String endpoint;
+    PrintStream logfile_writer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -173,7 +181,19 @@ public class MainActivity extends Activity implements ServiceConnection {
         logging("onServiceConnected()");
         ble_ida = ((BLE_IDA.LocalBinder) service).getService();
         dan = new DAN();
-        dai = new DAI(endpoint, ble_ida, dan, ui_handler);
+        String logfile_name = "MorSensor-" + System.currentTimeMillis() + ".txt";
+        File logfile_dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+        File logfile = new File(logfile_dir, logfile_name);
+        if (!logfile_dir.mkdirs()) {
+            logging("Cannot mkdir "+ logfile_dir);
+        }
+        try {
+            logfile_writer = new PrintStream(new FileOutputStream(logfile), true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        dai = new DAI(endpoint, ble_ida, dan, ui_handler, logfile_writer);
         dai.start();
     }
 
@@ -187,6 +207,9 @@ public class MainActivity extends Activity implements ServiceConnection {
     public void onPause () {
         super.onPause();
         if (isFinishing()) {
+            if (logfile_writer != null) {
+                logfile_writer.close();
+            }
             if (ble_ida != null) {
                 this.unbindService(this);
             }

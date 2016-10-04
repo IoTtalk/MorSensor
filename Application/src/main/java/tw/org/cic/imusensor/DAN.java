@@ -166,7 +166,9 @@ public class DAN extends Thread {
                 if (check_command_message(data)) {
                     dan2dai_ref.pull("Control", data);
                 } else {
-                    logging("The command message is problematic, abort");
+                    if (data != null) {
+                        logging("The command message is problematic, abort");
+                    }
                 }
 
                 for (int i = 0; i < df_list.length; i++) {
