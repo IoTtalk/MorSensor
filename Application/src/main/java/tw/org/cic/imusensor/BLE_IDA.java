@@ -296,7 +296,7 @@ public class BLE_IDA extends Service implements ServiceConnection {
 
     class MessageQueue {
         final LinkedBlockingQueue<byte[]> msg_queue = new LinkedBlockingQueue<>();
-        final LinkedBlockingQueue<String> src_queue = new LinkedBlockingQueue<>();
+        final LinkedBlockingQueue<String> cmd_queue = new LinkedBlockingQueue<>();
         final Handler timer = new Handler(handler_thread.getLooper());
         final Runnable timeout_task = new Runnable () {
             @Override
@@ -306,10 +306,10 @@ public class BLE_IDA extends Service implements ServiceConnection {
             }
         };
 
-        public void write(String src, byte[] msg) {
-            logging("MessageQueue.write('%s', %02X)", src, msg[0]);
+        public void write(String cmd, byte[] msg) {
+            logging("MessageQueue.write('%s', %02X)", cmd, msg[0]);
             try {
-                src_queue.put(src);
+                cmd_queue.put(cmd);
                 msg_queue.put(msg);
                 if (msg_queue.size() == 1) {
                     logging("MessageQueue.write(%02X): got only one command, send it", msg[0]);
@@ -323,16 +323,16 @@ public class BLE_IDA extends Service implements ServiceConnection {
         public void clear () {
             logging("MessageQueue.clear()");
             timer.removeCallbacks(timeout_task);
-            src_queue.clear();
+            cmd_queue.clear();
             msg_queue.clear();
         }
 
         public void receive_msg(byte[] imsg) {
             logging("MessageQueue.receive_msg(%02X)", imsg[0]);
             byte[] omsg = msg_queue.peek();
-            String src = src_queue.peek();
-            if (src == null) {
-                src = "";
+            String cmd = cmd_queue.peek();
+            if (cmd == null) {
+                cmd = "";
             }
             if (omsg != null) {
                 if (ida2dai_ref.msg_match(omsg, imsg)) {
@@ -340,7 +340,7 @@ public class BLE_IDA extends Service implements ServiceConnection {
                     try {
                         /* cancel the timer */
                         timer.removeCallbacks(timeout_task);
-                        src_queue.take();
+                        cmd_queue.take();
                         msg_queue.take();
 
                         /* if msg_queue is not empty, send next command */
@@ -354,7 +354,7 @@ public class BLE_IDA extends Service implements ServiceConnection {
                 }
             }
 
-            ida2dai_ref.receive(src, imsg);
+            ida2dai_ref.receive(cmd, imsg);
         }
 
         private void send_msg() {
