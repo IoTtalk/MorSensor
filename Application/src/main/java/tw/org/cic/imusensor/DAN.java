@@ -20,7 +20,7 @@ public class DAN extends Thread {
     final int RETRY_INTERVAL = 2000;
     public final String log_tag = "MorSensor";
     DAN2DAI dan2dai_ref;
-    String mac_addr;
+    String device_addr;
     JSONObject profile;
     boolean registered;
     String[] df_list;
@@ -30,10 +30,10 @@ public class DAN extends Thread {
     String ctl_timestamp;
     boolean suspended;
 
-    public String init(DAN2DAI dan2dai_ref, String endpoint, String mac_addr, JSONObject profile) {
+    public String init(DAN2DAI dan2dai_ref, String endpoint, String device_addr, JSONObject profile) {
         logging("init()");
         this.dan2dai_ref = dan2dai_ref;
-        this.mac_addr = mac_addr.replace(":", "");
+        this.device_addr = device_addr.replace(":", "");
         if (endpoint == null) {
             endpoint = search();
         }
@@ -54,7 +54,7 @@ public class DAN extends Thread {
 
         this.profile = profile;
         try {
-            profile.put("d_name", profile.getString("dm_name") + this.mac_addr.substring(this.mac_addr.length() - 4));
+            profile.put("d_name", profile.getString("dm_name") + this.device_addr.substring(this.device_addr.length() - 4));
         } catch (JSONException e) {
             logging("init(): JSONException");
             return false;
@@ -62,7 +62,7 @@ public class DAN extends Thread {
 
         for (int i = 0; i < RETRY_COUNT; i++) {
             try {
-                if (CSMapi.register(this.mac_addr, profile)) {
+                if (CSMapi.register(this.device_addr, profile)) {
                     logging("init(): Register succeed: %s", CSMapi.ENDPOINT);
                     JSONArray json_df_list = profile.getJSONArray("df_list");
                     df_list = new String[json_df_list.length()];
@@ -118,7 +118,7 @@ public class DAN extends Thread {
             if (suspended && !idf_name.equals("__Ctl_I__")) {
                 return false;
             }
-            return CSMapi.push(mac_addr, idf_name, data);
+            return CSMapi.push(device_addr, idf_name, data);
         } catch (CSMapi.CSMError e) {
             logging("push(): CSMError: %s", e.getMessage());
         } catch (JSONException e) {
@@ -138,7 +138,7 @@ public class DAN extends Thread {
         registered = false;
         for (int i = 0; i < RETRY_COUNT; i++) {
             try {
-                if (CSMapi.deregister(mac_addr)) {
+                if (CSMapi.deregister(device_addr)) {
                     logging("deregister(): Deregister succeed: %s", CSMapi.ENDPOINT);
                     return true;
                 }
@@ -209,7 +209,7 @@ public class DAN extends Thread {
         } else {
             odf_name = df_list[index];
         }
-        JSONArray dataset = CSMapi.pull(mac_addr, odf_name);
+        JSONArray dataset = CSMapi.pull(device_addr, odf_name);
         if (dataset == null || dataset.length() == 0) {
             return null;
         }
