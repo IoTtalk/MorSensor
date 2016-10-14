@@ -61,15 +61,15 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
     }
 
     static abstract class Command {
-        public Command(String name, int... opcodes) {
+        public Command(String name, int... cmd_ids) {
             this.name = name;
-            this.opcodes = new byte[opcodes.length];
-            for (int i = 0; i < opcodes.length; i++) {
-                this.opcodes[i] = (byte) opcodes[i];
+            this.cmd_ids = new byte[cmd_ids.length];
+            for (int i = 0; i < cmd_ids.length; i++) {
+                this.cmd_ids[i] = (byte) cmd_ids[i];
             }
         }
         public String name;
-        public byte[] opcodes;
+        public byte[] cmd_ids;
         abstract public void run (JSONArray dl_cmd_params, ByteArrayInputStream ul_cmd_params);
     }
 
@@ -133,30 +133,30 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
 
     @Override
     public void receive(String name, byte[] params) {
-        byte i_opcode = params[0];
-        logging("DAI.receive_msg(%s, %02X)", name, i_opcode);
-        if (name.equals("") && i_opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+        byte i_cmd_id = params[0];
+        logging("DAI.receive_msg(%s, %02X)", name, i_cmd_id);
+        if (name.equals("") && i_cmd_id == MorSensorCommandTable.IN_SENSOR_DATA) {
             long timestamp = System.currentTimeMillis();
             if (timestamp - last_timestamp < min_time_interval) {
-                logging("DAI.receive_msg(%s, %02X): MorSensor data rate too high, drop packet", name, i_opcode);
+                logging("DAI.receive_msg(%s, %02X): MorSensor data rate too high, drop packet", name, i_cmd_id);
             } else {
                 ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(params);
                 last_timestamp = timestamp;
-                byte opcode = (byte) ul_cmd_params.read();
+                byte cmd_id = (byte) ul_cmd_params.read();
                 byte sensor_id = (byte) ul_cmd_params.read();
-                logging("DAI.receive_msg(%s, %02X): Sensor data from %02X", name, i_opcode, sensor_id);
+                logging("DAI.receive_msg(%s, %02X): Sensor data from %02X", name, i_cmd_id, sensor_id);
                 get_idf_handler(sensor_id).push(ul_cmd_params);
             }
         } else {
             for (Command cmd : cmd_list) {
-                for (byte cmd_opcode : cmd.opcodes) {
-                    if (cmd_opcode == i_opcode && name.equals(cmd.name)) {
+                for (byte cmd_cmd_id : cmd.cmd_ids) {
+                    if (cmd_cmd_id == i_cmd_id && name.equals(cmd.name)) {
                         ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(params);
                         cmd.run(null, ul_cmd_params);
                         try {
                             ul_cmd_params.close();
                         } catch (IOException e) {
-                            logging("DAI.receive_msg(%s, %02X): IOException", name, i_opcode);
+                            logging("DAI.receive_msg(%s, %02X): IOException", name, i_cmd_id);
                         }
                         return;
                     }
@@ -164,7 +164,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             }
         }
 
-        logging("DAI.receive_msg(%s, %02X): Unknown MorSensor command:", name, i_opcode);
+        logging("DAI.receive_msg(%s, %02X): Unknown MorSensor command:", name, i_cmd_id);
         for (int i = 0; i < 5; i++) {
             String s = "    ";
             for (int j = 0; j < 4; j++) {
@@ -654,14 +654,14 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                         }
                     } else {
                         try {
-                            byte opcode = (byte) ul_cmd_params.read();
+                            byte cmd_id = (byte) ul_cmd_params.read();
                             byte sensor_id = (byte) ul_cmd_params.read();
-                            logging("SET_DF_STATUS_RSP: %02X %02X", opcode, sensor_id);
+                            logging("SET_DF_STATUS_RSP: %02X %02X", cmd_id, sensor_id);
                             for (int i = 0; i < sensor_list.length; i++) {
                                 if (sensor_id == sensor_list[i]) {
-                                    if (sensor_activated_flags[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+                                    if (sensor_activated_flags[i] && cmd_id == MorSensorCommandTable.IN_SENSOR_DATA) {
                                         sensor_replied_flags[i] = true;
-                                    } else if (!sensor_activated_flags[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
+                                    } else if (!sensor_activated_flags[i] && cmd_id == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
                                         sensor_replied_flags[i] = true;
                                     }
                                     break;
@@ -707,12 +707,12 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                             push_cmd_to_iottalk("RESUME_RSP", "OK");
                         }
                     } else {
-                        byte opcode = (byte) ul_cmd_params.read();
+                        byte cmd_id = (byte) ul_cmd_params.read();
                         byte sensor_id = (byte) ul_cmd_params.read();
-                        logging("RESUME_RSP: %02X %02X", opcode, sensor_id);
+                        logging("RESUME_RSP: %02X %02X", cmd_id, sensor_id);
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_id == sensor_list[i]) {
-                                if (sensor_activated_flags[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+                                if (sensor_activated_flags[i] && cmd_id == MorSensorCommandTable.IN_SENSOR_DATA) {
                                     sensor_replied_flags[i] = true;
                                 }
                                 break;
@@ -746,11 +746,11 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                             push_cmd_to_iottalk("SUSPEND_RSP", "OK");
                         }
                     } else {
-                        byte opcode = (byte) ul_cmd_params.read();
+                        byte cmd_id = (byte) ul_cmd_params.read();
                         byte sensor_id = (byte) ul_cmd_params.read();
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_id == sensor_list[i]) {
-                                if (sensor_activated_flags[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
+                                if (sensor_activated_flags[i] && cmd_id == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
                                     sensor_replied_flags[i] = true;
                                 }
                                 break;
