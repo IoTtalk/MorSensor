@@ -28,7 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class BLE_IDA extends Service implements ServiceConnection {
     public interface IDA2DAI {
         boolean msg_match (byte[] msg1, byte[] msg2);
-        void receive (String source, byte[] msg);
+        void receive (String name, byte[] params);
     }
     IDA2DAI ida2dai_ref;
     MainActivity.UIhandler ui_handler;
@@ -43,7 +43,7 @@ public class BLE_IDA extends Service implements ServiceConnection {
     BluetoothGattCharacteristic read_characteristic;
     BluetoothGattCharacteristic write_characteristic;
     MessageQueue message_queue;
-    DAI.Command reconnect_cmd;
+    DAI.Command connect_cmd;
     boolean connected;
 
     public class LocalBinder extends Binder {
@@ -85,7 +85,7 @@ public class BLE_IDA extends Service implements ServiceConnection {
         this.read_characteristic_uuid = read_characteristic_uuid;
         this.write_characteristic_uuid = write_characteristic_uuid;
         this.message_queue = new MessageQueue();
-        this.reconnect_cmd = reconnect_cmd;
+        this.connect_cmd = reconnect_cmd;
 
         /* Check if Bluetooth is supported */
         final BluetoothManager bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -149,8 +149,8 @@ public class BLE_IDA extends Service implements ServiceConnection {
         return device_addr != null;
     }
 
-    void write(String source, byte[] cmd) {
-        message_queue.write(source, cmd);
+    void write(String name, byte[] params) {
+        message_queue.write(name, params);
     }
 
     boolean disconnect () {
@@ -244,7 +244,7 @@ public class BLE_IDA extends Service implements ServiceConnection {
                     device_addr = null;
                 }
                 release_lock();
-                reconnect_cmd.run(new JSONArray(), null);
+                connect_cmd.run(new JSONArray(), null);
                 connected = true;
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
@@ -295,8 +295,8 @@ public class BLE_IDA extends Service implements ServiceConnection {
     /* -------------------------------------------------- */
 
     class MessageQueue {
-        final LinkedBlockingQueue<byte[]> msg_queue = new LinkedBlockingQueue<>();
-        final LinkedBlockingQueue<String> cmd_queue = new LinkedBlockingQueue<>();
+        final LinkedBlockingQueue<byte[]> params_queue = new LinkedBlockingQueue<>();
+        final LinkedBlockingQueue<String> name_queue = new LinkedBlockingQueue<>();
         final Handler timer = new Handler(handler_thread.getLooper());
         final Runnable timeout_task = new Runnable () {
             @Override
@@ -306,31 +306,31 @@ public class BLE_IDA extends Service implements ServiceConnection {
             }
         };
 
-        public void write(String cmd, byte[] msg) {
-            logging("MessageQueue.write('%s', %02X)", cmd, msg[0]);
+        public void write(String name, byte[] params) {
+            logging("MessageQueue.write('%s', %02X)", name, params[0]);
             try {
-                cmd_queue.put(cmd);
-                msg_queue.put(msg);
-                if (msg_queue.size() == 1) {
-                    logging("MessageQueue.write(%02X): got only one command, send it", msg[0]);
+                name_queue.put(name);
+                params_queue.put(params);
+                if (params_queue.size() == 1) {
+                    logging("MessageQueue.write(%02X): got only one command, send it", params[0]);
                     send_msg();
                 }
             } catch (InterruptedException e) {
-                logging("MessageQueue.write(%02X): msg_queue full", msg[0]);
+                logging("MessageQueue.write(%02X): params_queue full", params[0]);
             }
         }
 
         public void clear () {
             logging("MessageQueue.clear()");
             timer.removeCallbacks(timeout_task);
-            cmd_queue.clear();
-            msg_queue.clear();
+            name_queue.clear();
+            params_queue.clear();
         }
 
         public void receive_msg(byte[] imsg) {
             logging("MessageQueue.receive_msg(%02X)", imsg[0]);
-            byte[] omsg = msg_queue.peek();
-            String cmd = cmd_queue.peek();
+            byte[] omsg = params_queue.peek();
+            String cmd = name_queue.peek();
             if (cmd == null) {
                 cmd = "";
             }
@@ -340,11 +340,11 @@ public class BLE_IDA extends Service implements ServiceConnection {
                     try {
                         /* cancel the timer */
                         timer.removeCallbacks(timeout_task);
-                        cmd_queue.take();
-                        msg_queue.take();
+                        name_queue.take();
+                        params_queue.take();
 
-                        /* if msg_queue is not empty, send next command */
-                        if (!msg_queue.isEmpty()) {
+                        /* if params_queue is not empty, send next command */
+                        if (!params_queue.isEmpty()) {
                             logging("MessageQueue.receive_msg(%02X): send next command", imsg[0]);
                             send_msg();
                         }
@@ -358,7 +358,7 @@ public class BLE_IDA extends Service implements ServiceConnection {
         }
 
         private void send_msg() {
-            byte[] omsg = msg_queue.peek();
+            byte[] omsg = params_queue.peek();
             if (omsg == null) {
                 logging("MessageQueue.send_msg(): [bug] omsg does not exist");
                 return;

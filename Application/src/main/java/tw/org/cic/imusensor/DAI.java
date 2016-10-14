@@ -18,12 +18,12 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
     final ArrayList<IDFhandler> idf_handler_list = new ArrayList<>();
     final ArrayList<IDF> idf_list = new ArrayList<>();
     JSONArray df_list;
-    String mac_addr;
+    String device_addr;
     long last_timestamp;
-    final long threshold = 50;
+    final long min_time_interval = 50;
     byte[] sensor_list;
-    boolean[] sensor_activate;
-    boolean[] sensor_responded;
+    boolean[] sensor_activated_flags;
+    boolean[] sensor_replied_flags;
     boolean suspended;
     boolean registered;
     String endpoint;
@@ -83,7 +83,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
         init_idfs();
 
         logging("DAI.run()");
-        mac_addr = ble_ida.init(
+        device_addr = ble_ida.init(
             this,
             ui_handler,
             "00002a37-0000-1000-8000-00805f9b34fb",
@@ -127,31 +127,31 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
     }
 
     @Override
-    public void receive(String cmd, byte[] msg) {
-        byte i_opcode = msg[0];
-        logging("DAI.receive_msg(%s, %02X)", cmd, i_opcode);
-        if (cmd.equals("") && i_opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+    public void receive(String name, byte[] params) {
+        byte i_opcode = params[0];
+        logging("DAI.receive_msg(%s, %02X)", name, i_opcode);
+        if (name.equals("") && i_opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
             long timestamp = System.currentTimeMillis();
-            if (timestamp - last_timestamp < threshold) {
-                logging("DAI.receive_msg(%s, %02X): MorSensor data rate too high, drop packet", cmd, i_opcode);
+            if (timestamp - last_timestamp < min_time_interval) {
+                logging("DAI.receive_msg(%s, %02X): MorSensor data rate too high, drop packet", name, i_opcode);
             } else {
-                ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(msg);
+                ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(params);
                 last_timestamp = timestamp;
                 byte opcode = (byte) ul_cmd_params.read();
                 byte sensor_id = (byte) ul_cmd_params.read();
-                logging("DAI.receive_msg(%s, %02X): Sensor data from %02X", cmd, i_opcode, sensor_id);
+                logging("DAI.receive_msg(%s, %02X): Sensor data from %02X", name, i_opcode, sensor_id);
                 get_idf_handler(sensor_id).push(ul_cmd_params);
             }
         } else {
-            for (Command cmd_i : cmd_list) {
-                for (byte cmd_opcode : cmd_i.opcodes) {
-                    if (cmd_opcode == i_opcode && cmd.equals(cmd_i.name)) {
-                        ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(msg);
-                        cmd_i.run(null, ul_cmd_params);
+            for (Command cmd : cmd_list) {
+                for (byte cmd_opcode : cmd.opcodes) {
+                    if (cmd_opcode == i_opcode && name.equals(cmd.name)) {
+                        ByteArrayInputStream ul_cmd_params = new ByteArrayInputStream(params);
+                        cmd.run(null, ul_cmd_params);
                         try {
                             ul_cmd_params.close();
                         } catch (IOException e) {
-                            logging("DAI.receive_msg(%s, %02X): IOException", cmd, i_opcode);
+                            logging("DAI.receive_msg(%s, %02X): IOException", name, i_opcode);
                         }
                         return;
                     }
@@ -159,11 +159,11 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
             }
         }
 
-        logging("DAI.receive_msg(%s, %02X): Unknown MorSensor command:", cmd, i_opcode);
+        logging("DAI.receive_msg(%s, %02X): Unknown MorSensor command:", name, i_opcode);
         for (int i = 0; i < 5; i++) {
             String s = "    ";
             for (int j = 0; j < 4; j++) {
-                s += String.format("%02X ", msg[i * 4 + j]);
+                s += String.format("%02X ", params[i * 4 + j]);
             }
             logging(s);
         }
@@ -541,8 +541,8 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                                 }
                                 ui_handler.send_info("DF_LIST", df_list);
                                 logging(df_list.toString());
-                                sensor_activate = new boolean[sensor_count];
-                                sensor_responded = new boolean[sensor_count];
+                                sensor_activated_flags = new boolean[sensor_count];
+                                sensor_replied_flags = new boolean[sensor_count];
 
                                 try {
                                     JSONObject profile = new JSONObject() {{
@@ -552,7 +552,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                                         put("u_name", "yb");
                                     }};
                                     if (!registered) {
-                                        endpoint = dan.init(DAI.this, endpoint, mac_addr, profile);
+                                        endpoint = dan.init(DAI.this, endpoint, device_addr, profile);
                                     } else {
                                         dan.register(endpoint, profile);
                                         registered = true;
@@ -594,11 +594,11 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                                 }
 
                                 if (suspended) {
-                                    sensor_responded[i] = true;
-                                } else if (any_df_selected == sensor_activate[i]) {
-                                    sensor_responded[i] = true;
+                                    sensor_replied_flags[i] = true;
+                                } else if (any_df_selected == sensor_activated_flags[i]) {
+                                    sensor_replied_flags[i] = true;
                                 } else {
-                                    sensor_responded[i] = false;
+                                    sensor_replied_flags[i] = false;
                                     if (any_df_selected) {
                                         if (sensor_list[i] == 0x52) {
                                             ble_ida.write("", MorSensorCommandTable.ModifyLEDState((byte) 1));
@@ -611,10 +611,10 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                                         ble_ida.write("SET_DF_STATUS", MorSensorCommandTable.SetSensorStopTransmission(idf_handler.sensor_id));
                                     }
                                 }
-                                sensor_activate[i] = any_df_selected;
-                                logging("Sensor responded: %02X %b", sensor_list[i], sensor_responded[i]);
+                                sensor_activated_flags[i] = any_df_selected;
+                                logging("Sensor responded: %02X %b", sensor_list[i], sensor_replied_flags[i]);
                             }
-                            if (all(sensor_responded)) {
+                            if (all(sensor_replied_flags)) {
                                 ui_handler.send_info("SET_DF_STATUS", flags);
                                 push_cmd_to_iottalk("SET_DF_STATUS_RSP", flags);
                             } else {
@@ -629,15 +629,15 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                             logging("SET_DF_STATUS_RSP: %02X %02X", opcode, sensor_id);
                             for (int i = 0; i < sensor_list.length; i++) {
                                 if (sensor_id == sensor_list[i]) {
-                                    if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
-                                        sensor_responded[i] = true;
-                                    } else if (!sensor_activate[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
-                                        sensor_responded[i] = true;
+                                    if (sensor_activated_flags[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+                                        sensor_replied_flags[i] = true;
+                                    } else if (!sensor_activated_flags[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
+                                        sensor_replied_flags[i] = true;
                                     }
                                     break;
                                 }
                             }
-                            if (all(sensor_responded)) {
+                            if (all(sensor_replied_flags)) {
                                 String flags = "";
                                 for (int i = 0; i < df_list.length(); i++) {
                                     IDF idf = get_idf(df_list.getString(i));
@@ -662,17 +662,17 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                     if (ul_cmd_params == null) {
                         suspended = false;
                         for (int i = 0; i < sensor_list.length; i++) {
-                            if (sensor_activate[i]) {
-                                sensor_responded[i] = false;
+                            if (sensor_activated_flags[i]) {
+                                sensor_replied_flags[i] = false;
                                 if (sensor_list[i] == 0x52) {
                                     ble_ida.write("", MorSensorCommandTable.ModifyLEDState((byte) 1));
                                 }
                                 ble_ida.write("RESUME", MorSensorCommandTable.RetrieveSensorData(sensor_list[i]));
                             } else {
-                                sensor_responded[i] = true;
+                                sensor_replied_flags[i] = true;
                             }
                         }
-                        if (all(sensor_responded)) {
+                        if (all(sensor_replied_flags)) {
                             ui_handler.send_info("RESUMED");
                             push_cmd_to_iottalk("RESUME_RSP", "OK");
                         }
@@ -682,13 +682,13 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                         logging("RESUME_RSP: %02X %02X", opcode, sensor_id);
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_id == sensor_list[i]) {
-                                if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
-                                    sensor_responded[i] = true;
+                                if (sensor_activated_flags[i] && opcode == MorSensorCommandTable.IN_SENSOR_DATA) {
+                                    sensor_replied_flags[i] = true;
                                 }
                                 break;
                             }
                         }
-                        if (all(sensor_responded)) {
+                        if (all(sensor_replied_flags)) {
                             ui_handler.send_info("RESUMED");
                             push_cmd_to_iottalk("RESUME_RSP", "OK");
                         }
@@ -701,17 +701,17 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                     if (ul_cmd_params == null) {
                         suspended = true;
                         for (int i = 0; i < sensor_list.length; i++) {
-                            if (sensor_activate[i]) {
-                                sensor_responded[i] = false;
+                            if (sensor_activated_flags[i]) {
+                                sensor_replied_flags[i] = false;
                                 if (sensor_list[i] == 0x52) {
                                     ble_ida.write("", MorSensorCommandTable.ModifyLEDState((byte) 0));
                                 }
                                 ble_ida.write("SUSPEND", MorSensorCommandTable.SetSensorStopTransmission(sensor_list[i]));
                             } else {
-                                sensor_responded[i] = true;
+                                sensor_replied_flags[i] = true;
                             }
                         }
-                        if (all(sensor_responded)) {
+                        if (all(sensor_replied_flags)) {
                             ui_handler.send_info("SUSPENDED");
                             push_cmd_to_iottalk("SUSPEND_RSP", "OK");
                         }
@@ -720,13 +720,13 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
                         byte sensor_id = (byte) ul_cmd_params.read();
                         for (int i = 0; i < sensor_list.length; i++) {
                             if (sensor_id == sensor_list[i]) {
-                                if (sensor_activate[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
-                                    sensor_responded[i] = true;
+                                if (sensor_activated_flags[i] && opcode == MorSensorCommandTable.IN_STOP_TRANSMISSION) {
+                                    sensor_replied_flags[i] = true;
                                 }
                                 break;
                             }
                         }
-                        if (all(sensor_responded)) {
+                        if (all(sensor_replied_flags)) {
                             ui_handler.send_info("SUSPENDED");
                             push_cmd_to_iottalk("SUSPEND_RSP", "OK");
                         }

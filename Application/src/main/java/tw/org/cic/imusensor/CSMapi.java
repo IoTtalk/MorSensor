@@ -64,7 +64,6 @@ public class CSMapi {
 
     static public boolean push (String d_id, String df_name, JSONArray data) throws CSMError, JSONException, InterruptedIOException {
     	try {
-			//logging(mac_addr +" pushing to "+ ENDPOINT);
     	    JSONObject obj = new JSONObject();
     	    obj.put("data", data);
 			String url = ENDPOINT +"/"+ d_id + "/" + df_name;
@@ -84,7 +83,6 @@ public class CSMapi {
 
     static public JSONArray pull (String d_id, String df_name) throws JSONException, CSMError, InterruptedIOException {
 	    try {
-			//logging(mac_addr +" pulling from "+ ENDPOINT);
 			String url = ENDPOINT +"/"+ d_id + "/" + df_name;
 	        Response res = request("GET", url, null);
 			if (res.status_code != 200) {
@@ -104,7 +102,6 @@ public class CSMapi {
 
     static public JSONObject tree () throws CSMError, InterruptedIOException {
 	    try {
-			//logging(mac_addr +" pulling from "+ ENDPOINT);
 			String url = ENDPOINT +"/tree";
 	        Response res = request("GET", url, null);
 			if (res.status_code != 200) {
