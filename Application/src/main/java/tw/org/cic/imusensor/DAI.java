@@ -214,7 +214,7 @@ public class DAI extends Thread implements DAN.DAN2DAI, BLE_IDA.IDA2DAI {
 
     void write_log (String df_name, JSONArray data) {
         logging("write_log("+ df_name +", "+ data +")");
-        logfile_writer.println(df_name + " " + data);
+        logfile_writer.println(df_name + " " + System.currentTimeMillis() + " " + data);
     }
 
     void add_idf_handlers(IDFhandler... idf_handlers) {
